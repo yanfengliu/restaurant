@@ -90,6 +90,27 @@ These additional 2560 × 1440 screenshots remain untracked under `output/gallery
 
 The current browser implementation's supplies and task model must be compared against these observed batch, payment, refund, equipment-support, and four-state-priority rules. Its own service tests do not verify the unobserved native service loop.
 
+### Access and service setup follow-up, 2026-10-17
+
+A third bounded session exercised a fresh Fast Food scenario in installed build 20401477 at 2560 × 1440 from approximately 14:21 to 14:39 PDT. No original save was loaded and no named save was created. Actual native controls were necessary for this study; no assets or code were extracted. The following input observations were recorded during the session, while the two retained screenshots below were also inspected at their original resolution.
+
+- The initial balance was 3000 coins with about 2.5 stars. The displayed goals were 400 coins of monthly fries revenue, 700 coins of monthly fries and nuggets revenue, and a wait below 30 seconds for 20 people. These are observed goal descriptions, not completed objectives.
+- Four four-segment wall runs deducted 192 coins in total at 12 per segment; enclosure created the peach floor. The first entry door was free. Separate table and chair purchases cost 50 and 25. Cabinets cost 50 each and connected into an ivory worktop; the cutting board cost 50 and the small countertop fryer 100. A successful cabinet placement ended that placement tool, requiring the card to be selected again for the next cabinet.
+- A small shelf cost 100. The miscellaneous catalog showed a pedestal sink at 70, toilet at 100, and broom at 75. The 150-coin wooden object with cheese was a mousetrap, not a dishwasher. The study did not identify or verify the equipment needed to wash dishes.
+- Setting a recurring potato quantity of six made no immediate charge. Ordering three plates prepaid 45 coins, leaving 2018. Hiring Isabella at the displayed monthly wage of 76 entered placement mode; placing her on the world tile made no immediate cash deduction. Monthly payroll timing and proration were not established.
+- By January 10, the three plates had arrived but potato stock remained zero and cash remained 2018; a red “Storage not reachable” message appeared. The shelf was obstructed by the tight room layout. While paused on January 14, moving the empty shelf onto owned grass outside the building was accepted without a cash change. By January 20, the outdoor shelf held potato crates, inventory showed six potatoes and three plates, and cash was 2012. This verifies an access-dependent ingredient arrival without a charge for the failed attempt, and storage placement on owned outdoor grass in this setup.
+- By January 29, potato stock reached 12 and cash was 2006. Exact delivery transition frames were not captured. Together with the earlier session, these snapshots confirm recurring batches and six-coin arrivals; they do not prove an exact ten-day cadence. The current ten-day implementation contract remains an inferred default requiring calibration, and an approximately nine-day cycle is also compatible with these observations.
+- Fast simulation continued while the menu panel was open. On March 12, Fries had no missing requirement borders and its green Add to menu control changed to Remove from menu after a click. By March 14, a guest occupied the default chair at the table. The employee displayed a warning that she had nothing to do. The March 16 capture shows a seated guest and visible fryer contents, cash 1990, twelve potatoes and three plates. The later cash decreases were not attributed to a specific charge, and the fryer contents alone do not prove completed cooking or a successful order.
+
+The finally guard closed the exact task-owned game process and its descendants at approximately 14:39 PDT (21:39 UTC), leaving shared Steam running. A complete cooking, serving, payment, dirty-tableware and washing cycle was not observed. The pedestal sink's role in dishwashing, ingredient consumption, stock aging, full storage rules, and long-term economy remain unverified. Outdoor storage placement and the one-shot furnishing tool are concrete comparison gaps for the browser game; they do not change the active supplies contract without a separate implementation decision.
+
+Both screenshots remain untracked in `output/gallery/`. The capture times below come from the retained evidence manifest; SHA-256 binds the conclusions to the inspected bytes.
+
+| Local gallery file | Captured (PDT) | SHA-256 |
+| --- | --- | --- |
+| `reference-live-19-exterior-stock.png` | 14:35:47 | `ffd5ad76a8c53553bbbb4856590a48ea8ed0143b56f6c7cde32ebcdd88292c6b` |
+| `reference-live-20-service-room.png` | 14:39:05 | `1562269772bc6fafe39b5458a34dce8cbe0e5d81eca7ef11aea511b958c04e05` |
+
 ## Direction implemented
 
 Corner Table uses its own title, six challenge briefs, object geometry, catalog, illustrations, and interface copy.
