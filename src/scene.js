@@ -379,7 +379,8 @@ export function createScene(container, callbacks = {}) {
   function surfaceHeight(x,z) { return floorMeshes.has(cellKey(Math.round(x),Math.round(z)))?0.1:0.036; }
   function objectHeight(type,x,z) {
     const surface=surfaceHeight(x,z);
-    if(surface===0.1||['painting','clock'].includes(type))return surface;
+    if(['painting','clock'].includes(type))return surface-(modelBaseHeights.get(type)||0);
+    if(surface===0.1)return surface;
     const standingType=['cuttingboard','fryer'].includes(type)?'counter':type;
     return surface-(modelBaseHeights.get(standingType)||0);
   }
@@ -393,6 +394,28 @@ export function createScene(container, callbacks = {}) {
       connections.push({x:Math.round(dx*Math.cos(r)-dz*Math.sin(r)),z:Math.round(dx*Math.sin(r)+dz*Math.cos(r))});
     }
     return connections;
+  }
+  function nearestWall(data) {
+    let nearest=null;
+    for(const wall of game?.objects||[]){
+      if(wall.type!=='wall')continue;
+      const nx=Math.round(Math.sin(angle(wall.rotation))),nz=Math.round(Math.cos(angle(wall.rotation)));
+      const dx=data.x-wall.x,dz=data.z-wall.z,distance=dx*nx+dz*nz;
+      if(Math.abs(distance)>1.6||Math.abs(dx*nz-dz*nx)>0.55)continue;
+      if(!nearest||Math.abs(distance)<Math.abs(nearest.distance))nearest={wall,nx,nz,distance};
+    }
+    return nearest;
+  }
+  function positionWallArt(group,data) {
+    const nearest=nearestWall(data);
+    group.position.set(data.x+0.5,objectHeight(data.type,data.x,data.z),data.z+0.5);
+    group.rotation.y=angle(data.rotation);group.userData.hostWallId=null;
+    if(nearest){
+      const side=nearest.distance<0?-1:1,nx=nearest.nx*side,nz=nearest.nz*side;
+      const mountDistance=data.type==='clock'?0.55:0.555,shift=mountDistance-Math.abs(nearest.distance);
+      group.position.x+=nx*shift;group.position.z+=nz*shift;group.position.y=surfaceHeight(data.x,data.z);
+      group.rotation.y=Math.atan2(nx,nz);group.userData.hostWallId=nearest.wall.id;
+    }
   }
   function syncObjects() {
     const ids=new Set();
@@ -410,23 +433,7 @@ export function createScene(container, callbacks = {}) {
     for(const group of objects.values()) {
       const data=group.userData.data;
       if(!['painting','clock'].includes(data.type)) continue;
-      let nearest=null;
-      for(const wall of objects.values()) {
-        const w=wall.userData.data;
-        if(w.type!=='wall') continue;
-        const nx=Math.round(Math.sin(angle(w.rotation))), nz=Math.round(Math.cos(angle(w.rotation)));
-        const dx=data.x-w.x, dz=data.z-w.z, distance=dx*nx+dz*nz;
-        if(Math.abs(distance)>1.6 || Math.abs(dx*nz-dz*nx)>0.55) continue;
-        if(!nearest || Math.abs(distance)<Math.abs(nearest.distance)) nearest={wall,nx,nz,distance};
-      }
-      group.position.set(data.x+0.5,surfaceHeight(data.x,data.z),data.z+0.5);group.rotation.y=angle(data.rotation);group.userData.hostWallId=null;
-      if(nearest) {
-        const side=nearest.distance<0?-1:1, nx=nearest.nx*side, nz=nearest.nz*side;
-        const mountDistance=data.type==='clock'?0.55:0.555;
-        const shift=mountDistance-Math.abs(nearest.distance);
-        group.position.x+=nx*shift;group.position.z+=nz*shift;
-        group.rotation.y=Math.atan2(nx,nz);group.userData.hostWallId=nearest.wall.userData.objectId;
-      }
+      positionWallArt(group,data);
     }
   }
   function personModel(data,isStaff=true) {
@@ -588,6 +595,10 @@ export function createScene(container, callbacks = {}) {
         const supportHost=['cuttingboard','fryer'].includes(tool?.itemType)?(game?.objects||[]).find(o=>o.type==='counter'&&o.x===cell.x&&o.z===cell.z):null;
         const height=tool.type==='HIRE'?personHeight(cell,ghost):objectHeight(tool.itemType,cell.x,cell.z);
         ghost.position.set(cell.x+0.5,height,cell.z+0.5);ghost.rotation.y=angle(doorHost?host.rotation:supportHost?supportHost.rotation:rotation);
+        if(['painting','clock'].includes(tool.itemType)){
+          positionWallArt(ghost,{type:tool.itemType,x:cell.x,z:cell.z,rotation});
+          const wall=objects.get(ghost.userData.hostWallId);ghost.visible=ghost.visible&&(!wall||wall.scale.y>0.5);
+        }
         const good=validCell(cell.x,cell.z), m=material(good?'#8fc695':'#d67969',{transparent:true,opacity:0.58,depthWrite:false,roughness:0.7});
         if(tool?.type!=='HIRE')ghost.traverse(n=>{if(n.isMesh)n.material=m;});cursor.material=material(good?'#90c8a0':'#d67969',{transparent:true,opacity:0.4,depthWrite:false});
       }

@@ -45,6 +45,8 @@ Dining seats require an adjacent table and chair without a floor prerequisite. E
 
 No new furniture types, prices, opening budgets, scenarios, dishwasher behavior or timing changes enter this work unit.
 
+Wall art keeps its authored height and face offset only while a nearby wall supports its mount. Otherwise a clock or painting rests its measured geometry base on the current grass or floor surface. Placed objects and destination ghosts share the same mount calculation, and moving a wall or art or adding flooring reevaluates that placement. This is a placement consistency safeguard; corresponding native visual behavior remains unverified.
+
 ## Verification bounds
 
 Engine checks use public actions except deliberate malformed-save mutations. Pin full snapshots before every rejected MOVE. Cover missing IDs, nonfinite rotations, fractional/unowned cells, occupied/colliding/unsupported destinations, parent+child active protections, no-op identity and empty versus stocked moves. Move structural segments to open and close a boundary; verify free interior flooring, preserved old floors, moved door cost/grant and collision rejection instead of destination replacement.
