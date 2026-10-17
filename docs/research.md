@@ -19,7 +19,43 @@ The sources below inform the visual direction and management loop; they are not 
 
 The exact supplied post and developer notes were retrieved from Steam's public HTML event payload and public news API when the web reader could not render the pages.
 The community guide's initial fetch contained a Steam content interstitial; the search index exposed the guide text.
-The original desktop game has not been played in this task; no installed-game behavior is claimed as observed.
+The installed desktop game was directly exercised on 2026-10-17 as bounded below; public-source descriptions remain distinct from those observations.
+
+## Installed-game study, 2026-10-17
+
+The installed Steam build was 20401477. A new Fast Food scenario was studied at 2560 × 1440 from about 13:19 to 13:25 PDT through actual native controls, using the Computer Use skill. Load was disabled at startup; no existing save was opened. The visible game was necessary because the native control flow could not be exercised headlessly. No assets or code were extracted.
+
+- The scenario selector displayed six cards, with later cards requiring 1, 4, 7, 10, and 15 accumulated stars. The first scenario began with an empty fenced grass plot, 3000 coins, no employees, and about 2.5 displayed reputation stars. Its three goals concerned monthly fries revenue, fries-and-nuggets revenue, and a wait-time/population target.
+- The first tutorial taught WASD or screen-edge camera panning. A W keypress visibly panned the camera. The pause and play icons changed the active speed and displayed pause feedback; the calendar advanced while running. Zoom, orbit, and floor switching were not exercised.
+- Construction used an isometric grid. A drag created an axis-aligned wall run at 12 coins per segment; each observed three-segment run deducted 36 coins. Closing four wall runs automatically filled the enclosed room with a peach wood floor. Door selection became available after enclosure; placing an entry door made the other management and furnishing icons available. The first selected door produced no visible cash deduction.
+- Tables and chairs were separate purchases and placements. The first table cost 50 coins and the first chair cost 25; both deductions were observed. Placement showed footstep access hints. The table catalog displayed four columns with many styles and prices, while some object cards included a color swatch.
+- The kitchen category displayed 14 equipment cards, including counters, shelves, a refrigerator, a cutting board, fryers, mixers, a coffee unit, an oven, and a cooker. No appliance was placed in this bounded study.
+- The menu was a scrollable dish dependency tree. Selecting Fries showed a one-star dish, price 15, minus/plus price controls, and an unavailable Add to menu button. Missing requirements had red borders: a fryer, cutting board, potato ingredient crate, and plate. This directly confirms visible equipment, ingredient, and tableware dependencies; it does not establish how their inventories deplete or replenish.
+- The tableware panel displayed six types with minus/plus order controls, each priced at 15 coins, and a Delivery button below. Clicking the plate plus control with no storage placed did not complete a purchase or show a cash deduction; the reason was not independently verified.
+- Hiring displayed three candidates with monthly wages, portraits, and bars for Clumsiness, Cooking, and Speed. Hiring a candidate entered a placement state; placing the employee inside the restaurant completed that step. The management panel then listed Serving, Cooking, Dishwashing, and Cleaning. One click changed Serving from a blank square to an upward triangle. The settings tab showed the hired employee's skills and wage. No firing or clothing control was exercised.
+- The live room used tall maroon brick walls, substantial dark caps and skirting, warm peach floorboards, and soft directional shadows. The interface used thin near-black full-width top and bottom strips, serif labels, pale gray panels, charcoal category tabs, and rendered object previews. The construction panel occupied about one quarter of the screen width and left the rest of the room visible.
+
+The study stopped after two desktop-input interruptions, including a fresh window-selection recovery, rather than competing with the user's foreground input. The task-owned game process was closed by an exact-PID cleanup guard, and a follow-up process check found neither that process nor its children. The game directory exposed only its runtime log and Unity analytics files, with no save file observed. The shared Steam client was left running.
+
+### Retained local visual evidence
+
+The nine native screenshots below were inspected as returned by the capture tool and retained only in the ignored informational gallery. These SHA-256 values bind the observations to the inspected bytes. Native screenshots are 2560 × 1440; they are not tracked assets.
+
+| Local gallery file | SHA-256 |
+| --- | --- |
+| `reference-live-01-scenario.png` | `fd18e932701cecbd5993c502f6a84f5de4a1985c9b788f3a5479d1a48eded26f` |
+| `reference-live-02-construction.png` | `1c9f5e8d79be2e00d7f79ead9e9046bec60129a5877077956431998b1897c6f9` |
+| `reference-live-03-enclosed-room.png` | `37a1426367272c5f1a59ee5028ac1d903c96408b779142b909e2cfba1f97439a` |
+| `reference-live-04-tables.png` | `916e665929f0fc478fc0b09260eb27f9a25199f3fab4185b65f45971af94dc96` |
+| `reference-live-05-kitchen.png` | `2eb3bc702a03f41e6fdd7c7e003dfb881d7d447d56c14960e7956ab10d3eaabb` |
+| `reference-live-06-dish-requirements.png` | `444041829fcdb61b80677823f65110df4b3a83b551fe34f307437f453ef50a80` |
+| `reference-live-07-tableware.png` | `3b61d254d53c0c6a60a2e34a078215d123109689bf4f027faefea50de67275b5` |
+| `reference-live-08-hiring.png` | `68403c68658718c2f5c4570a89ae961c6e5a933837f00dc9f5eaa028c04b3db9` |
+| `reference-live-09-priorities.png` | `4283a94a8c93970e538b6e95c90b4534e091677bae81ff8dc2f4d79050cdab3b` |
+
+The inspected browser screenshot `output/playwright/current-room.png` had SHA-256 `c91f22294108cba3907708b00a17a47f828b39e008a33f3af5fc1ab1714af56b`. Its warm olive environment, isometric room, wood floor, and dark wall caps follow the researched direction. It differs visibly in lower cream walls, a more open front cutaway, finer floor texture, bundled seating, a large light branding header, and editorial text at the right of the room. The native game instead emphasizes tall saturated brick walls, compact dark bars, and a larger furnishing catalog. These are qualitative comparisons across different maps and scales, not a pixel-match score.
+
+The native cooking, serving, payment, dirty-dish, restroom, cleaning, delivery, and long-term economy loops were not exercised to completion. Corner Table's tests and browser checks therefore establish its own behavior only; complete gameplay or visual parity is not verified.
 
 ## Direction implemented
 
@@ -34,7 +70,7 @@ The interface surfaces time, cash, rating, hygiene, building, food, staff priori
 This increment has a single build level, a finite original catalog, a simplified menu and employee priority system, and deterministic restaurant simulation rules.
 It does not reproduce the complete reference catalog, original scenario maps or exact balancing, multi-floor building, room zoning, per-table menus, individual ingredient and tableware inventory, research-tree progression, item recoloring, configurable restroom cleaning frequency, employee clothing, achievements, translations, audio, or every guest review detail.
 The art is authored procedural geometry and SVG rather than extracted assets.
-Behavioral and visual checks of Corner Table establish that this game's controls and systems work within the tested bounds; they cannot establish exact parity with a game that was not directly exercised.
+Behavioral and visual checks of Corner Table establish that this game's controls and systems work within the tested bounds; the bounded installed-game study above does not establish complete parity.
 
 ## Toolchain sources
 
