@@ -9,15 +9,15 @@ const floorColors = { wood: '#c09568', tile: '#e5dfca', tiles: '#e5dfca', kitche
 /** A self-contained, procedural restaurant world. Coordinates identify one-unit cells. */
 export function createScene(container, callbacks = {}) {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#b9c4ab');
-  scene.fog = new THREE.Fog('#b9c4ab', 58, 105);
+  scene.background = new THREE.Color('#8b9470');
+  scene.fog = new THREE.Fog('#8b9470', 58, 105);
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.22;
+  renderer.toneMappingExposure = 1.05;
   renderer.domElement.className = 'restaurant-canvas';
   renderer.domElement.style.cssText = 'display:block;width:100%;height:100%;touch-action:none;outline:none';
   renderer.domElement.tabIndex = 0;
@@ -30,12 +30,12 @@ export function createScene(container, callbacks = {}) {
   let width = 1, height = 1, disposed = false, frame = 0, game = null, tool = null, rotation = 0;
   let hover = null, ghost = null, ghostType = null, floorSignature = '', landSignature = '';
   let hoveredId = null, lastTime = performance.now();
+  const startedAt = lastTime;
   const materials = new Map(), geometries = new Set(), textures = new Set();
   const objects = new Map(), people = new Map(), floorMeshes = new Map(), tableProps = new Map();
   const objectLayer = new THREE.Group(), floorLayer = new THREE.Group(), peopleLayer = new THREE.Group(), propsLayer = new THREE.Group();
   scene.add(floorLayer, objectLayer, peopleLayer, propsLayer);
   const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hitPoint = new THREE.Vector3();
-  const clock = new THREE.Clock();
 
   function material(color, extra = {}) {
     const key = `${color}:${JSON.stringify(extra)}`;
@@ -176,18 +176,18 @@ export function createScene(container, callbacks = {}) {
     return g;
   }
 
-  scene.add(new THREE.HemisphereLight('#f3f1d7', '#758669', 2.35));
-  const sun = new THREE.DirectionalLight('#fff0d0', 3.1);
+  scene.add(new THREE.HemisphereLight('#f3f1df', '#697354', 1.55));
+  const sun = new THREE.DirectionalLight('#fff0d8', 2.25);
   sun.position.set(-14, 30, 15); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
   Object.assign(sun.shadow.camera, { left: -27, right: 27, top: 27, bottom: -27, near: 1, far: 80 });
   sun.shadow.normalBias = 0.025; sun.shadow.bias = -0.00005; sun.target.position.set(12, 0, 12);
   scene.add(sun, sun.target);
-  const fill = new THREE.DirectionalLight('#dce9f3', 0.55); fill.position.set(20, 12, -15); scene.add(fill);
+  const fill = new THREE.DirectionalLight('#dce9f3', 0.45); fill.position.set(20, 12, -15); scene.add(fill);
 
   const world = new THREE.Group(); scene.add(world);
-  box(world, 120, 0.18, 120, material('#94a07a'), 12, -0.19, 12);
-  box(world, 24, 0.16, 24, material('#a1b783'), 12, -0.05, 12);
-  const grassPatch = material('#9bb07d');
+  box(world, 120, 0.18, 120, material('#77845c'), 12, -0.19, 12);
+  box(world, 24, 0.16, 24, material('#879565'), 12, -0.05, 12);
+  const grassPatch = material('#82915f');
   for (let x = 0; x < 24; x++) for (let z = 0; z < 24; z++) if ((x * 17 + z * 7) % 5 === 0) box(world, 1, 0.004, 1, grassPatch, x + 0.5, 0.034, z + 0.5);
   box(world, 30, 0.16, 2, material('#b9b6a6'), 12, -0.015, -1);
   box(world, 34, 0.1, 5.5, material('#666f6b'), 12, -0.08, -4.75);
@@ -265,6 +265,27 @@ export function createScene(container, callbacks = {}) {
       group.userData={objectId:data.id,signature,data}; objectLayer.add(group); objects.set(data.id,group);
     }
     for(const [id,group] of objects) if(!ids.has(id)) { clearChildren(group); objectLayer.remove(group); objects.delete(id); }
+    for(const group of objects.values()) {
+      const data=group.userData.data;
+      if(!['painting','clock'].includes(data.type)) continue;
+      let nearest=null;
+      for(const wall of objects.values()) {
+        const w=wall.userData.data;
+        if(w.type!=='wall') continue;
+        const nx=Math.round(Math.sin(angle(w.rotation))), nz=Math.round(Math.cos(angle(w.rotation)));
+        const dx=data.x-w.x, dz=data.z-w.z, distance=dx*nx+dz*nz;
+        if(Math.abs(distance)>1.6 || Math.abs(dx*nz-dz*nx)>0.55) continue;
+        if(!nearest || Math.abs(distance)<Math.abs(nearest.distance)) nearest={wall,nx,nz,distance};
+      }
+      group.position.set(data.x+0.5,0.1,data.z+0.5);group.rotation.y=angle(data.rotation);group.userData.hostWallId=null;
+      if(nearest) {
+        const side=nearest.distance<0?-1:1, nx=nearest.nx*side, nz=nearest.nz*side;
+        const mountDistance=data.type==='clock'?0.535:0.54;
+        const shift=mountDistance-Math.abs(nearest.distance);
+        group.position.x+=nx*shift;group.position.z+=nz*shift;
+        group.rotation.y=Math.atan2(nx,nz);group.userData.hostWallId=nearest.wall.userData.objectId;
+      }
+    }
   }
   function makePerson(data, isStaff) {
     const g=new THREE.Group(), body=new THREE.Group(); g.add(body);
@@ -340,7 +361,10 @@ export function createScene(container, callbacks = {}) {
   function pick(event) {
     const rect=renderer.domElement.getBoundingClientRect(); pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);
     raycaster.setFromCamera(pointer,camera);
-    const hits=raycaster.intersectObjects(tool?objectLayer.children:[...objectLayer.children,...peopleLayer.children],true);
+    const hits=raycaster.intersectObjects(tool?objectLayer.children:[...objectLayer.children,...peopleLayer.children],true).filter(hit=>{
+      for(let node=hit.object;node;node=node.parent) if(!node.visible)return false;
+      return true;
+    });
     let objectId=null;
     if(hits.length) { let obj=hits[0].object; while(obj&&!obj.userData.objectId)obj=obj.parent; objectId=obj?.userData.objectId; }
     if(!raycaster.ray.intersectPlane(plane,hitPoint))return null;
@@ -403,6 +427,11 @@ export function createScene(container, callbacks = {}) {
       const inFront=Math.abs(normalX)>0.7 ? (d.x+0.5-target.x)*(camera.position.x-target.x)>0 : (d.z+0.5-target.z)*(camera.position.z-target.z)>0;
       group.scale.y = view==='top' || inFront ? 0.17 : 1;
     }
+    for(const group of objects.values()) {
+      if(!['painting','clock'].includes(group.userData.data.type)) continue;
+      const host=objects.get(group.userData.hostWallId);
+      group.visible=!host || host.scale.y>0.5;
+    }
   }
   function resize() {
     width=Math.max(1,container.clientWidth);height=Math.max(1,container.clientHeight);renderer.setSize(width,height,false);updateCamera();
@@ -412,7 +441,7 @@ export function createScene(container, callbacks = {}) {
   function animate() {
     if(disposed)return;
     const now=performance.now(), dt=Math.min((now-lastTime)/1000,0.06);lastTime=now;
-    const elapsed=clock.getElapsedTime();
+    const elapsed=(now-startedAt)/1000;
     for(const group of people.values()) {
       const u=group.userData,d=u.data, tx=Number(d.x)+0.5,tz=Number(d.z)+0.5;
       const dx=tx-group.position.x,dz=tz-group.position.z,distance=Math.hypot(dx,dz),moving=distance>0.025;
