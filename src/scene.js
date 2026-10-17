@@ -4,7 +4,8 @@ const TAU = Math.PI * 2;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const cellKey = (x, z) => `${x},${z}`;
 const angle = value => (Number(value) || 0) * Math.PI / 180;
-const floorColors = { peach: '#d9a17f', wood: '#c09568', tile: '#e5dfca', tiles: '#e5dfca', kitchen: '#e5dfca', stone: '#929b99', checker: '#ede5cd', carpet: '#ad5952', concrete: '#a8aaa2', dark: '#605445', white: '#ede9d9' };
+const floorColors = { peach: '#dfa98b', wood: '#c09568', tile: '#e5dfca', tiles: '#e5dfca', kitchen: '#e5dfca', stone: '#929b99', checker: '#ede5cd', carpet: '#ad5952', concrete: '#a8aaa2', dark: '#605445', white: '#ede9d9' };
+const architectural = type => ['wall','window','door'].includes(type);
 
 /** A self-contained, procedural restaurant world. Coordinates identify one-unit cells. */
 export function createScene(container, callbacks = {}) {
@@ -49,12 +50,12 @@ export function createScene(container, callbacks = {}) {
     red: material('#ac4941'), steel: material('#b7c2bf', { roughness: 0.45, metalness: 0.3 }), steelDark: material('#7b8a87', { roughness: 0.42, metalness: 0.28 }),
     black: material('#303534'), white: material('#f6f1e2'), glass: material('#a3cad0', { transparent: true, opacity: 0.6, roughness: 0.2 }),
     leaf: material('#59804b'), leafLight: material('#82a15b'), soil: material('#554636'), brass: material('#be9c58', { roughness: 0.4, metalness: 0.5 }),
-    brick: material('#893e50'), brickLight: material('#974658'), brickDark: material('#7f394c'), masonryTrim: material('#514451'),
+    brick: material('#aa5a6d'), brickDark: material('#975467'), masonryTrim: material('#665768'),
   };
   const brickCanvas=document.createElement('canvas');brickCanvas.width=128;brickCanvas.height=256;
-  const brickContext=brickCanvas.getContext('2d');brickContext.fillStyle='#743347';brickContext.fillRect(0,0,128,256);
+  const brickContext=brickCanvas.getContext('2d');brickContext.fillStyle='#a4576a';brickContext.fillRect(0,0,128,256);
   for(let row=0;row<14;row++)for(let col=-1;col<3;col++){
-    brickContext.fillStyle=['#893e50','#914255','#82394b'][(row*7+col+4)%3];
+    brickContext.fillStyle=['#aa5b6e','#ad5e70','#a85a6c'][(row*7+col+4)%3];
     brickContext.fillRect(col*64+(row%2?32:0)+1,row*19+1,62,18);
   }
   const brickTexture=new THREE.CanvasTexture(brickCanvas);brickTexture.colorSpace=THREE.SRGBColorSpace;textures.add(brickTexture);
@@ -94,15 +95,28 @@ export function createScene(container, callbacks = {}) {
     }
     for (const x of [-0.33, 0.33]) for (const z of [-0.3, 0.3]) box(group, 0.07, 0.12, 0.07, palette.black, x, 0.06, z);
   }
-  function brickwork(group, bottom, top) {
-    const wall=box(group,1,top-bottom,0.18,palette.brick,0,(bottom+top)/2,0),uv=wall.geometry.attributes.uv;
-    for(let i=0;i<uv.count;i++)uv.setY(i,(uv.getY(i)*(top-bottom)+bottom)/2.56);
+  function brickwork(group, bottom, top, length=1, x=0, z=0, rotationY=0) {
+    const wall=box(group,length,top-bottom,0.18,palette.brick,x,(bottom+top)/2,z),uv=wall.geometry.attributes.uv;
+    wall.rotation.y=rotationY;
+    for(let i=0;i<uv.count;i++){uv.setX(i,uv.getX(i)*length);uv.setY(i,(uv.getY(i)*(top-bottom)+bottom)/2.56);}
   }
-  function wallTrim(group) {
-    box(group,1.025,0.14,0.27,palette.masonryTrim,0,2.61,0);
-    box(group,1.01,0.14,0.23,palette.masonryTrim,0,0.11,0);
+  function wallTrim(group,length=1,x=0,z=0,rotationY=0) {
+    box(group,length+0.025,0.14,0.27,palette.masonryTrim,x,2.61,z).rotation.y=rotationY;
+    box(group,length+0.01,0.14,0.23,palette.masonryTrim,x,0.11,z).rotation.y=rotationY;
   }
-  function model(type, color) {
+  function wallArm(group,type,direction){
+    const z=direction*0.25;
+    if(type==='wall')brickwork(group,0.05,2.56,0.5,0,z,Math.PI/2);
+    else if(type==='window'){
+      brickwork(group,0.05,0.65,0.5,0,z,Math.PI/2);brickwork(group,2.31,2.56,0.5,0,z,Math.PI/2);
+      box(group,0.04,1.55,0.5,palette.glass,0,1.48,z);
+      for(const y of [0.67,1.21,1.76,2.3])box(group,0.12,0.055,0.5,palette.white,0,y,z);
+    }else{
+      brickwork(group,2.4,2.56,0.5,0,z,Math.PI/2);box(group,0.26,0.12,0.5,palette.white,0,2.36,z);
+    }
+    wallTrim(group,0.5,0,z,Math.PI/2);
+  }
+  function model(type, color, connections=null) {
     const g = new THREE.Group();
     const upholstery = color ? material(color) : palette.red;
     switch (type) {
@@ -161,7 +175,9 @@ export function createScene(container, callbacks = {}) {
         for (let i = -3; i <= 3; i++) box(g, 0.055, 0.37, 0.04, palette.lightwood, i * 0.125, 0.23, 0.26);
         for (let i = 0; i < 7; i++) stem(g, -0.33 + (i % 4) * 0.21, 0.35, (i % 2 ? -1 : 1) * 0.1); break;
       case 'wall':
-        brickwork(g,0.05,2.56);wallTrim(g);break;
+        if(connections?.length>=2){
+          for(const {x,z} of connections){const r=x===0?Math.PI/2:0;brickwork(g,0.05,2.56,0.5,x*0.25,z*0.25,r);wallTrim(g,0.5,x*0.25,z*0.25,r);}
+        }else{brickwork(g,0.05,2.56);wallTrim(g);}break;
       case 'door':
         for(const x of [-0.44,0.44])box(g,0.12,2.55,0.25,palette.white,x,1.3,0);
         brickwork(g,2.4,2.56);box(g,0.95,0.12,0.26,palette.white,0,2.36,0);
@@ -195,6 +211,7 @@ export function createScene(container, callbacks = {}) {
         for (const child of g.children) {child.position.z-=0.42;child.position.y+=0.55;} break;
       default: cabinet(g);
     }
+    if(['window','door'].includes(type))for(const connection of connections||[])if(connection.z)wallArm(g,type,connection.z);
     return g;
   }
 
@@ -262,28 +279,36 @@ export function createScene(container, callbacks = {}) {
   }
   function syncFloors() {
     const tiles=game?.floors || [];
-    const signature = `${view}:${Math.round((game?.stats?.cleanliness || 0)/10)}:${tiles.map(t=>`${t.x},${t.z},${t.style}`).join(';')}`;
+    const structure=new Set((game?.objects||[]).filter(data=>architectural(data.type)).map(data=>cellKey(data.x,data.z)));
+    const signature = `${view}:${Math.round((game?.stats?.cleanliness || 0)/10)}:${tiles.map(t=>`${t.x},${t.z},${t.style}`).join(';')}:${[...structure].join(';')}`;
     if(signature===floorSignature) return; floorSignature=signature;
     clearChildren(floorLayer); floorMeshes.clear();
     for(const tile of tiles) {
       const group=new THREE.Group(); group.position.set(tile.x+0.5,0,tile.z+0.5); group.userData={tile:{x:tile.x,z:tile.z}};
-      box(group,0.996,0.085,0.996,tileMaterial(tile),0,0.05,0);
+      const west=structure.has(cellKey(tile.x-1,tile.z))?0.5:0,east=structure.has(cellKey(tile.x+1,tile.z))?0.5:0;
+      const north=structure.has(cellKey(tile.x,tile.z-1))?0.5:0,south=structure.has(cellKey(tile.x,tile.z+1))?0.5:0;
+      box(group,0.996+west+east,0.085,0.996+north+south,tileMaterial(tile),(east-west)/2,0.05,(south-north)/2);
       if((['wood','peach'].includes(tile.style) || !tile.style) && view !== 'decor' && view !== 'hygiene') {
-        const peach=tile.style==='peach',seam=material(peach?'#b98169':'#9b7957',{transparent:true,opacity:peach?0.26:0.38});
-        for(const x of peach?[0]:[-0.25,0.25])box(group,0.009,0.003,0.995,seam,x,0.095,0);
-        box(group,peach?0.995:0.495,0.003,0.009,seam,peach?0:-0.25,0.096,(tile.x+tile.z)%2 ? 0.2 : -0.22);
+        const peach=tile.style==='peach',seam=material(peach?'#c18d73':'#9b7957',{transparent:true,opacity:peach?0.18:0.38});
+        if(!peach)for(const x of [-0.25,0.25])box(group,0.009,0.003,0.995,seam,x,0.095,0);
+        if(!peach||tile.z%2===0)box(group,peach?0.995:0.495,0.003,0.009,seam,peach?0:-0.25,0.096,peach?0:(tile.x+tile.z)%2?0.2:-0.22);
       }
       floorLayer.add(group); floorMeshes.set(cellKey(tile.x,tile.z),group);
     }
   }
   function syncObjects() {
     const ids=new Set();
+    const structure=new Map((game?.objects||[]).filter(data=>architectural(data.type)).map(data=>[cellKey(data.x,data.z),data]));
     for(const data of game?.objects || []) {
-      ids.add(data.id); const signature = [data.type,data.x,data.z,data.rotation,data.color].join(':');
+      const connections=[];
+      if(architectural(data.type))for(const [dx,dz]of [[-1,0],[1,0],[0,-1],[0,1]])if(structure.has(cellKey(data.x+dx,data.z+dz))){
+        const r=angle(data.rotation);connections.push({x:Math.round(dx*Math.cos(r)-dz*Math.sin(r)),z:Math.round(dx*Math.sin(r)+dz*Math.cos(r))});
+      }
+      ids.add(data.id); const signature = [data.type,data.x,data.z,data.rotation,data.color,JSON.stringify(connections)].join(':');
       let group=objects.get(data.id);
       if(group?.userData.signature===signature) continue;
       if(group) { clearChildren(group); objectLayer.remove(group); }
-      group=model(data.type,data.color); group.position.set(data.x+0.5,0.1,data.z+0.5); group.rotation.y=angle(data.rotation);
+      group=model(data.type,data.color,connections); group.position.set(data.x+0.5,0.1,data.z+0.5); group.rotation.y=angle(data.rotation);
       group.userData={objectId:data.id,signature,data}; objectLayer.add(group); objects.set(data.id,group);
     }
     for(const [id,group] of objects) if(!ids.has(id)) { clearChildren(group); objectLayer.remove(group); objects.delete(id); }
