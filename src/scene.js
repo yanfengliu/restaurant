@@ -4,7 +4,7 @@ const TAU = Math.PI * 2;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const cellKey = (x, z) => `${x},${z}`;
 const angle = value => (Number(value) || 0) * Math.PI / 180;
-const floorColors = { wood: '#c09568', tile: '#e5dfca', tiles: '#e5dfca', kitchen: '#e5dfca', stone: '#929b99', checker: '#ede5cd', carpet: '#ad5952', concrete: '#a8aaa2', dark: '#605445', white: '#ede9d9' };
+const floorColors = { peach: '#d9a17f', wood: '#c09568', tile: '#e5dfca', tiles: '#e5dfca', kitchen: '#e5dfca', stone: '#929b99', checker: '#ede5cd', carpet: '#ad5952', concrete: '#a8aaa2', dark: '#605445', white: '#ede9d9' };
 
 /** A self-contained, procedural restaurant world. Coordinates identify one-unit cells. */
 export function createScene(container, callbacks = {}) {
@@ -26,7 +26,7 @@ export function createScene(container, callbacks = {}) {
 
   const camera = new THREE.OrthographicCamera(-20, 20, 15, -15, 0.1, 160);
   const target = new THREE.Vector3(12, 0, 11.8);
-  let azimuth = Math.PI * 3 / 4, elevation = 0.79, zoomLevel = 1, view = 'isometric';
+  let azimuth = Math.PI * 3 / 4, elevation = 0.79, zoomLevel = 1, view = 'isometric', wallMode = 'full';
   let width = 1, height = 1, disposed = false, frame = 0, game = null, tool = null, rotation = 0;
   let hover = null, ghost = null, ghostType = null, floorSignature = '', landSignature = '';
   let hoveredId = null, lastTime = performance.now();
@@ -35,6 +35,8 @@ export function createScene(container, callbacks = {}) {
   const objects = new Map(), people = new Map(), floorMeshes = new Map(), tableProps = new Map();
   const objectLayer = new THREE.Group(), floorLayer = new THREE.Group(), peopleLayer = new THREE.Group(), propsLayer = new THREE.Group();
   scene.add(floorLayer, objectLayer, peopleLayer, propsLayer);
+  const strokeLayer = new THREE.Group(); scene.add(strokeLayer); strokeLayer.visible = false;
+  let strokeSignature = '';
   const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hitPoint = new THREE.Vector3();
 
   function material(color, extra = {}) {
@@ -47,7 +49,16 @@ export function createScene(container, callbacks = {}) {
     red: material('#ac4941'), steel: material('#b7c2bf', { roughness: 0.45, metalness: 0.3 }), steelDark: material('#7b8a87', { roughness: 0.42, metalness: 0.28 }),
     black: material('#303534'), white: material('#f6f1e2'), glass: material('#a3cad0', { transparent: true, opacity: 0.6, roughness: 0.2 }),
     leaf: material('#59804b'), leafLight: material('#82a15b'), soil: material('#554636'), brass: material('#be9c58', { roughness: 0.4, metalness: 0.5 }),
+    brick: material('#893e50'), brickLight: material('#974658'), brickDark: material('#7f394c'), masonryTrim: material('#514451'),
   };
+  const brickCanvas=document.createElement('canvas');brickCanvas.width=128;brickCanvas.height=256;
+  const brickContext=brickCanvas.getContext('2d');brickContext.fillStyle='#743347';brickContext.fillRect(0,0,128,256);
+  for(let row=0;row<14;row++)for(let col=-1;col<3;col++){
+    brickContext.fillStyle=['#893e50','#914255','#82394b'][(row*7+col+4)%3];
+    brickContext.fillRect(col*64+(row%2?32:0)+1,row*19+1,62,18);
+  }
+  const brickTexture=new THREE.CanvasTexture(brickCanvas);brickTexture.colorSpace=THREE.SRGBColorSpace;textures.add(brickTexture);
+  palette.brick=new THREE.MeshStandardMaterial({map:brickTexture,roughness:0.85});materials.set('masonry',palette.brick);
   function addMesh(parent, geometry, mat, x = 0, y = 0, z = 0) {
     geometries.add(geometry);
     const mesh = new THREE.Mesh(geometry, mat);
@@ -82,6 +93,14 @@ export function createScene(container, callbacks = {}) {
       box(group, 0.1, 0.025, 0.045, palette.black, x, top - 0.18, depth / 2 + 0.04);
     }
     for (const x of [-0.33, 0.33]) for (const z of [-0.3, 0.3]) box(group, 0.07, 0.12, 0.07, palette.black, x, 0.06, z);
+  }
+  function brickwork(group, bottom, top) {
+    const wall=box(group,1,top-bottom,0.18,palette.brick,0,(bottom+top)/2,0),uv=wall.geometry.attributes.uv;
+    for(let i=0;i<uv.count;i++)uv.setY(i,(uv.getY(i)*(top-bottom)+bottom)/2.56);
+  }
+  function wallTrim(group) {
+    box(group,1.025,0.14,0.27,palette.masonryTrim,0,2.61,0);
+    box(group,1.01,0.14,0.23,palette.masonryTrim,0,0.11,0);
   }
   function model(type, color) {
     const g = new THREE.Group();
@@ -142,18 +161,21 @@ export function createScene(container, callbacks = {}) {
         for (let i = -3; i <= 3; i++) box(g, 0.055, 0.37, 0.04, palette.lightwood, i * 0.125, 0.23, 0.26);
         for (let i = 0; i < 7; i++) stem(g, -0.33 + (i % 4) * 0.21, 0.35, (i % 2 ? -1 : 1) * 0.1); break;
       case 'wall':
-        box(g, 1, 1.72, 0.15, palette.cream, 0, 0.88, 0);
-        box(g, 1.015, 0.08, 0.19, palette.trim, 0, 1.78, 0); box(g, 1, 0.1, 0.18, palette.darkwood, 0, 0.1, 0);
-        for (const x of [-0.4, -0.2, 0, 0.2, 0.4]) box(g, 0.012, 1.56, 0.003, material('#ded6c4'), x, 0.92, 0.077); break;
+        brickwork(g,0.05,2.56);wallTrim(g);break;
       case 'door':
-        for (const x of [-0.44, 0.44]) box(g, 0.12, 1.8, 0.2, palette.cream, x, 0.9, 0);
-        box(g, 1, 0.13, 0.2, palette.cream, 0, 1.78, 0); box(g, 0.68, 1.58, 0.065, palette.lightwood, -0.02, 0.82, -0.02);
-        box(g, 0.47, 0.66, 0.015, palette.glass, -0.02, 1.11, 0.02); box(g, 0.46, 0.4, 0.018, palette.wood, -0.02, 0.36, 0.02); sphere(g, 0.045, palette.brass, 0.23, 0.77, 0.05); break;
+        for(const x of [-0.44,0.44])box(g,0.12,2.55,0.25,palette.white,x,1.3,0);
+        brickwork(g,2.4,2.56);box(g,0.95,0.12,0.26,palette.white,0,2.36,0);
+        box(g,0.7,2.23,0.08,palette.brickDark,0,1.15,0);box(g,0.53,1.08,0.095,palette.glass,0,1.66,0);
+        for(const x of [-0.28,0,0.28])box(g,0.035,1.13,0.12,palette.white,x,1.66,0);
+        for(const y of [1.1,1.65,2.2])box(g,0.6,0.035,0.12,palette.white,0,y,0);
+        box(g,0.53,0.7,0.1,palette.wood,0,0.48,0);sphere(g,0.045,palette.brass,0.25,1.03,0.1);wallTrim(g);break;
       case 'window':
-        box(g, 1, 0.55, 0.16, palette.cream, 0, 0.29, 0); box(g, 1, 0.2, 0.16, palette.cream, 0, 1.68, 0);
-        for (const x of [-0.43, 0.43]) box(g, 0.13, 1.77, 0.19, palette.cream, x, 0.9, 0);
-        box(g, 0.7, 1.01, 0.035, palette.glass, 0, 1.08, 0); box(g, 0.055, 1.03, 0.06, palette.white, 0, 1.08, 0.03); box(g, 0.75, 0.045, 0.06, palette.white, 0, 1.08, 0.03);
-        box(g, 0.88, 0.07, 0.28, palette.white, 0, 0.57, 0); box(g, 1, 0.08, 0.19, palette.trim, 0, 1.82, 0); break;
+        brickwork(g,0.05,0.65);brickwork(g,2.31,2.56);
+        for(const x of [-0.45,0.45])box(g,0.1,1.65,0.18,palette.brick,x,1.48,0);
+        box(g,0.73,1.55,0.04,palette.glass,0,1.48,0);
+        for(const x of [-0.38,0,0.38])box(g,0.055,1.65,0.12,palette.white,x,1.48,0);
+        for(const y of [0.67,1.21,1.76,2.3])box(g,0.83,0.055,0.12,palette.white,0,y,0);
+        box(g,0.92,0.09,0.32,palette.white,0,0.65,0);wallTrim(g);break;
       case 'divider':
         box(g, 0.94, 0.85, 0.14, palette.wood, 0, 0.45, 0); box(g, 1, 0.065, 0.21, palette.lightwood, 0, 0.91, 0);
         for (const x of [-0.4, 0.4]) box(g, 0.11, 0.94, 0.19, palette.darkwood, x, 0.5, 0); break;
@@ -165,12 +187,12 @@ export function createScene(container, callbacks = {}) {
       case 'painting':
         box(g, 0.73, 0.69, 0.08, palette.darkwood, 0, 1.12, 0); box(g, 0.62, 0.58, 0.025, palette.cream, 0, 1.12, 0.055);
         box(g, 0.52, 0.28, 0.015, material('#7e9c93'), 0, 1.04, 0.073); sphere(g, 0.11, material('#d9a85d'), 0.14, 1.25, 0.09); box(g, 0.18, 0.2, 0.018, material('#596b68'), -0.1, 1.02, 0.09);
-        for (const child of g.children) child.position.z -= 0.42; break;
+        for (const child of g.children) {child.position.z-=0.42;child.position.y+=0.55;} break;
       case 'clock':
         const clockFace = cyl(g, 0.28, 0.07, palette.darkwood, 0, 1.24, 0, 24); clockFace.rotation.x = Math.PI / 2;
         const face = cyl(g, 0.235, 0.012, palette.cream, 0, 1.24, 0.044, 24); face.rotation.x = Math.PI / 2;
         box(g, 0.024, 0.18, 0.02, palette.black, 0, 1.3, 0.06); const hand = box(g, 0.13, 0.022, 0.022, palette.black, 0.05, 1.24, 0.06); hand.rotation.z = -0.4;
-        for (const child of g.children) child.position.z -= 0.42; break;
+        for (const child of g.children) {child.position.z-=0.42;child.position.y+=0.55;} break;
       default: cabinet(g);
     }
     return g;
@@ -246,10 +268,10 @@ export function createScene(container, callbacks = {}) {
     for(const tile of tiles) {
       const group=new THREE.Group(); group.position.set(tile.x+0.5,0,tile.z+0.5); group.userData={tile:{x:tile.x,z:tile.z}};
       box(group,0.996,0.085,0.996,tileMaterial(tile),0,0.05,0);
-      if((tile.style === 'wood' || !tile.style) && view !== 'decor' && view !== 'hygiene') {
-        const seam=material('#9b7957',{transparent:true,opacity:0.38});
-        for(const x of [-0.25,0.25]) box(group,0.009,0.003,0.995,seam,x,0.095,0);
-        box(group,0.495,0.003,0.009,seam,-0.25,0.096,(tile.x+tile.z)%2 ? 0.2 : -0.22);
+      if((['wood','peach'].includes(tile.style) || !tile.style) && view !== 'decor' && view !== 'hygiene') {
+        const peach=tile.style==='peach',seam=material(peach?'#b98169':'#9b7957',{transparent:true,opacity:peach?0.26:0.38});
+        for(const x of peach?[0]:[-0.25,0.25])box(group,0.009,0.003,0.995,seam,x,0.095,0);
+        box(group,peach?0.995:0.495,0.003,0.009,seam,peach?0:-0.25,0.096,(tile.x+tile.z)%2 ? 0.2 : -0.22);
       }
       floorLayer.add(group); floorMeshes.set(cellKey(tile.x,tile.z),group);
     }
@@ -280,7 +302,7 @@ export function createScene(container, callbacks = {}) {
       group.position.set(data.x+0.5,0.1,data.z+0.5);group.rotation.y=angle(data.rotation);group.userData.hostWallId=null;
       if(nearest) {
         const side=nearest.distance<0?-1:1, nx=nearest.nx*side, nz=nearest.nz*side;
-        const mountDistance=data.type==='clock'?0.535:0.54;
+        const mountDistance=data.type==='clock'?0.55:0.555;
         const shift=mountDistance-Math.abs(nearest.distance);
         group.position.x+=nx*shift;group.position.z+=nz*shift;
         group.rotation.y=Math.atan2(nx,nz);group.userData.hostWallId=nearest.wall.userData.objectId;
@@ -330,8 +352,12 @@ export function createScene(container, callbacks = {}) {
     if(x<l.minX || x>l.maxX || z<l.minZ || z>l.maxZ) return false;
     if(tool?.type==='FLOOR') return true;
     if(tool?.type==='LAND') return true;
-    const occupied=(game?.objects||[]).some(o=>o.x===x&&o.z===z);
-    return !occupied && floorMeshes.has(cellKey(x,z));
+    const occupant=(game?.objects||[]).find(o=>o.x===x&&o.z===z);
+    if(tool?.type==='PLACE'&&['wall','window','door'].includes(tool.itemType)){
+      if(tool.itemType==='door'&&['wall','window'].includes(occupant?.type))return true;
+      return !occupant || occupant.type===tool.itemType;
+    }
+    return !occupant && floorMeshes.has(cellKey(x,z));
   }
   function rebuildGhost() {
     const next=tool?.type==='PLACE'?tool.itemType:null;
@@ -348,7 +374,7 @@ export function createScene(container, callbacks = {}) {
     const cell=hover;
     cursor.visible=Boolean(cell && tool); if(cell) cursor.position.set(cell.x+0.5,0.12,cell.z+0.5);
     if(ghost) {
-      ghost.visible=Boolean(cell);
+      ghost.visible=Boolean(cell)&&!strokeLayer.visible;
       if(cell) {
         ghost.position.set(cell.x+0.5,0.12,cell.z+0.5); ghost.rotation.y=angle(rotation);
         const good=validCell(cell.x,cell.z), m=material(good?'#8fc695':'#d67969',{transparent:true,opacity:0.58,depthWrite:false,roughness:0.7});
@@ -357,6 +383,25 @@ export function createScene(container, callbacks = {}) {
     }
     const object=objects.get(hoveredId)||people.get(hoveredId); hoverOutline.visible=Boolean(object && !ghost);
     if(object) hoverOutline.setFromObject(object);
+  }
+  function axisStroke(start,end){
+    const dx=end.x-start.x,dz=end.z-start.z,axis=Math.abs(dx)>=Math.abs(dz)?'x':'z';
+    const length=Math.abs(axis==='x'?dx:dz),direction=Math.sign(axis==='x'?dx:dz),cells=[];
+    for(let i=0;i<=length;i++)cells.push({x:start.x+(axis==='x'?i*direction:0),z:start.z+(axis==='z'?i*direction:0)});
+    return {cells,axis};
+  }
+  function clearStrokePreview(){strokeLayer.visible=false;strokeSignature='';clearChildren(strokeLayer);}
+  function previewStroke(stroke){
+    const signature=`${tool?.type}:${tool?.itemType}:${tool?.style}:${stroke.axis}:${stroke.cells.map(c=>cellKey(c.x,c.z)).join(';')}`;
+    if(strokeSignature===signature)return;
+    clearStrokePreview();strokeSignature=signature;strokeLayer.visible=true;
+    for(const cell of stroke.cells){
+      const good=validCell(cell.x,cell.z),preview=tool.type==='FLOOR'?new THREE.Group():model(tool.itemType,tool.color);
+      const mat=material(good?'#9cb593':'#d47972',{transparent:true,opacity:0.6,depthWrite:false,roughness:0.8});
+      if(tool.type==='FLOOR')box(preview,0.99,0.035,0.99,mat,0,0.015,0);
+      preview.traverse(node=>{if(node.isMesh){node.material=mat;node.castShadow=false;}});
+      preview.position.set(cell.x+0.5,0.12,cell.z+0.5);preview.rotation.y=stroke.axis==='x'?0:Math.PI/2;strokeLayer.add(preview);
+    }
   }
   function pick(event) {
     const rect=renderer.domElement.getBoundingClientRect(); pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);
@@ -376,12 +421,15 @@ export function createScene(container, callbacks = {}) {
   let drag=null;
   const canvas=renderer.domElement;
   function onPointerDown(event) {
-    if(event.button>2)return;
+    if(event.button>2||drag)return;
     event.preventDefault();
-    drag={x:event.clientX,y:event.clientY,lastX:event.clientX,lastY:event.clientY,button:event.button,moved:false,pan:event.button===1||event.shiftKey};
+    const pan=event.button===1||event.shiftKey||(event.pointerType==='touch'&&!tool),startCell=pick(event);
+    const stroke=event.button===0&&!pan&&startCell&&(tool?.type==='FLOOR'||(tool?.type==='PLACE'&&['wall','window'].includes(tool.itemType)));
+    drag={x:event.clientX,y:event.clientY,lastX:event.clientX,lastY:event.clientY,button:event.button,pointerId:event.pointerId,moved:false,pan,stroke,startCell,endCell:startCell};
     canvas.setPointerCapture(event.pointerId);
   }
   function onPointerMove(event) {
+    if(drag&&drag.pointerId!==event.pointerId)return;
     if(drag) {
       const dx=event.clientX-drag.lastX,dy=event.clientY-drag.lastY;
       if(Math.hypot(event.clientX-drag.x,event.clientY-drag.y)>5)drag.moved=true;
@@ -389,16 +437,29 @@ export function createScene(container, callbacks = {}) {
         const factor=26/height/zoomLevel;
         target.x += (-dx*Math.cos(azimuth)+dy*Math.sin(azimuth))*factor;
         target.z += (dx*Math.sin(azimuth)+dy*Math.cos(azimuth))*factor;
-        target.x=clamp(target.x,2,22);target.z=clamp(target.z,2,22); updateCamera();
+        target.x=clamp(target.x,-4,28);target.z=clamp(target.z,-4,28); updateCamera();
       } else if(drag.button===2 && drag.moved) { azimuth-=dx*0.008; elevation=clamp(elevation+dy*0.006,0.42,1.4);updateCamera(); }
+      else if(drag.stroke&&drag.moved){
+        const end=pick(event);if(end)drag.endCell=end;
+        const stroke=axisStroke(drag.startCell,drag.endCell);
+        previewStroke(stroke);
+      }
       drag.lastX=event.clientX;drag.lastY=event.clientY;
     }
     const next=pick(event); hover=next; hoveredId=next?.objectId || null; callbacks.onHover?.(next); updateHoverVisual();
   }
   function onPointerUp(event) {
+    if(!drag||drag.pointerId!==event.pointerId)return;
     const was=drag;drag=null;
     if(canvas.hasPointerCapture(event.pointerId))canvas.releasePointerCapture(event.pointerId);
-    if(was?.button!==0||was.moved||was.pan)return;
+    clearStrokePreview();
+    if(was.button!==0)return;
+    if(was.stroke&&was.moved){
+      const stroke=axisStroke(was.startCell,pick(event)||was.endCell);
+      callbacks.onTileStroke?.(stroke);
+      updateHoverVisual();return;
+    }
+    if(was.moved)return;
     const cell=pick(event); if(!cell)return;
     if(cell.objectId && (!tool || tool.type==='REMOVE')) callbacks.onObjectClick?.(cell.objectId);
     else callbacks.onTileClick?.({x:cell.x,z:cell.z});
@@ -406,8 +467,13 @@ export function createScene(container, callbacks = {}) {
   function onPointerLeave() { if(drag)return;hover=null;hoveredId=null;callbacks.onHover?.(null);updateHoverVisual(); }
   function onWheel(event) { event.preventDefault(); zoomLevel=clamp(zoomLevel*Math.exp(-event.deltaY*0.001),0.55,2.8);updateCamera(); }
   function onContext(event){event.preventDefault();}
-  function onCancel(){drag=null;}
-  const listeners={pointerdown:onPointerDown,pointermove:onPointerMove,pointerup:onPointerUp,pointerleave:onPointerLeave,pointercancel:onCancel,wheel:onWheel,contextmenu:onContext};
+  function onCancel(event){
+    if(!drag||(event&&drag.pointerId!==event.pointerId))return;
+    const pointerId=drag.pointerId;drag=null;
+    if(canvas.hasPointerCapture(pointerId))canvas.releasePointerCapture(pointerId);
+    clearStrokePreview();updateHoverVisual();
+  }
+  const listeners={pointerdown:onPointerDown,pointermove:onPointerMove,pointerup:onPointerUp,pointerleave:onPointerLeave,pointercancel:onCancel,lostpointercapture:onCancel,wheel:onWheel,contextmenu:onContext};
   for(const [name,fn]of Object.entries(listeners))canvas.addEventListener(name,fn,{passive:false});
 
   function updateCamera() {
@@ -417,15 +483,15 @@ export function createScene(container, callbacks = {}) {
     camera.position.set(target.x+Math.sin(azimuth)*Math.cos(e)*distance,target.y+Math.sin(e)*distance,target.z+Math.cos(azimuth)*Math.cos(e)*distance);
     camera.lookAt(target);camera.updateProjectionMatrix();camera.updateMatrixWorld();
     updateCutaway();
-    callbacks.onCameraChange?.({azimuth,elevation:e,zoom:zoomLevel,view});
+    callbacks.onCameraChange?.({azimuth,elevation:e,zoom:zoomLevel,view,wallMode});
   }
   function updateCutaway() {
     for (const group of objects.values()) {
       const d=group.userData.data;
-      if (!['wall','window'].includes(d.type)) continue;
+      if (!['wall','window','door'].includes(d.type)) continue;
       const normalX=Math.sin(angle(d.rotation)), normalZ=Math.cos(angle(d.rotation));
       const inFront=Math.abs(normalX)>0.7 ? (d.x+0.5-target.x)*(camera.position.x-target.x)>0 : (d.z+0.5-target.z)*(camera.position.z-target.z)>0;
-      group.scale.y = view==='top' || inFront ? 0.17 : 1;
+      group.scale.y=wallMode==='low'||(wallMode==='cutaway'&&(view==='top'||inFront))?0.13:1;
     }
     for(const group of objects.values()) {
       if(!['painting','clock'].includes(group.userData.data.type)) continue;
@@ -460,15 +526,17 @@ export function createScene(container, callbacks = {}) {
 
   return {
     update(nextGame) { if(disposed)return;game=nextGame;syncLand();syncFloors();syncObjects();syncPeople();syncTableProps();updateCutaway();updateHoverVisual(); },
-    setTool(nextTool) { tool=nextTool;rebuildGhost();canvas.style.cursor=tool?'crosshair':'default';updateHoverVisual(); },
+    setTool(nextTool) { onCancel();tool=nextTool;rebuildGhost();canvas.style.cursor=tool?'crosshair':'default';updateHoverVisual(); },
     setRotation(value) { rotation=Number(value)||0;updateHoverVisual(); },
     setView(nextView) { view=['top','decor','hygiene'].includes(nextView)?nextView:'isometric';floorSignature='';syncFloors();updateCamera(); },
+    setWallMode(nextMode){wallMode=['full','cutaway','low'].includes(nextMode)?nextMode:'full';updateCamera();updateHoverVisual();},
+    pan(dx,dz){target.x=clamp(target.x+(Number(dx)||0),-4,28);target.z=clamp(target.z+(Number(dz)||0),-4,28);updateCamera();},
     rotate(delta) { azimuth+=Number(delta)||0;updateCamera(); },
     zoom(delta) { zoomLevel=clamp(zoomLevel+(Number(delta)||0),0.55,2.8);updateCamera(); },
     resize,
     screenPosition(x,z) { const p=new THREE.Vector3(x+0.5,0.1,z+0.5).project(camera);return {x:(p.x+1)*width/2,y:(1-p.y)*height/2}; },
     dispose() {
-      if(disposed)return;disposed=true;cancelAnimationFrame(frame);observer.disconnect();
+      if(disposed)return;disposed=true;cancelAnimationFrame(frame);observer.disconnect();onCancel();
       for(const[name,fn]of Object.entries(listeners))canvas.removeEventListener(name,fn);
       for(const geometry of geometries)geometry.dispose();for(const mat of materials.values())mat.dispose();for(const texture of textures)texture.dispose();
       hoverOutline.geometry.dispose();hoverOutline.material.dispose();renderer.dispose();renderer.forceContextLoss();canvas.remove();
