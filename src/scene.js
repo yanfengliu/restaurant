@@ -179,7 +179,10 @@ export function createScene(container, callbacks = {}) {
       case 'wall':
         if(connections?.length>=2){
           for(const {x,z} of connections){const r=x===0?Math.PI/2:0;brickwork(g,0.05,2.56,0.5,x*0.25,z*0.25,r);wallTrim(g,0.5,x*0.25,z*0.25,r);}
-        }else{brickwork(g,0.05,2.56);wallTrim(g);}break;
+        }else{
+          const r=connections?.[0]?.z?Math.PI/2:0;
+          brickwork(g,0.05,2.56,1,0,0,r);wallTrim(g,1,0,0,r);
+        }break;
       case 'door':
         for(const x of [-0.44,0.44])box(g,0.12,2.55,0.25,palette.white,x,1.3,0);
         brickwork(g,2.4,2.56);box(g,0.95,0.12,0.26,palette.white,0,2.36,0);
@@ -407,7 +410,9 @@ export function createScene(container, callbacks = {}) {
     if(ghost) {
       ghost.visible=Boolean(cell)&&!strokeLayer.visible;
       if(cell) {
-        ghost.position.set(cell.x+0.5,0.12,cell.z+0.5); ghost.rotation.y=angle(rotation);
+        const host=objects.get(cell.objectId)?.userData.data;
+        const doorHost=tool?.itemType==='door'&&['wall','window'].includes(host?.type);
+        ghost.position.set(cell.x+0.5,0.12,cell.z+0.5);ghost.rotation.y=angle(doorHost?host.rotation:rotation);
         const good=validCell(cell.x,cell.z), m=material(good?'#8fc695':'#d67969',{transparent:true,opacity:0.58,depthWrite:false,roughness:0.7});
         ghost.traverse(n=>{if(n.isMesh)n.material=m;}); cursor.material=material(good?'#90c8a0':'#d67969',{transparent:true,opacity:0.4,depthWrite:false});
       }
@@ -445,7 +450,9 @@ export function createScene(container, callbacks = {}) {
     if(hits.length) { let obj=hits[0].object; while(obj&&!obj.userData.objectId)obj=obj.parent; objectId=obj?.userData.objectId; }
     if(!raycaster.ray.intersectPlane(plane,hitPoint))return null;
     let x=Math.floor(hitPoint.x),z=Math.floor(hitPoint.z);
-    if(objectId && tool?.type!=='FLOOR' && tool?.type!=='PLACE') { const o=(objects.get(objectId)||people.get(objectId)).userData.data; x=Math.floor(o.x);z=Math.floor(o.z); }
+    const objectData=(objects.get(objectId)||people.get(objectId))?.userData.data;
+    const doorHost=tool?.type==='PLACE'&&tool.itemType==='door'&&['wall','window'].includes(objectData?.type);
+    if(objectData&&((tool?.type!=='FLOOR'&&tool?.type!=='PLACE')||doorHost)){x=Math.floor(objectData.x);z=Math.floor(objectData.z);}
     if(x<0||x>23||z<0||z>23)return null;
     return {x,z,...(objectId?{objectId}:{})};
   }
