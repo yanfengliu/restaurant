@@ -6,6 +6,7 @@ const cellKey = (x, z) => `${x},${z}`;
 const angle = value => (Number(value) || 0) * Math.PI / 180;
 const floorColors = { peach: '#dfa98b', wood: '#c09568', tile: '#e5dfca', tiles: '#e5dfca', kitchen: '#e5dfca', stone: '#929b99', checker: '#ede5cd', carpet: '#ad5952', concrete: '#a8aaa2', dark: '#605445', white: '#ede9d9' };
 const architectural = type => ['wall','window','door'].includes(type);
+const modelTypes=new Set('table chair stove oven fridge counter prep sink fryer coffee bar toilet plant flowerbox wall door window divider bin lamp painting clock'.split(' '));
 
 /** A self-contained, procedural restaurant world. Coordinates identify one-unit cells. */
 export function createScene(container, callbacks = {}) {
@@ -33,6 +34,7 @@ export function createScene(container, callbacks = {}) {
   let hoveredId = null, lastTime = performance.now();
   const startedAt = lastTime;
   const materials = new Map(), geometries = new Set(), textures = new Set();
+  const thumbnailCache=new Map();let thumbnailTarget=null;
   const objects = new Map(), people = new Map(), floorMeshes = new Map(), tableProps = new Map();
   const objectLayer = new THREE.Group(), floorLayer = new THREE.Group(), peopleLayer = new THREE.Group(), propsLayer = new THREE.Group();
   scene.add(floorLayer, objectLayer, peopleLayer, propsLayer);
@@ -269,13 +271,25 @@ export function createScene(container, callbacks = {}) {
   function clearChildren(group) {
     for (const child of [...group.children]) { group.remove(child); child.traverse(n => { if(n.geometry) { n.geometry.dispose(); geometries.delete(n.geometry); } }); }
   }
-  function tileMaterial(tile) {
-    if (view === 'hygiene') return material(Number(game?.stats?.cleanliness ?? 100) > 60 ? '#a4be8d' : '#c79377');
-    if (view === 'decor') return material(((tile.x * 7 + tile.z * 3) % 5) ? '#b6c694' : '#d0cc9e');
+  function tileMaterial(tile,mode=view) {
+    if (mode === 'hygiene') return material(Number(game?.stats?.cleanliness ?? 100) > 60 ? '#a4be8d' : '#c79377');
+    if (mode === 'decor') return material(((tile.x * 7 + tile.z * 3) % 5) ? '#b6c694' : '#d0cc9e');
     const base = floorColors[tile.style] || floorColors.wood;
     const col = new THREE.Color(base); const variance = ((tile.x * 13 + tile.z * 19) % 7 - 3) * 0.008;
     if (['checker','tile','tiles','kitchen'].includes(tile.style) && (tile.x + tile.z) % 2) col.multiplyScalar(tile.style === 'checker' ? 0.49 : 0.92); else col.offsetHSL(0,0,variance);
     return material(`#${col.getHexString()}`);
+  }
+  function floorTile(tile,structure=new Set(),mode=view){
+    const group=new THREE.Group();group.position.set(tile.x+0.5,0,tile.z+0.5);group.userData={tile:{x:tile.x,z:tile.z}};
+    const west=structure.has(cellKey(tile.x-1,tile.z))?0.5:0,east=structure.has(cellKey(tile.x+1,tile.z))?0.5:0;
+    const north=structure.has(cellKey(tile.x,tile.z-1))?0.5:0,south=structure.has(cellKey(tile.x,tile.z+1))?0.5:0;
+    box(group,0.996+west+east,0.085,0.996+north+south,tileMaterial(tile,mode),(east-west)/2,0.05,(south-north)/2);
+    if((['wood','peach'].includes(tile.style)||!tile.style)&&mode!=='decor'&&mode!=='hygiene'){
+      const peach=tile.style==='peach',seam=material(peach?'#c18d73':'#9b7957',{transparent:true,opacity:peach?0.18:0.38});
+      if(!peach)for(const x of [-0.25,0.25])box(group,0.009,0.003,0.995,seam,x,0.095,0);
+      if(!peach||tile.z%2===0)box(group,peach?0.995:0.495,0.003,0.009,seam,peach?0:-0.25,0.096,peach?0:(tile.x+tile.z)%2?0.2:-0.22);
+    }
+    return group;
   }
   function syncFloors() {
     const tiles=game?.floors || [];
@@ -284,15 +298,7 @@ export function createScene(container, callbacks = {}) {
     if(signature===floorSignature) return; floorSignature=signature;
     clearChildren(floorLayer); floorMeshes.clear();
     for(const tile of tiles) {
-      const group=new THREE.Group(); group.position.set(tile.x+0.5,0,tile.z+0.5); group.userData={tile:{x:tile.x,z:tile.z}};
-      const west=structure.has(cellKey(tile.x-1,tile.z))?0.5:0,east=structure.has(cellKey(tile.x+1,tile.z))?0.5:0;
-      const north=structure.has(cellKey(tile.x,tile.z-1))?0.5:0,south=structure.has(cellKey(tile.x,tile.z+1))?0.5:0;
-      box(group,0.996+west+east,0.085,0.996+north+south,tileMaterial(tile),(east-west)/2,0.05,(south-north)/2);
-      if((['wood','peach'].includes(tile.style) || !tile.style) && view !== 'decor' && view !== 'hygiene') {
-        const peach=tile.style==='peach',seam=material(peach?'#c18d73':'#9b7957',{transparent:true,opacity:peach?0.18:0.38});
-        if(!peach)for(const x of [-0.25,0.25])box(group,0.009,0.003,0.995,seam,x,0.095,0);
-        if(!peach||tile.z%2===0)box(group,peach?0.995:0.495,0.003,0.009,seam,peach?0:-0.25,0.096,peach?0:(tile.x+tile.z)%2?0.2:-0.22);
-      }
+      const group=floorTile(tile,structure);
       floorLayer.add(group); floorMeshes.set(cellKey(tile.x,tile.z),group);
     }
   }
@@ -529,6 +535,43 @@ export function createScene(container, callbacks = {}) {
   }
   const observer=new ResizeObserver(resize);observer.observe(container);resize();
 
+  const thumbnailScene=new THREE.Scene();thumbnailScene.background=new THREE.Color('#dedfda');
+  thumbnailScene.add(new THREE.HemisphereLight('#fff7ec','#939b87',2));
+  const thumbnailLight=new THREE.DirectionalLight('#fff1dc',2.1);thumbnailLight.position.set(-3,6,5);thumbnailScene.add(thumbnailLight);
+  function thumbnail(type,color,floorStyle){
+    if(disposed||(!modelTypes.has(type)&&type!=='floor'))return null;
+    const style=floorStyle||'wood';if(type==='floor'&&!Object.hasOwn(floorColors,style))return null;
+    const key=JSON.stringify([type,color||null,type==='floor'?style:null]);if(thumbnailCache.has(key))return thumbnailCache.get(key);
+    const saved={target:renderer.getRenderTarget(),face:renderer.getActiveCubeFace(),mip:renderer.getActiveMipmapLevel(),viewport:renderer.getViewport(new THREE.Vector4()),scissor:renderer.getScissor(new THREE.Vector4()),scissorTest:renderer.getScissorTest(),clear:renderer.getClearColor(new THREE.Color()),alpha:renderer.getClearAlpha(),autoClear:renderer.autoClear,shadows:renderer.shadowMap.enabled};
+    const asset=new THREE.Group(),size=160;let shadowMaterial=null;
+    try{
+      if(type==='floor')for(let x=0;x<2;x++)for(let z=0;z<2;z++)asset.add(floorTile({x,z,style},new Set(),'isometric'));
+      else asset.add(model(type,color));
+      thumbnailScene.add(asset);asset.updateMatrixWorld(true);
+      let bounds=new THREE.Box3().setFromObject(asset);asset.position.y-=bounds.min.y;asset.updateMatrixWorld(true);bounds=new THREE.Box3().setFromObject(asset);
+      const center=bounds.getCenter(new THREE.Vector3()),extent=bounds.getSize(new THREE.Vector3()),span=Math.max(extent.x,extent.y,extent.z,0.5);
+      shadowMaterial=new THREE.MeshBasicMaterial({color:'#6f746c',transparent:true,opacity:0.13,depthWrite:false});
+      const shadow=addMesh(asset,new THREE.CircleGeometry(Math.max(extent.x,extent.z)*0.42,24),shadowMaterial,center.x,-asset.position.y-0.012,center.z);shadow.rotation.x=-Math.PI/2;
+      const iconCamera=new THREE.OrthographicCamera(-2,2,2,-2,0.1,100);iconCamera.position.copy(center).add(new THREE.Vector3(3.6,2.8,4.5).multiplyScalar(span));iconCamera.lookAt(center);iconCamera.updateMatrixWorld(true);
+      let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+      for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z]){
+        const point=new THREE.Vector3(x,y,z).applyMatrix4(iconCamera.matrixWorldInverse);minX=Math.min(minX,point.x);maxX=Math.max(maxX,point.x);minY=Math.min(minY,point.y);maxY=Math.max(maxY,point.y);
+      }
+      const half=Math.max(maxX-minX,maxY-minY)*0.62,cx=(minX+maxX)/2,cy=(minY+maxY)/2;
+      iconCamera.left=cx-half;iconCamera.right=cx+half;iconCamera.top=cy+half;iconCamera.bottom=cy-half;iconCamera.updateProjectionMatrix();
+      if(!thumbnailTarget){thumbnailTarget=new THREE.WebGLRenderTarget(size,size,{depthBuffer:true,samples:4});thumbnailTarget.texture.colorSpace=THREE.SRGBColorSpace;}
+      renderer.autoClear=true;renderer.shadowMap.enabled=false;renderer.setRenderTarget(thumbnailTarget);renderer.setScissorTest(false);renderer.setClearColor('#dedfda',1);renderer.render(thumbnailScene,iconCamera);
+      const pixels=new Uint8Array(size*size*4);renderer.readRenderTargetPixels(thumbnailTarget,0,0,size,size,pixels);
+      const output=document.createElement('canvas');output.width=size;output.height=size;const context=output.getContext('2d');if(!context)throw new Error('A 2D canvas is unavailable for the catalog preview.');
+      const image=context.createImageData(size,size);for(let row=0;row<size;row++)image.data.set(pixels.subarray((size-1-row)*size*4,(size-row)*size*4),row*size*4);context.putImageData(image,0,0);
+      const url=output.toDataURL('image/png');thumbnailCache.set(key,url);return url;
+    }catch(error){console.warn(`Catalog preview could not render ${type}.`,error);thumbnailCache.set(key,null);return null;}
+    finally{
+      thumbnailScene.remove(asset);clearChildren(asset);shadowMaterial?.dispose();
+      renderer.autoClear=saved.autoClear;renderer.shadowMap.enabled=saved.shadows;renderer.setClearColor(saved.clear,saved.alpha);renderer.setViewport(saved.viewport);renderer.setScissor(saved.scissor);renderer.setScissorTest(saved.scissorTest);renderer.setRenderTarget(saved.target,saved.face,saved.mip);
+    }
+  }
+
   function animate() {
     if(disposed)return;
     const now=performance.now(), dt=Math.min((now-lastTime)/1000,0.06);lastTime=now;
@@ -559,12 +602,13 @@ export function createScene(container, callbacks = {}) {
     rotate(delta) { azimuth+=Number(delta)||0;updateCamera(); },
     zoom(delta) { zoomLevel=clamp(zoomLevel+(Number(delta)||0),0.55,2.8);updateCamera(); },
     resize,
+    thumbnail,
     screenPosition(x,z) { const p=new THREE.Vector3(x+0.5,0.1,z+0.5).project(camera);return {x:(p.x+1)*width/2,y:(1-p.y)*height/2}; },
     dispose() {
       if(disposed)return;disposed=true;cancelAnimationFrame(frame);observer.disconnect();onCancel();
       for(const[name,fn]of Object.entries(listeners))canvas.removeEventListener(name,fn);
       for(const geometry of geometries)geometry.dispose();for(const mat of materials.values())mat.dispose();for(const texture of textures)texture.dispose();
-      hoverOutline.geometry.dispose();hoverOutline.material.dispose();renderer.dispose();renderer.forceContextLoss();canvas.remove();
+      hoverOutline.geometry.dispose();hoverOutline.material.dispose();thumbnailTarget?.dispose();thumbnailCache.clear();renderer.dispose();renderer.forceContextLoss();canvas.remove();
       objects.clear();people.clear();floorMeshes.clear();tableProps.clear();
     },
   };
