@@ -150,6 +150,7 @@ function itemArt(type, color) {
   else if (/toilet/.test(type)) shapes = '<path d="m35 19 28-4 14 9v28L49 59 35 49Z" fill="#eeeae2"/><path d="m40 50 32-3 15 11v10L60 81 36 65Z" fill="#f8f5ec"/><ellipse cx="61" cy="57" rx="22" ry="11" fill="#c8c6be"/><ellipse cx="61" cy="57" rx="14" ry="6" fill="#8faaa8"/><path d="m48 74 23-4-3 19-20 2Z" fill="#deded7"/>';
   else if (/floor/.test(type)) shapes = '<path d="m13 53 42-26 42 25-43 26Z" fill="COLOR"/><path d="m13 53 41 25 43-26v7L54 84 13 59Z" fill="#907657"/><path d="m27 45 42 25M41 36l41 26M27 62l42-26M41 70l43-26" stroke="#f3e6cb" opacity=".45"/>';
   else if (/fridge|shelf|cabinet/.test(type)) shapes = '<path d="m31 12 35-6 15 10v68l-35 10-15-11Z" fill="#c7c8be"/><path d="m31 12 15 11v71L31 83Z" fill="#9a9e96"/><path d="m46 23 35-7v68l-35 10Z" fill="#e4e5dc"/><path d="m47 48 32-7M52 34v7M52 58v11" stroke="#69746f" stroke-width="3"/>';
+  else if (/counter|prep/.test(type)) shapes = '<path d="m20 38 40-17 30 18-42 19Z" fill="#e1ded0"/><path d="m20 38 28 20v31L20 71Z" fill="#91704e"/><path d="m48 58 42-19v32L48 89Z" fill="COLOR"/><path d="m20 38 28 20 42-19v5L48 64 20 44Z" fill="#f1edde"/><path d="m52 67 15-7v22l-15 7Zm19-9 14-6v20l-14 8Z" fill="#c39b71"/><path d="m63 70 1-.5m11-5 1-.5" stroke="#70563b" stroke-width="3" stroke-linecap="round"/><ellipse cx="54" cy="37" rx="12" ry="6" fill="#f7f4e8"/><ellipse cx="54" cy="37" rx="8" ry="4" fill="none" stroke="#c9c6b6" stroke-width="1"/>';
   else if (/sink|clean|broom/.test(type)) shapes = '<path d="m22 40 38-15 27 16-38 18Z" fill="#d5d9d2"/><path d="m22 40 27 19v29L22 72Zm27 19 38-18v30L49 88Z" fill="#a6b3ac"/><ellipse cx="56" cy="42" rx="17" ry="8" fill="#718d8e"/><path d="M63 36V21q0-10-10-4" stroke="#d4e2dc" stroke-width="4" fill="none"/>';
   else shapes = '<path d="m23 35 37-14 27 17-39 17Z" fill="#9aa6a0"/><path d="m23 35 25 20v35L23 70Z" fill="#84928b"/><path d="m48 55 39-17v36L48 90Z" fill="#c2cbc3"/><path d="m54 64 26-12v20L54 83Z" fill="#455457"/><path d="m51 57 31-14" stroke="#e4e7d9" stroke-width="2"/><ellipse cx="51" cy="35" rx="10" ry="5" fill="#40504b"/><ellipse cx="68" cy="41" rx="9" ry="5" fill="#40504b"/>';
   return `<svg class="item-art" viewBox="0 0 110 104" aria-hidden="true"><ellipse cx="55" cy="91" rx="33" ry="6" fill="#323731" opacity=".1"/>${shapes.replaceAll('COLOR', fill)}</svg>`;
@@ -238,14 +239,17 @@ function renderGoals(compact = false) {
   const goals = getStats(game).scenarioProgress || game.scenario?.goals || [];
   const fallback = [
     { label: 'Serve 25 guests', current: game.stats?.served || 0, target: 25 },
-    { label: 'Earn a 4-star reputation', current: game.stats?.rating || 0, target: 4 },
+    { stat: 'rating', label: 'Earn a 4-star reputation', current: game.stats?.rating || 0, target: 4 },
     { label: 'Keep hygiene above 85%', current: game.stats?.cleanliness || 0, target: 85 },
   ];
   return `<div class="goal-list ${compact ? 'compact' : ''}">${(goals.length ? goals : fallback).map((goal) => {
     const current = goalValue(goal);
     const target = Number(goal.target || goal.value || 1);
     const percent = Math.min(100, Math.max(0, current / target * 100));
-    return `<div class="goal ${goal.complete || percent >= 100 ? 'complete' : ''}"><span class="goal-check">${goal.complete || percent >= 100 ? '✓' : ''}</span><div><span>${escapeHtml(goal.label || goal.description || goal.title || `Reach ${target} ${goal.metric || ''}`)}</span><div class="progress-track"><i style="width:${percent}%"></i></div></div><small>${number(current)}<span> / ${number(target)}</span></small></div>`;
+    const isRating = (goal.stat || goal.metric) === 'rating';
+    const currentLabel = isRating ? current.toFixed(1) : number(current);
+    const targetLabel = isRating ? target.toLocaleString('en-US', { maximumFractionDigits: 1 }) : number(target);
+    return `<div class="goal ${goal.complete || percent >= 100 ? 'complete' : ''}"><span class="goal-check">${goal.complete || percent >= 100 ? '✓' : ''}</span><div><span>${escapeHtml(goal.label || goal.description || goal.title || `Reach ${target} ${goal.metric || ''}`)}</span><div class="progress-track"><i style="width:${percent}%"></i></div></div><small>${currentLabel}<span> / ${targetLabel}</span></small></div>`;
   }).join('')}</div>`;
 }
 
@@ -286,7 +290,7 @@ function render() {
   open.innerHTML = `<i class="${game.open ? 'open' : ''}"></i>${game.open ? 'OPEN FOR BUSINESS' : 'CLOSED'}<span>${game.open ? 'Close' : 'Open'}</span>`;
   document.querySelector('#guest-count').textContent = `${game.guests.length} ${game.guests.length === 1 ? 'guest' : 'guests'} visiting`;
   document.querySelector('#service-label').textContent = game.speed === 0 ? 'PAUSED' : game.open ? 'SERVICE IN PROGRESS' : 'TIME TO MAKE IT YOURS';
-  document.querySelector('#restaurant-subtitle').textContent = game.scenario?.title ? `${game.scenario.title} · ${game.scenario.complete ? 'Challenge complete' : 'Challenge in progress'}` : 'A little place. A big possibility.';
+  document.querySelector('#restaurant-subtitle').textContent = game.scenario?.title ? `${game.scenario.title} · ${game.scenario.id === 'sandbox' ? 'Free play' : game.scenario.complete ? 'Challenge complete' : 'Challenge in progress'}` : 'A little place. A big possibility.';
   for (const button of document.querySelectorAll('.nav-button')) button.classList.toggle('active', button.dataset.panel === ui.panel);
   for (const button of document.querySelectorAll('.speed-button')) button.classList.toggle('active', Number(button.dataset.speed) === game.speed);
   const pause = document.querySelector('.pause-button');
@@ -448,7 +452,14 @@ function animate(now) {
   refresh += elapsed;
   overviewRefresh += elapsed;
   if (refresh > .2) {
-    if (overviewRefresh > 2 && !document.querySelector('#panel input:focus, #panel select:focus')) { ui.dirty = true; overviewRefresh = 0; }
+    if (overviewRefresh > 2) {
+      if (game.speed > 0) {
+        renderOverview();
+        if (ui.panel && ui.panel !== 'build' && !document.querySelector('#panel input:focus, #panel select:focus')) renderPanel();
+        if (!document.querySelector('#inspector select:focus')) renderInspector();
+      }
+      overviewRefresh = 0;
+    }
     render();
     refresh = 0;
   }
