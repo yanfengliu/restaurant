@@ -58,7 +58,37 @@ The nine native screenshots below were inspected as returned by the capture tool
 
 The inspected browser screenshot `output/playwright/current-room.png` had SHA-256 `c91f22294108cba3907708b00a17a47f828b39e008a33f3af5fc1ab1714af56b`. Its warm olive environment, isometric room, wood floor, and dark wall caps follow the researched direction. It differs visibly in lower cream walls, a more open front cutaway, finer floor texture, limited seating variants, a large light branding header, and editorial text at the right of the room. Both products place tables and chairs independently. The native game emphasizes tall saturated brick walls, compact dark bars, and a larger furnishing catalog. These are qualitative comparisons across different maps and scales, not a pixel-match score.
 
-The native cooking, serving, payment, dirty-dish, restroom, cleaning, delivery, and long-term economy loops were not exercised to completion. Corner Table's tests and browser checks therefore establish its own behavior only; complete gameplay or visual parity is not verified.
+The first session did not exercise the native cooking, serving, payment, dirty-dish, restroom, cleaning, delivery, or long-term economy loops to completion. The second session below exercised deliveries. Corner Table's tests and browser checks establish its own behavior only; complete gameplay or visual parity is not verified.
+
+### Supplies and priorities follow-up, 2026-10-17
+
+The same installed build, 20401477, was exercised again from 13:46 to 13:54:55 PDT after the user explicitly made the desktop available. No game process existed before launch. A fresh Fast Food scenario was built with an approximately five-by-five-tile enclosed room, an entry door, two cabinets, a cutting board, a countertop fryer, and a small shelf. This session used actual native inputs and retained nine further screenshots in the ignored gallery.
+
+- Each observed five-segment wall run cost 60 coins. A cabinet cost 50, the cutting board 50, the countertop fryer 100, and the small shelf 100. Cutting board and countertop fryer placement required an existing cabinet; unsupported placement displayed “Must be placed on cabinet.” Both successful placements used the cabinet's ground-grid tile, rather than its raised countertop pixels.
+- The ingredient panel grouped stock by Shelf and Fridge. The visible Shelf list priced Potato and Flour at 1 coin, and Tomato, Coffee, and Avocado at 2. The Fridge list showed Steak and Chicken at 5, with red plus controls while no fridge was placed. These observations establish the visible storage classes and unavailable controls, not the full ingredient catalog or precise capacity rules.
+- Potato plus controls set a persistent delivery quantity: 0 to 1, then 6. Cash stayed at 2410 while paused, inventory stayed 0, and the Next Delivery cost became 6. A black progress fill advanced with running simulation. After the separate plate purchase below, cash was 2395; by January 12, six potatoes were visible on the shelf and in inventory and cash was 2389. By January 23, inventory was 12 and cash was 2383, with no cooking or additional ingredient inputs. The setting still showed 6 and a future cost of 6 on January 24. This directly distinguishes a recurring six-unit batch from a target of six total stock. Cash/calendar snapshots suggest a ten-day delivery cadence around January 10 and 20; the exact transition frames and whether cadence is configurable were not captured.
+- Tableware behaved differently. With cabinets placed, one plate plus click immediately deducted 15 coins, showed one plate in the Delivery queue, and left available inventory at 0. A delivery progress fill advanced while running, and available plates reached 1 by January 8. The queue was empty when reopened on January 24. A second plus click changed cash 2383 to 2368 and queued one plate; minus immediately restored 2383 and emptied that queue. This verifies one-time prepayment and cancellation refund, without establishing maximum cabinet capacity or the exact delivery duration.
+- Once the fryer, board, potato stock, and plate were present, Fries showed a green Add to menu control with no missing requirement borders. Clicking it changed the control to Remove from menu and cleared the No Dishes Available warning. This verifies the dependency gate and menu toggle, not preparation or sale of that dish.
+- An employee was hired and placed inside. Repeated clicks on Serving visibly cycled through blank square, upward triangle, X, downward triangle, then blank square. Four columns remained Serving, Cooking, Dishwashing, and Cleaning. The symbols support normal, high, disabled, and low priority interpretations, but task scheduling differences were not measured. The full four-state cycle is a stronger baseline than the first session's single upward-triangle observation.
+- Scroll input visibly changed camera scale during setup. The filled shelf displayed individual potato crates, making stock changes visible in the room as well as the Inventory panel. The dense top/bottom bars and pale gray compact panels remained consistent with the first session's visual baseline.
+
+The bounded session prioritized deliveries and priority controls. It did not establish maximum shelf/cabinet capacity, ingredient quality decay or consumption, a customer order through cooking/serving/payment, dirty-plate collection, washing, restrooms, cleaning, or long-term finances. No table or chair was placed in this follow-up, so a complete service cycle could not be claimed. No existing save was loaded or changed; a new named save was not created because no straightforward save control was observed within the remaining time. The exact owned game process and its descendants were closed by the finally guard at 13:54:55 PDT, and a subsequent process query was empty. Shared Steam and ordinary game runtime files were preserved.
+
+These additional 2560 × 1440 screenshots remain untracked under `output/gallery/`. Times are local PDT; hashes bind the retained pixels to the observed states.
+
+| Local gallery file | Captured | SHA-256 |
+| --- | --- | --- |
+| `reference-live-10-ingredient-order.png` | 13:50:48 | `6adfd8bf6a280bf6bebf4a3fb497d2a8c10155ddb887c6efb5883bce116b3340` |
+| `reference-live-11-plate-arrived.png` | 13:53:01 | `7ea673377cf7afb945cc326bc740aaa373a73fb442eca7aad4d1140d3749c2a6` |
+| `reference-live-12-priority-disabled.png` | 13:53:36 | `b75734225cc4faf736e926cca75e1d65f8d11a9a4a62c09d2fedc280a18e7afb` |
+| `reference-live-13-priority-low.png` | 13:53:40 | `b04273f711e5dc56c662d26679bae8b3e6cee6bb9548a55ad2ef7a7262e1e07c` |
+| `reference-live-14-recurring-stock.png` | 13:53:56 | `f4986bd4953a062e82e01d492447829880ba7513c09216b070355e6e9b4168d5` |
+| `reference-live-15-recipe-ready.png` | 13:54:09 | `fae8bbdf1897805ef81ff823ca0a6ca1c01612d4915895c256133671a743e50f` |
+| `reference-live-16-repeat-quantity.png` | 13:54:25 | `13a1f7030d1d05fff5a79261451b2623c4267cfd130571633917f9e0dcbd4aed` |
+| `reference-live-17-fridge-category.png` | 13:54:30 | `562471c2db8418b1c5d6e02e5b7e8b4be092e3c23c2af208026eab486529ddac` |
+| `reference-live-18-tableware-queue.png` | 13:54:47 | `d83a021d0db00789ad9282f0f5ac8c3f9b042913461e10361ae57ae7628c00cd` |
+
+The current browser implementation's supplies and task model must be compared against these observed batch, payment, refund, equipment-support, and four-state-priority rules. Its own service tests do not verify the unobserved native service loop.
 
 ## Direction implemented
 
