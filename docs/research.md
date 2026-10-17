@@ -88,7 +88,7 @@ These additional 2560 × 1440 screenshots remain untracked under `output/gallery
 | `reference-live-17-fridge-category.png` | 13:54:30 | `562471c2db8418b1c5d6e02e5b7e8b4be092e3c23c2af208026eab486529ddac` |
 | `reference-live-18-tableware-queue.png` | 13:54:47 | `d83a021d0db00789ad9282f0f5ac8c3f9b042913461e10361ae57ae7628c00cd` |
 
-The current browser implementation's supplies and task model must be compared against these observed batch, payment, refund, equipment-support, and four-state-priority rules. Its own service tests do not verify the unobserved native service loop.
+These observations established the batch, payment, refund, equipment-support, and four-state-priority baseline for the supplies milestone below. Browser service tests do not verify the unobserved native service loop.
 
 ### Access and service setup follow-up, 2026-10-17
 
@@ -111,6 +111,16 @@ Both screenshots remain untracked in `output/gallery/`. The capture times below 
 | `reference-live-19-exterior-stock.png` | 14:35:47 | `ffd5ad76a8c53553bbbb4856590a48ea8ed0143b56f6c7cde32ebcdd88292c6b` |
 | `reference-live-20-service-room.png` | 14:39:05 | `1562269772bc6fafe39b5458a34dce8cbe0e5d81eca7ef11aea511b958c04e05` |
 
+## Supplies comparison checkpoint, 2026-10-17
+
+The supplies milestone implements recurring ingredient batches charged on arrival, a separate prepaid tableware queue with pending-item refunds, storage-specific inventory, cabinet-supported countertop appliances, three hiring candidates with monthly wages and skill bars, and four independent employee task priorities. These follow the directly observed setup rules above; exact timing, balancing and native scheduling outcomes remain distinct from the inferred implementation defaults.
+
+Actual desktop browser controls exercised room and equipment placement, ingredient quantity changes, tableware payment/refund/arrival, menu availability and price changes, world-tile hiring, and the complete normal → high → off → low priority cycle. At product revision `b1d2c123a82537df11845a376a331bcadd0e09af`, a single identified plate passed from preparation through carrying, guest use, dirty-table collection, washing and clean return. One served meal earned sixteen coins. An active-meal save/load preserved the state, and an ingredient-starved order resumed after the next delivery without being replaced. The flow reported no JavaScript errors or warnings. These are checks of Corner Table, not observations of the installed game's complete service loop.
+
+The later visual revision `ed9198cfe6c6f55e4fdcb98ab651b7710111fbc2` repaired low-framed candidate portraits and placed separate meals on different parts of a shared table. Original-resolution inspection showed complete candidate heads and torsos and two distinct food portions on the shared table. The integration owner inspected 28 desktop captures across 2560-, 1440- and 1024-pixel window widths, fixed and exploratory camera views, and 37 individual 160 × 160 model previews. The ignored gallery retains the earlier portrait defect as a before image, the repaired view, service snapshots, source comparisons and byte hashes. The implementation passed 53 simulation tests; focused final independent review was still pending at this checkpoint.
+
+The installed game's complete cooking, serving, payment and washing loop remains unobserved. Ingredient freshness, maximum storage rules, payroll timing, exact delivery cadence, native task scheduling and long-term economy remain uncalibrated. Starting budgets and scenario goals, outdoor storage placement, one-shot furnishing tools, catalog breadth, character detail, lighting and camera scale still differ. The browser's verified meal-and-wash cycle cannot close those research gaps or establish full behavioral or visual parity.
+
 ## Direction implemented
 
 Corner Table uses its own title, six challenge briefs, object geometry, catalog, illustrations, and interface copy.
@@ -121,8 +131,8 @@ The interface surfaces time, cash, rating, hygiene, building, food, staff priori
 
 ## Scope and remaining distinctions
 
-This increment has a single build level, a finite original catalog, a simplified menu and employee priority system, and deterministic restaurant simulation rules.
-It does not reproduce the complete reference catalog, original scenario maps or exact balancing, multi-floor building, room zoning, per-table menus, individual ingredient and tableware inventory, research-tree progression, item recoloring, configurable restroom cleaning frequency, employee clothing, achievements, translations, audio, or every guest review detail.
+This increment has a single build level, a finite original catalog and seven-dish menu, per-storage ingredient stock, reusable tableware, four employee task priorities, and deterministic restaurant simulation rules.
+It does not reproduce the complete reference catalog, original scenario maps or exact balancing, multi-floor building, room zoning, per-table menus, ingredient freshness, research-tree progression, item recoloring, configurable restroom cleaning frequency, employee clothing, achievements, translations, audio, or every guest review detail.
 The art is authored procedural geometry and SVG rather than extracted assets.
 Behavioral and visual checks of Corner Table establish that this game's controls and systems work within the tested bounds; the bounded installed-game study above does not establish complete parity.
 
