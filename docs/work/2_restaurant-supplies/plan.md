@@ -22,7 +22,7 @@ Engine/catalog/tests, interface, and scene each retain separate owners; root agr
 - [ ] A player can equip storage and kitchen, choose quantities, receive capacity-limited supplies, enable a recipe only when its prerequisites are met, serve and collect payment, then collect and wash used tableware; shortages visibly stop further preparation.
 - [ ] Four independently adjustable employee task priorities and three candidate skills affect actual task selection, walking, food quality and breakage; wages have a coherent displayed period.
 - [ ] Saves preserve inventories, active orders, dirty dishes, deliveries and employee priorities; malformed graphs fail safely and valid earlier saves migrate without silent loss.
-- [ ] Actual desktop browser controls and rendered views pass comparison, ignored gallery is updated, relevant deterministic tests and independent review pass before main merge/push; mobile is outside the user's scope.
+- [ ] Actual desktop browser controls pass; rendered desktop views are inspected and compared with explicit observed matches, differences and unverified bounds. The ignored gallery, deterministic tests and independent review are complete before main merge/push; mobile is outside the user's scope.
 
 ## Implementation steps
 
