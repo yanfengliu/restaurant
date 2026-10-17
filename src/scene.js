@@ -484,13 +484,16 @@ export function createScene(container, callbacks = {}) {
         parent=people.get(unit.staffId)?.userData.carried;scale=0.9;
         if(unit.state==='carriedMeal')recipeId=(game.orders||[]).find(order=>order.id===unit.orderId)?.recipeId||null;
       }else if(unit.state==='guest'){
-        const guest=(game.guests||[]).find(actor=>actor.id===unit.guestId);parent=objects.get(guest?.tableId);position.set(0.15,0.845,0.14);recipeId=guest?.recipeId||guest?.mealRecipeId||null;
+        const guest=(game.guests||[]).find(actor=>actor.id===unit.guestId);parent=objects.get(guest?.tableId);
+        const seat=objects.get(guest?.seatId)?.userData.data,table=parent?.userData.data,r=angle(table?.rotation);
+        const dx=(seat?.x??table?.x??0)-(table?.x??0),dz=(seat?.z??table?.z??0)-(table?.z??0);
+        position.set((dx*Math.cos(r)-dz*Math.sin(r))*0.27,0.845,(dx*Math.sin(r)+dz*Math.cos(r))*0.27);scale=0.9;recipeId=guest?.recipeId||guest?.mealRecipeId||null;
       }else{
         const order=unit.state==='order'?(game.orders||[]).find(entry=>entry.id===unit.orderId):null;
         const locationId=order?.sourceId||unit.locationId||unit.sinkId;parent=objects.get(locationId);
         const type=parent?.userData.data?.type,index=locationIndices.get(locationId)||0;locationIndices.set(locationId,index+1);
         position.set(unit.state==='washing'?0:0.18, type==='table'?0.845:type==='fryer'?1.22:0.95,unit.state==='washing'?0.04:0.2);position.y+=index*0.028;
-        if(order?.status==='ready')recipeId=order.recipeId;
+        if(order?.state==='ready')recipeId=order.recipeId;
       }
       if(!parent){removeProp(wareProps,unit.id);continue;}
       const signature=JSON.stringify([unit.type,unit.state,unit.storageId,unit.orderId,unit.staffId,unit.guestId,unit.locationId,unit.sinkId,recipeId,position.toArray(),scale]);

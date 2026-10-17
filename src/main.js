@@ -1,6 +1,6 @@
 import './style.css';
-import { createGame, dispatch, tick, getStats, serialize, deserialize } from './engine.js';
-import { ITEMS, RECIPES, SCENARIOS } from './catalog.js';
+import { createGame, dispatch, tick, getStats, getSupplies, getRecipeStatus, serialize, deserialize } from './engine.js';
+import { ITEMS, RECIPES, SCENARIOS, INGREDIENTS, TABLEWARE, TASK_GROUPS } from './catalog.js';
 import { createScene } from './scene.js';
 
 const SAVE_KEY = 'corner-table.save.v1';
@@ -36,9 +36,13 @@ const iconPaths = {
   plus: '<path d="M12 4v16M4 12h16"/>',
   minus: '<path d="M4 12h16"/>',
   expand: '<path d="M3 9V3h6M15 3h6v6M21 15v6h-6M9 21H3v-6M3 3l6 6M21 3l-6 6M21 21l-6-6M3 21l6-6"/>',
+  ingredients: '<path d="M12 7c-6-5-11 1-8 7s5 8 8 6c3 2 6 0 8-6S17 2 12 7ZM12 7V3M12 4c1-3 4-3 6-2-1 3-3 4-6 2"/>',
+  tableware: '<ellipse cx="12" cy="12" rx="10" ry="7"/><ellipse cx="12" cy="12" rx="7" ry="4"/>',
+  inventory: '<path d="m3 6 9-3 9 3-9 3ZM3 6v13l9 3 9-3V6M12 9v13M7 5l9 3v5"/>',
+  calendar: '<path d="M3 5h18v16H3ZM3 10h18M7 2v6M17 2v6M7 14h2M14 14h2M7 18h2"/>',
 };
 const icon = (name, extra = '') => `<svg class="icon ${extra}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${iconPaths[name] || iconPaths.table}</svg>`;
-const ui = { panel: null, category: 'construction', tool: null, rotation: 0, selected: null, hover: null, view: 'isometric', wallMode: 'full', azimuth: Math.PI * 3 / 4, dirty: true, modal: null, lastSpeed: 1 };
+const ui = { panel: null, ingredientsOpen: false, inventoryOpen: false, ingredientStorage: 'shelf', staffTab: 'priorities', recipeId: null, category: 'construction', tool: null, rotation: 0, selected: null, hover: null, view: 'isometric', wallMode: 'full', azimuth: Math.PI * 3 / 4, dirty: true, modal: null, lastSpeed: 1 };
 const panKeys = new Set();
 let game;
 let savedAt = 0;
@@ -59,19 +63,22 @@ app.innerHTML = `
     <div id="scene" aria-label="3D restaurant. WASD, Shift-drag or middle-drag to pan, right-drag to orbit, scroll to zoom, click an object to inspect it."></div>
     <header class="topbar">
       <div class="top-stats" role="status" aria-label="Restaurant statistics">
-        <button class="stat stat-button" data-action="panel" data-panel="goals" title="Guest rating and objectives">${icon('star')}<strong id="rating"></strong><small>Rating</small></button>
+        <button class="stat stat-button reputation-button" data-action="panel" data-panel="goals" title="Guest rating and objectives"><span id="rating" class="reputation-stars" role="img"></span><small>Rating</small></button>
         <div class="stat cash-stat" title="Available funds">${icon('coin')}<strong id="cash"></strong><small>Funds</small></div>
         <div class="stat visitor-stat" title="Guests currently visiting">${icon('staff')}<strong id="guest-count"></strong></div>
         <button class="stat stat-button hygiene-stat" data-action="panel" data-panel="staff" title="Restaurant hygiene">${icon('clean')}<strong id="hygiene"></strong><small>Hygiene</small></button>
       </div>
-      <div class="date-group"><span id="day"></span><strong id="time"></strong></div>
+      <div class="date-group">${icon('calendar')}<strong id="day"></strong></div>
       <div class="restaurant-heading"><button id="restaurant-name" data-action="rename" title="Rename restaurant"></button><span id="restaurant-subtitle"></span></div>
       <div class="time-controls" aria-label="Simulation speed"><button class="icon-button pause-button" data-action="pause" title="Pause or resume (Space)" aria-label="Pause or resume">${icon('pause')}</button>${[1, 2, 3].map((speed) => `<button class="speed-button" data-action="speed" data-speed="${speed}" aria-label="${speed} times speed">${speed}×</button>`).join('')}</div>
       <button class="icon-button help-button" data-action="help" title="How to play (?)" aria-label="How to play">${icon('help')}</button>
+      <button class="icon-button" data-action="toggle-inventory" title="Inventory" aria-label="Inventory">${icon('inventory')}</button>
     </header>
     <div class="venue-bar"><button id="open-button" data-action="open" class="status-toggle"></button><span id="service-label"></span></div>
     <aside id="construction-hint" class="construction-hint" role="status" hidden></aside>
     <section id="panel" class="panel" aria-label="Management panel" hidden></section>
+    <section id="ingredients-panel" class="supply-window ingredients-panel" aria-label="Ingredients" hidden></section>
+    <aside id="inventory-panel" class="supply-window inventory-panel" aria-label="Inventory" hidden></aside>
     <aside id="inspector" class="inspector" aria-label="Selected item" hidden></aside>
     <div id="tool-banner" class="tool-banner" hidden></div>
     <div class="camera-tools" aria-label="Camera controls">
@@ -85,7 +92,7 @@ app.innerHTML = `
     </div>
     <footer class="bottom-bar">
       <nav class="management-nav" aria-label="Manage restaurant">
-        ${[['build', 'Build', 'B'], ['menu', 'Menu', 'M'], ['staff', 'Staff', ''], ['finance', 'Finances', ''], ['goals', 'Goals', '']].map(([key, label, shortcut]) => `<button data-action="panel" data-panel="${key}" class="nav-button" title="${label}${shortcut ? ` (${shortcut})` : ''}">${icon(key)}<span>${label}</span>${shortcut ? `<kbd>${shortcut}</kbd>` : ''}</button>`).join('')}
+        ${[['build', 'Build', 'B'], ['menu', 'Menu', 'M'], ['ingredients', 'Ingredients', ''], ['tableware', 'Tableware', ''], ['staff', 'Staff', ''], ['finance', 'Finances', ''], ['goals', 'Goals', '']].map(([key, label, shortcut]) => `<button data-action="${key === 'ingredients' ? 'toggle-ingredients' : 'panel'}" data-panel="${key}" class="nav-button" title="${label}${shortcut ? ` (${shortcut})` : ''}">${icon(key)}<span>${label}</span>${shortcut ? `<kbd>${shortcut}</kbd>` : ''}</button>`).join('')}
       </nav>
       <div class="session-controls"><button class="icon-button" data-action="save" title="Save restaurant" aria-label="Save restaurant">${icon('save')}</button><button class="icon-button" data-action="settings" title="Save, load, or start a new restaurant" aria-label="Game settings">${icon('settings')}</button></div>
     </footer>
@@ -99,7 +106,11 @@ try {
   scene = createScene(document.querySelector('#scene'), {
     onTileClick: ({ x, z }) => {
       if (ui.modal) return;
-      if (ui.tool?.type === 'PLACE') act({ type: 'PLACE', itemType: ui.tool.itemType, x, z, rotation: ui.rotation });
+      if (ui.tool?.type === 'HIRE') {
+        const result = act({ type: 'HIRE', candidateId: ui.tool.candidateId, x, z });
+        if (result.ok) { setTool(null); render(); }
+      }
+      else if (ui.tool?.type === 'PLACE') act({ type: 'PLACE', itemType: ui.tool.itemType, x, z, rotation: ui.rotation });
       else if (ui.tool?.type === 'FLOOR') act({ type: 'FLOOR', x, z, style: ui.tool.style });
       else if (ui.tool?.type === 'REMOVE') toast('Click the item you want to remove.');
       else { ui.selected = null; renderInspector(); }
@@ -115,7 +126,7 @@ try {
     onObjectClick: (id) => {
       if (ui.modal) return;
       if (ui.tool?.type === 'REMOVE') act({ type: 'REMOVE', id });
-      else { ui.selected = id; renderInspector(); }
+      else { ui.inventoryOpen = false; renderInventory(); ui.selected = id; renderInspector(); }
     },
     onHover: (tile) => {
       ui.hover = tile;
@@ -154,11 +165,89 @@ function toast(message, error = false) {
 }
 
 function itemArt(type, color, floorStyle) {
-  const label = type === 'floor' ? (floorStyle || 'peach') + ' floor' : ITEMS[type]?.name || type;
+  const ingredientId = type.startsWith('ingredient-') ? type.slice(11) : null;
+  const wareId = type.startsWith('ware-') ? type.slice(5) : null;
+  const dishId = type.startsWith('dish-') ? type.slice(5) : null;
+  const label = type === 'floor' ? (floorStyle || 'peach') + ' floor' : INGREDIENTS[ingredientId]?.name || TABLEWARE[wareId]?.name || RECIPES.find((recipe) => recipe.id === dishId)?.name || ITEMS[type]?.name || type;
   const preview = scene?.thumbnail?.(type, color, floorStyle);
   return preview
     ? '<img class="item-art" src="' + escapeHtml(preview) + '" alt="' + escapeHtml(label) + '" draggable="false" />'
     : '<span class="item-art item-art-empty" role="img" aria-label="' + escapeHtml(label + ' preview unavailable') + '"></span>';
+}
+
+function personArt(person) {
+  const preview = scene?.personThumbnail?.(person);
+  return preview ? `<img class="person-art" src="${escapeHtml(preview)}" alt="${escapeHtml(person.name)}" draggable="false" />` : `<span class="person-art" role="img" aria-label="${escapeHtml(person.name)} portrait unavailable"></span>`;
+}
+
+const taskLabel = (group) => ({ serving: 'Serving', cooking: 'Cooking', dishwashing: 'Dishwashing', cleaning: 'Cleaning' })[group];
+const prioritySymbol = (priority) => ({ normal: '', high: '▲', off: '×', low: '▼' })[priority];
+function priorityButton(staff, group) {
+  const priority = staff.priorities[group];
+  return `<button class="priority-button priority-${priority}" data-action="priority" data-id="${escapeHtml(staff.id)}" data-group="${group}" aria-label="${escapeHtml(staff.name)} ${taskLabel(group)} priority: ${priority}" title="${taskLabel(group)}: ${priority}. Click for normal → high → off → low.">${prioritySymbol(priority)}</button>`;
+}
+
+function skillBars(person) {
+  return `<div class="skill-bars">${[['clumsiness', 'Clumsiness'], ['cooking', 'Cooking'], ['speed', 'Speed']].map(([key, label]) => `<div class="skill-row"><span>${label}</span><div class="skill-track" role="meter" aria-label="${label}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(person.skills[key] * 100)}"><i style="width:${person.skills[key] * 100}%"></i></div></div>`).join('')}</div>`;
+}
+
+function windowHeading(title, closeAction) {
+  return `<div class="panel-heading"><span>${title}</span><button class="close-button" data-action="${closeAction}" aria-label="Close ${title}">${icon('close')}</button></div>`;
+}
+
+function paintWindow(element, html) {
+  if (element.innerHTML === html) return;
+  const positions = [...element.querySelectorAll('.panel-body, .ingredient-list, .dish-grid, .staff-list')].map((node) => node.scrollTop);
+  element.innerHTML = html;
+  [...element.querySelectorAll('.panel-body, .ingredient-list, .dish-grid, .staff-list')].forEach((node, index) => { node.scrollTop = positions[index] || 0; });
+}
+
+function deliveryStatus(delivery, cost, label) {
+  const progress = Math.max(0, Math.min(1, delivery.progress));
+  const status = delivery.status === 'idle' ? 'No delivery scheduled' : delivery.status === 'blocked' ? 'Delivery blocked' : delivery.status === 'due' ? 'Delivery due' : 'Next delivery';
+  return `<div class="delivery-status ${delivery.status === 'blocked' ? 'blocked' : ''}"><div class="delivery-summary"><span>${label || status}${delivery.nextDay ? ` · Day ${delivery.nextDay}` : ''}</span>${cost !== undefined ? `<strong>${money(cost)}</strong>` : `<small>${status}</small>`}</div><div class="delivery-track" role="progressbar" aria-label="${label || 'Delivery'} progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(progress * 100)}"><i style="width:${progress * 100}%"></i></div>${delivery.blockedReason ? `<p class="blocked-reason">${escapeHtml(delivery.blockedReason)}</p>` : ''}</div>`;
+}
+
+function renderIngredients(supplies) {
+  const panel = document.querySelector('#ingredients-panel');
+  panel.hidden = !ui.ingredientsOpen;
+  if (!ui.ingredientsOpen) return;
+  supplies ||= getSupplies(game);
+  const rows = supplies.ingredients.filter((row) => row.storageKind === ui.ingredientStorage);
+  paintWindow(panel, windowHeading('Ingredients', 'toggle-ingredients') + `<div class="supply-body"><label class="storage-selector"><span class="sr-only">Ingredient storage</span><select id="ingredient-storage" aria-label="Ingredient storage"><option value="shelf" ${ui.ingredientStorage === 'shelf' ? 'selected' : ''}>Shelf</option><option value="fridge" ${ui.ingredientStorage === 'fridge' ? 'selected' : ''}>Fridge</option></select></label><div class="ingredient-list">${rows.map((row) => `<article class="ingredient-row" title="${escapeHtml(row.blockedReason || `${row.onHand} on hand · ${row.storageFree} free storage units`)}"><div class="ingredient-label">${itemArt('ingredient-' + row.id)}<strong>${escapeHtml(row.name)}</strong><small>${money(row.unitPrice)}</small></div><div class="quantity-controls"><button data-action="ingredient-batch" data-id="${row.id}" data-delta="-1" aria-label="Decrease ${escapeHtml(row.name)} batch" ${row.batchQuantity <= 0 ? 'disabled' : ''}>−</button><output aria-label="${escapeHtml(row.name)} delivery batch">${row.batchQuantity}</output><button data-action="ingredient-batch" data-id="${row.id}" data-delta="1" aria-label="Increase ${escapeHtml(row.name)} batch" ${!row.storageAvailable || row.batchQuantity >= row.batchLimit ? 'disabled' : ''}>+</button></div></article>`).join('')}</div><p class="supply-note">Quantities are recurring batches. Payment is taken when goods arrive.</p>${deliveryStatus(supplies.deliveries.ingredient, supplies.deliveries.ingredient.scheduledCost)}</div>`);
+}
+
+function renderInventory(supplies) {
+  const panel = document.querySelector('#inventory-panel');
+  panel.hidden = !ui.inventoryOpen;
+  if (!ui.inventoryOpen) return;
+  supplies ||= getSupplies(game);
+  paintWindow(panel, windowHeading('Inventory', 'toggle-inventory') + `<div class="supply-body"><h3 class="inventory-label">Ingredients on hand</h3><div class="stock-grid">${supplies.ingredients.map((row) => `<div class="stock-count ${row.onHand === 0 ? 'empty' : ''}" title="${escapeHtml(row.name)}: ${row.onHand} on hand, ${row.usable} usable">${itemArt('ingredient-' + row.id)}<strong>${row.onHand}</strong></div>`).join('')}</div><h3 class="inventory-label">Clean tableware</h3><div class="stock-grid">${supplies.tableware.map((row) => `<div class="stock-count ${row.clean === 0 ? 'empty' : ''}" title="${escapeHtml(row.name)}: ${row.clean} clean, ${row.usable} usable, ${row.inUse} in use, ${row.dirty} dirty, ${row.returning} returning, ${row.queued} pending">${itemArt('ware-' + row.id)}<strong>${row.clean}</strong></div>`).join('')}</div></div>`);
+}
+
+function renderTableware() {
+  const supplies = getSupplies(game);
+  return `<div class="tableware-grid">${supplies.tableware.map((row) => `<article class="tableware-card"><h3>${escapeHtml(row.name)}</h3>${itemArt('ware-' + row.id)}<strong>${money(row.unitPrice)}</strong><div class="quantity-controls"><button data-action="tableware-order" data-id="${row.id}" data-delta="-1" aria-label="Cancel pending ${escapeHtml(row.name)}" ${!row.canCancel ? 'disabled' : ''}>−</button><button data-action="tableware-order" data-id="${row.id}" data-delta="1" aria-label="Order ${escapeHtml(row.name)}" ${!row.canAdd ? 'disabled' : ''} title="Prepay ${money(row.unitPrice)}; requires an available cabinet slot">+</button></div><small>${row.clean} clean · ${row.queued} pending</small></article>`).join('')}</div><div class="tableware-queue" aria-label="Pending tableware">${supplies.tableware.filter((row) => row.queued > 0).map((row) => `<span>${itemArt('ware-' + row.id)}<strong>${row.queued}</strong></span>`).join('') || '<span>No pending tableware</span>'}</div>${deliveryStatus(supplies.deliveries.tableware, undefined, 'Tableware delivery')}<p class="supply-note">Plus prepays ${money(15)} per item. Minus refunds pending items only. Delivered tableware is reusable.</p>`;
+}
+
+function renderMenu() {
+  const statuses = getRecipeStatus(game);
+  const recipe = RECIPES.find((entry) => entry.id === ui.recipeId) || RECIPES[0];
+  ui.recipeId = recipe.id;
+  const status = statuses.find((entry) => entry.recipeId === recipe.id);
+  const menuEntry = game.menu.find((entry) => entry.recipeId === recipe.id);
+  return `<div class="menu-layout"><div class="dish-grid" aria-label="Recipes">${RECIPES.map((dish) => {
+    const row = statuses.find((entry) => entry.recipeId === dish.id);
+    const price = game.menu.find((entry) => entry.recipeId === dish.id).price;
+    return `<button class="dish-card ${ui.recipeId === dish.id ? 'selected' : ''} ${row.enabled ? 'enabled' : ''} ${!row.unlocked ? 'locked' : ''}" data-action="select-recipe" data-id="${dish.id}" aria-label="Select ${escapeHtml(dish.name)}" title="${escapeHtml(dish.name)} · ${row.enabled ? 'On menu' : row.status}">${itemArt('dish-' + dish.id)}<strong>${money(price)}</strong><small>${escapeHtml(dish.name)}</small>${row.enabled ? '<span class="on-menu-mark">✓</span>' : ''}</button>`;
+  }).join('')}</div><article class="dish-detail"><h2>${escapeHtml(recipe.name)}</h2>${itemArt('dish-' + recipe.id)}<button class="menu-toggle ${status.enabled ? 'remove' : ''}" data-action="recipe" data-recipe="${recipe.id}" aria-label="${status.enabled ? 'Remove' : 'Add'} ${escapeHtml(recipe.name)} ${status.enabled ? 'from' : 'to'} menu" ${!status.enabled && !status.canEnable ? 'disabled' : ''}>${status.enabled ? 'Remove from menu' : 'Add to menu'}</button><div class="dish-price"><button data-action="recipe-price" data-id="${recipe.id}" data-delta="-1" aria-label="Decrease ${escapeHtml(recipe.name)} price">−</button><label><span class="sr-only">${escapeHtml(recipe.name)} price</span><input type="number" aria-label="${escapeHtml(recipe.name)} price" data-price="${recipe.id}" min="1" max="150" step="1" value="${menuEntry.price}" /></label><button data-action="recipe-price" data-id="${recipe.id}" data-delta="1" aria-label="Increase ${escapeHtml(recipe.name)} price">+</button></div>${[['equipment', 'Equipment'], ['ingredient', 'Ingredients'], ['tableware', 'Tableware']].map(([kind, title]) => `<section class="requirement-section"><h3>${title}</h3><div class="requirement-cards">${status.requirements.filter((requirement) => requirement.kind === kind).map((requirement) => `<div class="requirement-card ${requirement.met ? '' : 'missing'}" title="${escapeHtml(requirement.reason || requirement.label)}" aria-label="${escapeHtml(requirement.label)}: ${requirement.available} available, ${requirement.required} required">${itemArt(kind === 'ingredient' ? 'ingredient-' + requirement.id : kind === 'tableware' ? 'ware-' + requirement.id : requirement.id)}<small>${requirement.available}/${requirement.required}</small></div>`).join('')}</div></section>`).join('')}<p class="recipe-status ${status.canPrepare ? 'ready' : 'shortage'}">${!status.unlocked ? `Serve ${recipe.unlock} guests to unlock this recipe.` : status.canPrepare ? 'Ready to prepare.' : escapeHtml(status.missing.map((requirement) => requirement.reason || requirement.label).join(' · '))}${status.enabled && !status.canPrepare ? '<br>Still on the menu. Orders wait until supplies are ready.' : ''}</p></article></div>`;
+}
+
+function renderStaff() {
+  const stats = getStats(game);
+  const tabs = `<div class="staff-tabs" role="tablist" aria-label="Employee management"><button role="tab" aria-selected="${ui.staffTab === 'priorities'}" data-action="staff-tab" data-tab="priorities">Priorities</button><button role="tab" aria-selected="${ui.staffTab === 'hire'}" data-action="staff-tab" data-tab="hire">Hire employees</button></div>`;
+  if (ui.staffTab === 'hire') return tabs + `<div class="candidate-grid">${game.candidates.map((candidate) => `<article class="candidate-card">${personArt(candidate)}<h3>${escapeHtml(candidate.name)}</h3><strong>${money(candidate.monthlyWage)} / month</strong>${skillBars(candidate)}<button data-action="hire-candidate" data-id="${candidate.id}" aria-label="Hire ${escapeHtml(candidate.name)}">Hire</button></article>`).join('')}</div><p class="supply-note">Choose an employee, then click a clear floor tile to place them. Wages accrue through the month.</p>`;
+  return tabs + `<div class="priorities-table"><div class="priority-head"><span>Employee</span>${TASK_GROUPS.map((group) => `<span>${taskLabel(group)}</span>`).join('')}<span></span></div><div class="staff-list">${game.staff.map((staff) => `<div class="priority-row"><div class="employee-label">${personArt(staff)}<span><strong>${escapeHtml(staff.name)}</strong><small>${money(staff.monthlyWage)} / month</small><small>${escapeHtml(staff.blockedReason || staff.task)}</small></span></div>${TASK_GROUPS.map((group) => priorityButton(staff, group)).join('')}<button class="icon-button subtle" data-action="fire" data-id="${staff.id}" aria-label="Dismiss ${escapeHtml(staff.name)}" title="Dismiss employee">${icon('close')}</button></div>`).join('') || '<p class="empty-state">No employees. Open Hire employees to meet the candidates.</p>'}</div></div><p class="supply-note">Click a square to cycle normal → high ▲ → off × → low ▼. Employees choose available jobs in priority order.</p><div class="payroll-summary"><span>Monthly wages <strong>${money(stats.monthlyWages)}</strong></span><span>Accrued this month <strong>${money(stats.wagesAccrued)}</strong></span></div>`;
 }
 
 const categories = [
@@ -210,9 +299,9 @@ function renderToolBanner() {
   const banner = document.querySelector('#tool-banner');
   banner.hidden = !ui.tool;
   if (!ui.tool) return;
-  const name = ui.tool.type === 'REMOVE' ? 'Remove item' : ui.tool.type === 'FLOOR' ? `${ui.tool.style} floor` : ITEMS[ui.tool.itemType]?.name || ui.tool.itemType;
+  const name = ui.tool.type === 'HIRE' ? `Place ${ui.tool.candidate.name}` : ui.tool.type === 'REMOVE' ? 'Remove item' : ui.tool.type === 'FLOOR' ? `${ui.tool.style} floor` : ITEMS[ui.tool.itemType]?.name || ui.tool.itemType;
   const drawing = ui.tool.type === 'FLOOR' || ['wall', 'window'].includes(ui.tool.itemType);
-  const hint = ui.tool.type === 'REMOVE' ? 'Click an item to remove · 60% refund' : drawing ? 'Drag a straight line or click a tile' : 'Click a tile to place · R to rotate';
+  const hint = ui.tool.type === 'HIRE' ? `${money(ui.tool.candidate.monthlyWage)} / month · Click a clear floor tile` : ui.tool.type === 'REMOVE' ? 'Click an item to remove · 60% refund' : drawing ? 'Drag a straight line or click a tile' : 'Click a tile to place · R to rotate';
   banner.innerHTML = `${icon(ui.tool.type === 'REMOVE' ? 'trash' : 'build')}<span><strong>${escapeHtml(name)}</strong><small>${hint}</small></span><button data-action="show-build" title="Open construction catalog">${icon('build')}<span>Catalog</span></button>${ui.tool.type === 'PLACE' ? `<button data-action="rotate-item" title="Rotate item (R)">${icon('rotate')}<span>${ui.rotation}°</span></button>` : ''}<button class="icon-button" data-action="cancel" title="Cancel (Esc)" aria-label="Cancel building">${icon('close')}</button>`;
 }
 
@@ -220,7 +309,7 @@ function renderPanel() {
   const panel = document.querySelector('#panel');
   panel.hidden = !ui.panel;
   if (!ui.panel) return;
-  const titles = { build: ui.category === 'construction' ? 'Construction' : categories.find((category) => category.id === ui.category)?.name || 'Construction', menu: 'Menu', staff: 'Employees', finance: 'Finances', goals: 'Scenario goals' };
+  const titles = { build: ui.category === 'construction' ? 'Construction' : categories.find((category) => category.id === ui.category)?.name || 'Construction', menu: 'Menu', staff: 'Employees', finance: 'Finances', goals: 'Scenario goals', tableware: 'Tableware' };
   const heading = `<div class="panel-heading"><span>${icon(ui.panel)}${titles[ui.panel]}</span><button class="close-button" data-action="close-panel" aria-label="Close management panel">${icon('close')}</button></div>`;
   panel.className = `panel panel-${ui.panel}`;
   let content = '';
@@ -228,23 +317,20 @@ function renderPanel() {
     const entries = Object.entries(ITEMS).filter(([type, item]) => classify(type, item) === ui.category);
     content = `<div class="category-tabs" role="tablist" aria-label="Build categories">${categories.map((category) => `<button role="tab" aria-selected="${ui.category === category.id}" class="${ui.category === category.id ? 'active' : ''}" data-action="category" data-category="${category.id}" title="${category.name}">${icon(category.icon)}<span>${category.name}</span></button>`).join('')}</div><div class="palette-caption"><span>${categories.find((category) => category.id === ui.category)?.name}</span><span>${ui.category === 'floors' ? 'Drag or click to paint' : 'Choose an item'}</span></div><div class="item-grid">${ui.category === 'floors' ? ['peach', 'wood', 'tile', 'stone', 'checker'].map((style) => `<button class="item-card ${ui.tool?.style === style ? 'selected' : ''}" data-action="floor" data-style="${style}" title="${style} floor · Drag a line or click to paint" aria-label="Build ${style} floor">${itemArt('floor', undefined, style)}<span class="item-price">$12</span><span class="item-name">${style}</span></button>`).join('') : entries.map(([type, item]) => `<button class="item-card ${ui.tool?.itemType === type ? 'selected' : ''}" data-action="item" data-item="${escapeHtml(type)}" title="${escapeHtml(item.name)} · ${money(buildPrice(type, item))}${item.description ? ` · ${escapeHtml(item.description)}` : ''}" aria-label="Build ${escapeHtml(item.name)}, ${money(buildPrice(type, item))}">${itemArt(type)}<span class="item-price">${money(buildPrice(type, item))}</span><span class="item-name">${escapeHtml(item.name)}</span></button>`).join('')}</div><div class="palette-footer"><button data-action="demolish" class="text-button ${ui.tool?.type === 'REMOVE' ? 'active' : ''}">${icon('trash')}Remove <kbd>Del</kbd></button><button data-action="expand" class="text-button" title="Buy a larger plot of land">${icon('expand')}Buy land</button></div>`;
   } else if (ui.panel === 'menu') {
-    content = `<div class="panel-intro"><h2>Something for everyone.</h2><p>A thoughtful menu keeps guests happy. Equipment must be available before a dish can be served.</p></div><div class="recipe-list">${RECIPES.map((recipe) => {
-      const entry = game.menu.find((item) => item.recipeId === recipe.id) || { price: recipe.price, enabled: false };
-      const locked = (game.stats.served || 0) < (recipe.unlock || 0);
-      const missing = (recipe.equipment || []).filter((type) => !game.objects.some((object) => object.type === type));
-      return `<article class="recipe-row"><span class="recipe-symbol">${/coffee|tea|drink|lemon|juice|beer/.test(recipe.id) ? '☕' : /salad/.test(recipe.id) ? '🥗' : /pizza/.test(recipe.id) ? '🍕' : /cake|bread|toast/.test(recipe.id) ? '🍞' : /pasta/.test(recipe.id) ? '🍝' : '🍽'}</span><div class="recipe-info"><strong>${escapeHtml(recipe.name)}</strong><small>${locked ? `Unlocks after ${recipe.unlock} guests` : missing.length ? `Needs ${escapeHtml(missing.map((type) => ITEMS[type]?.name || type).join(', '))}` : `Ingredients ${money(recipe.cost)} · Ready to serve`}</small></div><label class="price-input"><span>$</span><input type="number" aria-label="${escapeHtml(recipe.name)} price" data-price="${escapeHtml(recipe.id)}" min="1" max="150" step="1" value="${Number(entry.price || recipe.price)}" /></label><button class="switch ${entry.enabled ? 'on' : ''}" data-action="recipe" data-recipe="${escapeHtml(recipe.id)}" aria-label="${entry.enabled ? 'Remove' : 'Add'} ${escapeHtml(recipe.name)} ${entry.enabled ? 'from' : 'to'} menu" aria-pressed="${entry.enabled}" title="${entry.enabled ? 'On the menu' : 'Off the menu'}"><span></span></button></article>`;
-    }).join('')}</div><div class="panel-tip">${icon('star')}Higher prices increase margins. Guests also judge value and waiting time.</div>`;
+    content = renderMenu();
   } else if (ui.panel === 'staff') {
-    content = `<div class="panel-intro"><h2>Good food takes good people.</h2><p>Give each employee a main priority. Balance your kitchen, service, and cleaning as the restaurant grows.</p></div><div class="hire-options">${[['chef', 'Cooking', 'kitchen'], ['waiter', 'Serving', 'menu'], ['cleaner', 'Cleaning', 'clean']].map(([role, label, glyph]) => `<button data-action="hire" data-role="${role}" title="Hire an employee with ${label.toLowerCase()} priority">${icon(glyph)}<span>Hire for<strong>${label}</strong></span>${icon('plus')}</button>`).join('')}</div><div class="staff-list">${game.staff.length ? game.staff.map((staff, index) => `<article class="staff-row"><span class="staff-avatar color-${index % 4}">${escapeHtml(staff.name?.charAt(0) || 'S')}</span><div class="staff-info"><strong>${escapeHtml(staff.name)}</strong><small>${escapeHtml(staff.task || 'Ready for the next task')} · ${money(staff.wage)}/hour</small></div><label class="priority-select"><span class="sr-only">Main priority for ${escapeHtml(staff.name)}</span><select data-priority="${escapeHtml(staff.id)}">${[['chef', 'Cooking'], ['waiter', 'Serving'], ['cleaner', 'Cleaning']].map(([value, label]) => `<option value="${value}" ${staff.role === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><button class="icon-button subtle" data-action="fire" data-id="${escapeHtml(staff.id)}" aria-label="Dismiss ${escapeHtml(staff.name)}" title="Dismiss employee">${icon('close')}</button></article>`).join('') : '<div class="empty-state">Your first employee is a hire away.<small>Start with cooking, serving, and cleaning priorities.</small></div>'}</div><div class="panel-tip">${icon('finance')}Hourly payroll: <strong>${money(game.staff.reduce((total, staff) => total + Number(staff.wage || 0), 0))}</strong></div>`;
+    content = renderStaff();
+  } else if (ui.panel === 'tableware') {
+    content = renderTableware();
   } else if (ui.panel === 'finance') {
-    const stats = game.stats || {};
+    const stats = getStats(game);
     const history = game.history || game.finances || [];
-    content = `<div class="panel-intro"><h2>Every little table counts.</h2><p>Keep your menu profitable and invest in a restaurant your neighbors will return to.</p></div><div class="finance-hero"><small>AVAILABLE FUNDS</small><strong>${money(game.cash)}</strong><span>Day ${game.day} · ${game.open ? 'Trading' : 'Closed'}</span></div><div class="finance-grid"><div><small>Total sales</small><strong class="positive">${money(stats.revenue)}</strong></div><div><small>Total expenses</small><strong>${money(stats.expenses)}</strong></div><div><small>Net result</small><strong class="${stats.revenue >= stats.expenses ? 'positive' : ''}">${money((stats.revenue || 0) - (stats.expenses || 0))}</strong></div><div><small>Guests served</small><strong>${number(stats.served)}</strong></div></div><h3 class="section-label">RECENT ACTIVITY</h3><div class="activity-list">${history.length ? history.slice(-8).reverse().map((entry) => `<div><span>Day ${entry.day || game.day}</span><strong>${money(entry.revenue ?? entry.income)}</strong><small>Expenses ${money(entry.expenses ?? entry.cost)}</small></div>`).join('') : (game.events || []).slice(0, 7).map((event) => `<p>${escapeHtml(event.text || event.message)}</p>`).join('') || '<p>Your first day is just beginning.</p>'}</div>`;
+    content = `<div class="panel-intro"><h2>Every little table counts.</h2><p>Keep your menu profitable and invest in a restaurant your neighbors will return to.</p></div><div class="finance-hero"><small>AVAILABLE FUNDS</small><strong>${money(game.cash)}</strong><span>${escapeHtml(stats.calendar.label)} · ${game.open ? 'Trading' : 'Closed'}</span></div><div class="finance-grid"><div><small>Total sales</small><strong class="positive">${money(stats.revenue)}</strong></div><div><small>Total expenses</small><strong>${money(stats.expenses)}</strong></div><div><small>Net result</small><strong class="${stats.revenue >= stats.expenses ? 'positive' : ''}">${money((stats.revenue || 0) - (stats.expenses || 0))}</strong></div><div><small>Guests served</small><strong>${number(stats.served)}</strong></div><div><small>Monthly wages</small><strong>${money(stats.monthlyWages)}</strong></div><div><small>Accrued wages</small><strong>${money(stats.wagesAccrued)}</strong></div></div><h3 class="section-label">RECENT ACTIVITY</h3><div class="activity-list">${history.length ? history.slice(-8).reverse().map((entry) => `<div><span>Day ${entry.day || game.day}</span><strong>${money(entry.revenue ?? entry.income)}</strong><small>Expenses ${money(entry.expenses ?? entry.cost)}</small></div>`).join('') : (game.events || []).slice(0, 7).map((event) => `<p>${escapeHtml(event.text || event.message)}</p>`).join('') || '<p>Your first day is just beginning.</p>'}</div>`;
   } else if (ui.panel === 'goals') {
     const scenario = game.scenario;
     content = `<div class="panel-intro"><h2>${escapeHtml(scenario?.title || 'Make yourself at home.')}</h2><p>${escapeHtml(scenario?.description || 'Start small. Cook something lovely. Build a place the neighborhood loves.')}</p></div>${renderGoals()}<div class="scenario-heading"><h3 class="section-label">A NEW CHALLENGE</h3><p>Choose a brief for your restaurant.</p></div><div class="scenario-list">${SCENARIOS.map((scenario, index) => `<button data-action="scenario" data-id="${escapeHtml(scenario.id)}" class="scenario-card ${game.scenario?.id === scenario.id ? 'current' : ''}"><span class="scenario-number">0${index + 1}</span><span><strong>${escapeHtml(scenario.title || scenario.name)}</strong><small>${escapeHtml(scenario.description || 'A new restaurant challenge.')}</small></span>${icon('arrow')}</button>`).join('')}</div>`;
   }
-  panel.innerHTML = heading + `<div class="panel-body">${content}</div>`;
+  paintWindow(panel, heading + `<div class="panel-body">${content}</div>`);
 }
 
 function goalValue(goal) {
@@ -292,32 +378,39 @@ function renderInspector() {
   inspector.hidden = !object && !staff && !guest;
   if (!object && (staff || guest)) {
     const person = staff || guest;
-    inspector.innerHTML = `<div class="panel-heading"><span>${escapeHtml(person.name)}</span><button class="close-button" data-action="close-inspector" aria-label="Close person details">${icon('close')}</button></div><div class="inspector-preview"><span class="staff-avatar inspector-person">${escapeHtml(person.name?.charAt(0) || '?')}</span></div><div class="inspector-content"><small>${staff ? 'YOUR TEAM' : 'YOUR GUEST'}</small><p>${escapeHtml(person.task || person.state || 'Enjoying the restaurant')}</p>${staff ? `<label class="field-label">Main priority<select data-priority="${escapeHtml(staff.id)}">${[['chef', 'Cooking'], ['waiter', 'Serving'], ['cleaner', 'Cleaning']].map(([value, label]) => `<option value="${value}" ${staff.role === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><div class="person-metrics"><span>Wage<strong>${money(staff.wage)}/h</strong></span><span>Skill<strong>${Math.round(staff.skill || 0)}</strong></span></div><button class="danger-button" data-action="fire" data-id="${escapeHtml(staff.id)}">Dismiss employee</button>` : `<div class="person-metrics"><span>Happiness<strong>${Math.round(guest.happiness || 0)}%</strong></span><span>Patience<strong>${Math.round(guest.patience || 0)}%</strong></span></div>`}</div>`;
+    inspector.innerHTML = `<div class="panel-heading"><span>${escapeHtml(person.name)}</span><button class="close-button" data-action="close-inspector" aria-label="Close person details">${icon('close')}</button></div><div class="inspector-preview">${personArt(person)}</div><div class="inspector-content"><small>${staff ? 'EMPLOYEE' : 'GUEST'}</small><p>${escapeHtml(person.blockedReason || person.task || person.state || 'Enjoying the restaurant')}</p>${staff ? `<div class="inspector-priorities">${TASK_GROUPS.map((group) => `<label>${taskLabel(group)}${priorityButton(staff, group)}</label>`).join('')}</div>${skillBars(staff)}<div class="person-metrics"><span>Monthly wage<strong>${money(staff.monthlyWage)}</strong></span><span>Accrued<strong>${money(staff.wageAccrued)}</strong></span></div><button class="danger-button" data-action="fire" data-id="${escapeHtml(staff.id)}">Dismiss employee</button>` : `<div class="person-metrics"><span>Happiness<strong>${Math.round(guest.happiness || 0)}%</strong></span><span>Patience<strong>${Math.round(guest.patience || 0)}%</strong></span></div>`}</div>`;
     return;
   }
   if (!object) return;
   const item = ITEMS[object.type] || {};
-  inspector.innerHTML = `<div class="panel-heading"><span>${escapeHtml(item.name || object.type)}</span><button class="close-button" data-action="close-inspector" aria-label="Close item details">${icon('close')}</button></div><div class="inspector-preview">${itemArt(object.type, object.color)}</div><div class="inspector-content"><small>TILE ${object.x}, ${object.z} · ${object.rotation || 0}°</small><p>${escapeHtml(item.description || 'Part of your restaurant. Keep clear paths around furniture so your guests and team can move freely.')}</p><button class="danger-button" data-action="remove-selected">${icon('trash')}Remove · ${money(Math.round((object.purchaseCost ?? item.cost ?? 0) * .6))} refund</button></div>`;
+  const storage = getSupplies(game).storage.find((entry) => entry.id === object.id);
+  const stock = storage ? `<div class="storage-summary"><strong>Storage ${storage.used} / ${storage.capacity}</strong><span>${storage.reserved} reserved</span>${storage.contents.map((entry) => `<small>${escapeHtml(INGREDIENTS[entry.id]?.name || TABLEWARE[entry.id]?.name || entry.id)} × ${entry.quantity}</small>`).join('')}</div>` : '';
+  inspector.innerHTML = `<div class="panel-heading"><span>${escapeHtml(item.name || object.type)}</span><button class="close-button" data-action="close-inspector" aria-label="Close item details">${icon('close')}</button></div><div class="inspector-preview">${itemArt(object.type, object.color)}</div><div class="inspector-content"><small>TILE ${object.x}, ${object.z} · ${object.rotation || 0}°</small><p>${escapeHtml(item.description || 'Keep a clear route to this item for your employees and guests.')}</p>${stock}<button class="danger-button" data-action="remove-selected">${icon('trash')}Remove · ${money(Math.round((object.purchaseCost ?? item.cost ?? 0) * .6))} refund</button></div>`;
+}
+
+function renderReputation(value) {
+  const rating = document.querySelector('#rating');
+  if (rating.dataset.value === value.toFixed(2)) return;
+  rating.dataset.value = value.toFixed(2);
+  rating.setAttribute('aria-label', `Guest rating ${value.toFixed(1)} out of 5`);
+  rating.innerHTML = Array.from({ length: 5 }, (_, index) => `<span class="reputation-star"><span>★</span><i style="width:${Math.max(0, Math.min(1, value - index)) * 100}%">★</i></span>`).join('');
 }
 
 function render() {
-  const stats = game.stats || {};
+  const stats = getStats(game);
   document.querySelector('#restaurant-name').textContent = game.name || 'The Corner Table';
-  document.querySelector('#cash').textContent = money(game.cash);
+  document.querySelector('#cash').textContent = number(game.cash);
   document.querySelector('#cash').classList.toggle('negative', game.cash < 0);
-  document.querySelector('#rating').textContent = `${Number(stats.rating || 0).toFixed(1)} / 5`;
+  renderReputation(stats.rating);
   document.querySelector('#hygiene').textContent = `${Math.round(stats.cleanliness ?? 100)}%`;
-  document.querySelector('#day').textContent = `DAY ${game.day || 1}`;
-  const hours = Math.floor(game.time || 0) % 24;
-  const minutes = Math.floor(((game.time || 0) % 1) * 60);
-  document.querySelector('#time').textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  document.querySelector('#day').textContent = stats.calendar.label;
   const open = document.querySelector('#open-button');
   open.innerHTML = `<i class="${game.open ? 'open' : ''}"></i>${game.open ? 'OPEN FOR BUSINESS' : 'CLOSED'}<span>${game.open ? 'Close' : 'Open'}</span>`;
   document.querySelector('#guest-count').textContent = `${game.guests.length}`;
   document.querySelector('#service-label').textContent = game.speed === 0 ? 'PAUSED' : game.open ? 'SERVICE IN PROGRESS' : 'TIME TO MAKE IT YOURS';
   document.querySelector('#service-label').classList.toggle('paused', game.speed === 0);
   document.querySelector('#restaurant-subtitle').textContent = game.scenario?.title ? `${game.scenario.title} · ${game.scenario.id === 'sandbox' ? 'Free play' : game.scenario.complete ? 'Challenge complete' : 'Challenge in progress'}` : 'A little place. A big possibility.';
-  for (const button of document.querySelectorAll('.nav-button')) button.classList.toggle('active', button.dataset.panel === ui.panel);
+  for (const button of document.querySelectorAll('.nav-button')) button.classList.toggle('active', button.dataset.panel === 'ingredients' ? ui.ingredientsOpen : button.dataset.panel === ui.panel);
   for (const button of document.querySelectorAll('.speed-button')) button.classList.toggle('active', Number(button.dataset.speed) === game.speed);
   const pause = document.querySelector('.pause-button');
   pause.innerHTML = icon(game.speed === 0 ? 'play' : 'pause');
@@ -328,6 +421,9 @@ function render() {
     renderInspector();
     renderToolBanner();
     renderConstructionHint();
+    const supplies = ui.ingredientsOpen || ui.inventoryOpen ? getSupplies(game) : undefined;
+    renderIngredients(supplies);
+    renderInventory(supplies);
     ui.dirty = false;
   }
 }
@@ -353,10 +449,10 @@ function showModal(type) {
   modal.hidden = false;
   const close = `<button class="modal-close icon-button" data-action="close-modal" aria-label="Close dialog">${icon('close')}</button>`;
   let content;
-  if (type === 'help') content = `<span class="eyebrow">WELCOME TO CORNER TABLE</span><h2>A restaurant of your own.</h2><p>Make a welcoming room, put good food on the menu, and take care of the people in it.</p><div class="help-grid"><div>${icon('build')}<strong>Build your space</strong><p>Open Build and drag straight walls to enclose a room; peach flooring fills it automatically. Add a doorway, then place furniture on clear tiles.</p></div><div>${icon('menu')}<strong>Make a menu</strong><p>Turn dishes on, set their prices, and build the equipment each recipe needs.</p></div><div>${icon('staff')}<strong>Find your people</strong><p>Hire employees for cooking, serving, and cleaning. Change their main priorities as service gets busy.</p></div><div>${icon('star')}<strong>Make guests happy</strong><p>Keep waits short, prices fair, the room clean, and toilets available. Good reviews reflect happy guests.</p></div></div><div class="shortcut-list"><span><kbd>WASD</kbd> Pan camera</span><span><kbd>Shift-drag</kbd> Pan camera</span><span><kbd>Right-drag</kbd> Orbit camera</span><span><kbd>Scroll</kbd> Zoom</span><span><kbd>Q</kbd><kbd>E</kbd> Rotate camera</span><span><kbd>R</kbd> Rotate item</span><span><kbd>Space</kbd> Pause</span><span><kbd>Esc</kbd> Cancel</span><span><kbd>B</kbd> Build</span><span><kbd>M</kbd> Menu</span><span><kbd>Delete</kbd> Remove</span><span>Wall button: full / cutaway / low</span></div><button class="primary-button" data-action="close-modal">Let's make something good ${icon('arrow')}</button>`;
+  if (type === 'help') content = `<span class="eyebrow">WELCOME TO CORNER TABLE</span><h2>A restaurant of your own.</h2><p>Make a welcoming room, put good food on the menu, and take care of the people in it.</p><div class="help-grid"><div>${icon('build')}<strong>Build your space</strong><p>Open Build and drag straight walls to enclose a room; peach flooring fills it automatically. Add a doorway, then place furniture on clear tiles.</p></div><div>${icon('menu')}<strong>Make a menu</strong><p>Select a dish, check its equipment, ingredients and tableware, then add it to the menu. Enabled dishes wait for supplies when stock runs out.</p></div><div>${icon('staff')}<strong>Find your people</strong><p>Compare three candidates and place an employee on a clear floor tile. Set serving, cooking, dishwashing and cleaning priorities independently; wages are monthly.</p></div><div>${icon('star')}<strong>Keep supplies moving</strong><p>Order recurring ingredient batches and prepaid tableware. Used dishes need a sink, cabinet space and an employee with dishwashing enabled to return clean.</p></div></div><div class="shortcut-list"><span><kbd>WASD</kbd> Pan camera</span><span><kbd>Shift-drag</kbd> Pan camera</span><span><kbd>Right-drag</kbd> Orbit camera</span><span><kbd>Scroll</kbd> Zoom</span><span><kbd>Q</kbd><kbd>E</kbd> Rotate camera</span><span><kbd>R</kbd> Rotate item</span><span><kbd>Space</kbd> Pause</span><span><kbd>Esc</kbd> Cancel</span><span><kbd>B</kbd> Build</span><span><kbd>M</kbd> Menu</span><span><kbd>Delete</kbd> Remove</span><span>Wall button: full / cutaway / low</span></div><button class="primary-button" data-action="close-modal">Let's make something good ${icon('arrow')}</button>`;
   else if (type === 'new') content = `<span class="eyebrow">A FRESH START</span><h2>Your next great little place.</h2><p>Choose how to begin. A new restaurant replaces the current restaurant and its browser save.</p><label class="field-label">Restaurant name<input id="new-name" maxlength="40" value="The Corner Table" /></label><div class="new-game-options"><button data-action="start-game" data-mode="sandbox">${icon('table')}<strong>The neighborhood bistro</strong><span>A furnished restaurant and a small team. Jump straight into service.</span>${icon('arrow')}</button><button data-action="start-game" data-mode="empty">${icon('build')}<strong>A blank canvas</strong><span>An empty plot and a starting budget. Build every corner yourself.</span>${icon('arrow')}</button></div>`;
   else if (type === 'rename') content = `<span class="eyebrow">MAKE IT YOURS</span><h2>A name above the door.</h2><form id="rename-form"><label class="field-label">Restaurant name<input id="rename-name" maxlength="40" required value="${escapeHtml(game.name)}" /></label><button class="primary-button" type="submit">Save name ${icon('arrow')}</button></form>`;
-  else content = `<span class="eyebrow">TAKE A LITTLE BREAK</span><h2>The Corner Table</h2><p>${automaticSaveBlocked ? 'Your previous save could not be loaded and is kept untouched. Choose Save or New Restaurant to replace it when you are ready.' : 'Your restaurant is saved automatically on this browser every 30 seconds.'}</p><div class="settings-actions"><button data-action="save">${icon('save')}Save restaurant<span>Save the current service</span></button><button data-action="load">${icon('clock')}Load saved restaurant<span>Return to your most recent save</span></button><button data-action="new-game">${icon('plus')}New restaurant<span>Start with a bistro or a blank plot</span></button><button data-action="help">${icon('help')}How to play<span>Controls and a few helpful tips</span></button></div><p class="settings-note">${savedAt ? `Last saved ${new Date(savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Browser save · Version 1'} · Made for a good little service.</p>`;
+  else content = `<span class="eyebrow">TAKE A LITTLE BREAK</span><h2>The Corner Table</h2><p>${automaticSaveBlocked ? 'Your previous save could not be loaded and is kept untouched. Choose Save or New Restaurant to replace it when you are ready.' : 'Your restaurant is saved automatically on this browser every 30 seconds.'}</p><div class="settings-actions"><button data-action="save">${icon('save')}Save restaurant<span>Save the current service</span></button><button data-action="load">${icon('clock')}Load saved restaurant<span>Return to your most recent save</span></button><button data-action="new-game">${icon('plus')}New restaurant<span>Start with a bistro or a blank plot</span></button><button data-action="help">${icon('help')}How to play<span>Controls and a few helpful tips</span></button></div><p class="settings-note">${savedAt ? `Last saved ${new Date(savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : `Browser save · Version ${game.version}`} · Made for a good little service.</p>`;
   modal.innerHTML = `<section class="modal-card ${type === 'help' ? 'wide' : ''}" role="dialog" aria-modal="true" aria-label="${type === 'help' ? 'How to play' : type === 'new' ? 'New restaurant' : type === 'rename' ? 'Rename restaurant' : 'Game settings'}">${close}${content}</section>`;
   modal.querySelector('input, button')?.focus();
 }
@@ -376,6 +472,8 @@ app.addEventListener('click', (event) => {
   if (!button) return;
   const { action } = button.dataset;
   if (action === 'panel') setPanel(button.dataset.panel);
+  else if (action === 'toggle-ingredients') { ui.ingredientsOpen = !ui.ingredientsOpen; ui.dirty = true; render(); }
+  else if (action === 'toggle-inventory') { ui.inventoryOpen = !ui.inventoryOpen; if (ui.inventoryOpen) ui.selected = null; ui.dirty = true; render(); }
   else if (action === 'close-panel') { ui.panel = null; ui.dirty = true; render(); }
   else if (action === 'show-build') { ui.panel = 'build'; ui.dirty = true; render(); }
   else if (action === 'category') { ui.category = button.dataset.category; ui.dirty = true; render(); }
@@ -388,9 +486,25 @@ app.addEventListener('click', (event) => {
   else if (action === 'open') act({ type: 'TOGGLE_OPEN' });
   else if (action === 'pause') pause();
   else if (action === 'speed') act({ type: 'SPEED', speed: Number(button.dataset.speed) }, true);
-  else if (action === 'hire') act({ type: 'HIRE', role: button.dataset.role });
+  else if (action === 'staff-tab') { ui.staffTab = button.dataset.tab; ui.dirty = true; render(); }
+  else if (action === 'hire-candidate') {
+    const candidate = game.candidates.find((entry) => entry.id === button.dataset.id);
+    ui.panel = null;
+    chooseTool({ type: 'HIRE', candidateId: candidate.id, candidate });
+  }
+  else if (action === 'priority') act({ type: 'PRIORITY', id: button.dataset.id, taskGroup: button.dataset.group });
+  else if (action === 'ingredient-batch') {
+    const row = getSupplies(game).ingredients.find((entry) => entry.id === button.dataset.id);
+    act({ type: 'INGREDIENT_BATCH', ingredientId: row.id, quantity: row.batchQuantity + Number(button.dataset.delta) });
+  }
+  else if (action === 'tableware-order') act({ type: 'TABLEWARE_ORDER', tablewareId: button.dataset.id, delta: Number(button.dataset.delta) });
   else if (action === 'fire') act({ type: 'FIRE', id: button.dataset.id });
   else if (action === 'recipe') act({ type: 'TOGGLE_RECIPE', recipeId: button.dataset.recipe });
+  else if (action === 'select-recipe') { ui.recipeId = button.dataset.id; ui.dirty = true; render(); }
+  else if (action === 'recipe-price') {
+    const entry = game.menu.find((row) => row.recipeId === button.dataset.id);
+    act({ type: 'PRICE', recipeId: entry.recipeId, price: entry.price + Number(button.dataset.delta) });
+  }
   else if (action === 'scenario') act({ type: 'SCENARIO', id: button.dataset.id });
   else if (action === 'remove-selected') { act({ type: 'REMOVE', id: ui.selected }); ui.selected = null; renderInspector(); }
   else if (action === 'close-inspector') { ui.selected = null; renderInspector(); ui.dirty = true; render(); }
@@ -446,7 +560,7 @@ app.addEventListener('click', (event) => {
 app.addEventListener('change', (event) => {
   const input = event.target;
   if (input.dataset.price) act({ type: 'PRICE', recipeId: input.dataset.price, price: Number(input.value) });
-  else if (input.dataset.priority) act({ type: 'PRIORITY', id: input.dataset.priority, role: input.value });
+  else if (input.id === 'ingredient-storage') { ui.ingredientStorage = input.value; ui.dirty = true; render(); }
 });
 app.addEventListener('submit', (event) => {
   if (event.target.id === 'rename-form') {
@@ -464,7 +578,7 @@ document.addEventListener('keydown', (event) => {
     else if (!event.shiftKey && index === focusable.length - 1) { event.preventDefault(); focusable[0]?.focus(); }
   }
   if (/INPUT|SELECT|TEXTAREA/.test(event.target.tagName) || event.target.isContentEditable) return;
-  if (event.key === 'Escape') { if (ui.modal) closeModal(); else { setTool(null); ui.panel = null; ui.selected = null; ui.dirty = true; render(); } return; }
+  if (event.key === 'Escape') { if (ui.modal) closeModal(); else { setTool(null); ui.panel = null; ui.ingredientsOpen = false; ui.inventoryOpen = false; ui.selected = null; ui.dirty = true; render(); } return; }
   if (ui.modal || event.ctrlKey || event.metaKey || event.altKey) return;
   if (['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(event.code)) { event.preventDefault(); panKeys.add(event.code); }
   else if (event.code === 'Space') { event.preventDefault(); pause(); }
@@ -507,6 +621,9 @@ function animate(now) {
       if (game.speed > 0) {
         renderConstructionHint();
         if (ui.panel && ui.panel !== 'build' && !document.querySelector('#panel input:focus, #panel select:focus')) renderPanel();
+        const supplies = ui.ingredientsOpen || ui.inventoryOpen ? getSupplies(game) : undefined;
+        if (!document.querySelector('#ingredients-panel select:focus')) renderIngredients(supplies);
+        renderInventory(supplies);
         if (!document.querySelector('#inspector select:focus')) renderInspector();
       }
       liveRefresh = 0;
