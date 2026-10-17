@@ -23,6 +23,7 @@ const iconPaths = {
   pause: '<path d="M8 5v14M16 5v14"/>',
   play: '<path d="m8 4 12 8-12 8Z"/>',
   rotate: '<path d="M20 7a8 8 0 1 0 0 10M20 3v5h-5"/>',
+  move: '<path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/>',
   trash: '<path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/>',
   table: '<path d="M3 7h18v5H3ZM6 12v9M18 12v9M12 3v4"/>',
   kitchen: '<path d="M4 3h16v18H4ZM4 9h16M8 13h8v5H8Z"/><circle cx="8" cy="6" r=".5"/><circle cx="16" cy="6" r=".5"/>',
@@ -110,7 +111,16 @@ try {
         const result = act({ type: 'HIRE', candidateId: ui.tool.candidateId, x, z });
         if (result.ok) { setTool(null); render(); }
       }
-      else if (ui.tool?.type === 'PLACE') act({ type: 'PLACE', itemType: ui.tool.itemType, x, z, rotation: ui.rotation });
+      else if (ui.tool?.type === 'MOVE') {
+        const id = ui.tool.id;
+        const result = act({ type: 'MOVE', id, x, z, rotation: ui.rotation });
+        if (result.ok) { setTool(null); ui.selected = id; ui.dirty = true; render(); }
+      }
+      else if (ui.tool?.type === 'PLACE') {
+        const itemType = ui.tool.itemType;
+        const result = act({ type: 'PLACE', itemType, x, z, rotation: ui.rotation });
+        if (result.ok && !['wall', 'window', 'door'].includes(itemType)) { setTool(null); render(); }
+      }
       else if (ui.tool?.type === 'FLOOR') act({ type: 'FLOOR', x, z, style: ui.tool.style });
       else if (ui.tool?.type === 'REMOVE') toast('Click the item you want to remove.');
       else { ui.selected = null; renderInspector(); }
@@ -131,7 +141,7 @@ try {
     onHover: (tile) => {
       ui.hover = tile;
       const object = game.objects.find((item) => item.id === tile?.objectId);
-      document.querySelector('#hover-label').textContent = object ? `${ITEMS[object.type]?.name || object.type} · Click to inspect` : tile && ui.tool ? `Tile ${tile.x}, ${tile.z} · Click or drag to build` : 'WASD / Shift-drag to pan · Right-drag to orbit · Scroll to zoom';
+      document.querySelector('#hover-label').textContent = tile && ui.tool?.type === 'MOVE' ? `Tile ${tile.x}, ${tile.z} · Click to move here` : object ? `${ITEMS[object.type]?.name || object.type} · Click to inspect` : tile && ui.tool ? `Tile ${tile.x}, ${tile.z} · Click or drag to build` : 'WASD / Shift-drag to pan · Right-drag to orbit · Scroll to zoom';
     },
   });
   scene.update(game);
@@ -298,11 +308,14 @@ function buildPrice(type, item) {
 function renderToolBanner() {
   const banner = document.querySelector('#tool-banner');
   banner.hidden = !ui.tool;
+  banner.setAttribute('aria-label', ui.tool?.type === 'MOVE' ? 'Moving item' : 'Construction tool');
   if (!ui.tool) return;
-  const name = ui.tool.type === 'HIRE' ? `Place ${ui.tool.candidate.name}` : ui.tool.type === 'REMOVE' ? 'Remove item' : ui.tool.type === 'FLOOR' ? `${ui.tool.style} floor` : ITEMS[ui.tool.itemType]?.name || ui.tool.itemType;
-  const drawing = ui.tool.type === 'FLOOR' || ['wall', 'window'].includes(ui.tool.itemType);
-  const hint = ui.tool.type === 'HIRE' ? `${money(ui.tool.candidate.monthlyWage)} / month · Click a clear floor tile` : ui.tool.type === 'REMOVE' ? 'Click an item to remove · 60% refund' : drawing ? 'Drag a straight line or click a tile' : 'Click a tile to place · R to rotate';
-  banner.innerHTML = `${icon(ui.tool.type === 'REMOVE' ? 'trash' : 'build')}<span><strong>${escapeHtml(name)}</strong><small>${hint}</small></span><button data-action="show-build" title="Open construction catalog">${icon('build')}<span>Catalog</span></button>${ui.tool.type === 'PLACE' ? `<button data-action="rotate-item" title="Rotate item (R)">${icon('rotate')}<span>${ui.rotation}°</span></button>` : ''}<button class="icon-button" data-action="cancel" title="Cancel (Esc)" aria-label="Cancel building">${icon('close')}</button>`;
+  const moving = ui.tool.type === 'MOVE';
+  const name = ui.tool.type === 'HIRE' ? `Place ${ui.tool.candidate.name}` : ui.tool.type === 'REMOVE' ? 'Remove item' : ui.tool.type === 'FLOOR' ? `${ui.tool.style} floor` : `${moving ? 'Move ' : ''}${ITEMS[ui.tool.itemType]?.name || ui.tool.itemType}`;
+  const drawing = ui.tool.type === 'FLOOR' || (ui.tool.type === 'PLACE' && ['wall', 'window'].includes(ui.tool.itemType));
+  const supported = ['cuttingboard', 'fryer'].includes(ui.tool.itemType);
+  const hint = ui.tool.type === 'HIRE' ? `${money(ui.tool.candidate.monthlyWage)} / month · Click clear owned ground` : ui.tool.type === 'REMOVE' ? 'Click an item to remove · 60% refund' : drawing ? 'Drag a straight line or click a tile' : supported ? `Click an empty cabinet · Follows cabinet rotation${moving ? ' · Esc to cancel' : ''}` : moving ? 'Click a destination · R to rotate · Esc to cancel' : 'Click owned ground to place · R to rotate';
+  banner.innerHTML = `${icon(moving ? 'move' : ui.tool.type === 'REMOVE' ? 'trash' : 'build')}<span><strong>${escapeHtml(name)}</strong><small>${hint}</small></span><button data-action="show-build" title="Open construction catalog">${icon('build')}<span>Catalog</span></button>${['PLACE', 'MOVE'].includes(ui.tool.type) && !supported ? `<button data-action="rotate-item" title="Rotate item (R)">${icon('rotate')}<span>${ui.rotation}°</span></button>` : ''}<button class="icon-button" data-action="cancel" title="Cancel (Esc)" aria-label="${moving ? 'Cancel move' : 'Cancel building'}">${icon('close')}</button>`;
 }
 
 function renderPanel() {
@@ -360,8 +373,8 @@ function renderGoals(compact = false) {
 function renderConstructionHint() {
   const hint = document.querySelector('#construction-hint');
   const stats = getStats(game);
-  const needsRoom = stats.hasRoom === false;
-  const needsEntrance = stats.hasRoom === true && stats.hasEntrance === false;
+  const needsRoom = !stats.hasUsableSeating && stats.hasRoom === false;
+  const needsEntrance = !stats.hasUsableSeating && stats.hasRoom === true && stats.hasEntrance === false;
   hint.hidden = !needsRoom && !needsEntrance;
   hint.innerHTML = needsRoom
     ? '<strong>Build an enclosed room</strong><span>Choose walls in Construction and drag four sides. An enclosed room receives peach flooring automatically.</span>'
@@ -385,7 +398,7 @@ function renderInspector() {
   const item = ITEMS[object.type] || {};
   const storage = getSupplies(game).storage.find((entry) => entry.id === object.id);
   const stock = storage ? `<div class="storage-summary"><strong>Storage ${storage.used} / ${storage.capacity}</strong><span>${storage.reserved} reserved</span>${storage.contents.map((entry) => `<small>${escapeHtml(INGREDIENTS[entry.id]?.name || TABLEWARE[entry.id]?.name || entry.id)} × ${entry.quantity}</small>`).join('')}</div>` : '';
-  inspector.innerHTML = `<div class="panel-heading"><span>${escapeHtml(item.name || object.type)}</span><button class="close-button" data-action="close-inspector" aria-label="Close item details">${icon('close')}</button></div><div class="inspector-preview">${itemArt(object.type, object.color)}</div><div class="inspector-content"><small>TILE ${object.x}, ${object.z} · ${object.rotation || 0}°</small><p>${escapeHtml(item.description || 'Keep a clear route to this item for your employees and guests.')}</p>${stock}<button class="danger-button" data-action="remove-selected">${icon('trash')}Remove · ${money(Math.round((object.purchaseCost ?? item.cost ?? 0) * .6))} refund</button></div>`;
+  inspector.innerHTML = `<div class="panel-heading"><span>${escapeHtml(item.name || object.type)}</span><button class="close-button" data-action="close-inspector" aria-label="Close item details">${icon('close')}</button></div><div class="inspector-preview">${itemArt(object.type, object.color)}</div><div class="inspector-content"><small>TILE ${object.x}, ${object.z} · ${object.rotation || 0}°</small><p>${escapeHtml(item.description || 'Keep a clear route to this item for your employees and guests.')}</p>${stock}<button class="move-button" data-action="move-selected" aria-label="Move item">${icon('move')}Move</button><button class="danger-button" data-action="remove-selected">${icon('trash')}Remove · ${money(Math.round((object.purchaseCost ?? item.cost ?? 0) * .6))} refund</button></div>`;
 }
 
 function renderReputation(value) {
@@ -449,7 +462,7 @@ function showModal(type) {
   modal.hidden = false;
   const close = `<button class="modal-close icon-button" data-action="close-modal" aria-label="Close dialog">${icon('close')}</button>`;
   let content;
-  if (type === 'help') content = `<span class="eyebrow">WELCOME TO CORNER TABLE</span><h2>A restaurant of your own.</h2><p>Make a welcoming room, put good food on the menu, and take care of the people in it.</p><div class="help-grid"><div>${icon('build')}<strong>Build your space</strong><p>Open Build and drag straight walls to enclose a room; peach flooring fills it automatically. Add a doorway, then place furniture on clear tiles.</p></div><div>${icon('menu')}<strong>Make a menu</strong><p>Select a dish, check its equipment, ingredients and tableware, then add it to the menu. Enabled dishes wait for supplies when stock runs out.</p></div><div>${icon('staff')}<strong>Find your people</strong><p>Compare three candidates and place an employee on a clear floor tile. Set serving, cooking, dishwashing and cleaning priorities independently; wages are monthly.</p></div><div>${icon('star')}<strong>Keep supplies moving</strong><p>Order recurring ingredient batches and prepaid tableware. Used dishes need a sink, cabinet space and an employee with dishwashing enabled to return clean.</p></div></div><div class="shortcut-list"><span><kbd>WASD</kbd> Pan camera</span><span><kbd>Shift-drag</kbd> Pan camera</span><span><kbd>Right-drag</kbd> Orbit camera</span><span><kbd>Scroll</kbd> Zoom</span><span><kbd>Q</kbd><kbd>E</kbd> Rotate camera</span><span><kbd>R</kbd> Rotate item</span><span><kbd>Space</kbd> Pause</span><span><kbd>Esc</kbd> Cancel</span><span><kbd>B</kbd> Build</span><span><kbd>M</kbd> Menu</span><span><kbd>Delete</kbd> Remove</span><span>Wall button: full / cutaway / low</span></div><button class="primary-button" data-action="close-modal">Let's make something good ${icon('arrow')}</button>`;
+  if (type === 'help') content = `<span class="eyebrow">WELCOME TO CORNER TABLE</span><h2>A restaurant of your own.</h2><p>Make a welcoming room, put good food on the menu, and take care of the people in it.</p><div class="help-grid"><div>${icon('build')}<strong>Build your space</strong><p>Furnish clear owned ground outdoors, or enclose a room with walls for automatic peach flooring. Click an existing item and choose Move to rearrange it without repurchasing.</p></div><div>${icon('menu')}<strong>Make a menu</strong><p>Select a dish, check its equipment, ingredients and tableware, then add it to the menu. Enabled dishes wait for supplies when stock runs out.</p></div><div>${icon('staff')}<strong>Find your people</strong><p>Compare three candidates and place an employee on clear owned ground. Set serving, cooking, dishwashing and cleaning priorities independently; wages are monthly.</p></div><div>${icon('star')}<strong>Keep supplies moving</strong><p>Order recurring ingredient batches and prepaid tableware. Used dishes need a sink, cabinet space and an employee with dishwashing enabled to return clean.</p></div></div><div class="shortcut-list"><span><kbd>WASD</kbd> Pan camera</span><span><kbd>Shift-drag</kbd> Pan camera</span><span><kbd>Right-drag</kbd> Orbit camera</span><span><kbd>Scroll</kbd> Zoom</span><span><kbd>Q</kbd><kbd>E</kbd> Rotate camera</span><span><kbd>R</kbd> Rotate item</span><span><kbd>Space</kbd> Pause</span><span><kbd>Esc</kbd> Cancel</span><span><kbd>B</kbd> Build</span><span><kbd>M</kbd> Menu</span><span><kbd>Delete</kbd> Remove</span><span>Wall button: full / cutaway / low</span></div><button class="primary-button" data-action="close-modal">Let's make something good ${icon('arrow')}</button>`;
   else if (type === 'new') content = `<span class="eyebrow">A FRESH START</span><h2>Your next great little place.</h2><p>Choose how to begin. A new restaurant replaces the current restaurant and its browser save.</p><label class="field-label">Restaurant name<input id="new-name" maxlength="40" value="The Corner Table" /></label><div class="new-game-options"><button data-action="start-game" data-mode="sandbox">${icon('table')}<strong>The neighborhood bistro</strong><span>A furnished restaurant and a small team. Jump straight into service.</span>${icon('arrow')}</button><button data-action="start-game" data-mode="empty">${icon('build')}<strong>A blank canvas</strong><span>An empty plot and a starting budget. Build every corner yourself.</span>${icon('arrow')}</button></div>`;
   else if (type === 'rename') content = `<span class="eyebrow">MAKE IT YOURS</span><h2>A name above the door.</h2><form id="rename-form"><label class="field-label">Restaurant name<input id="rename-name" maxlength="40" required value="${escapeHtml(game.name)}" /></label><button class="primary-button" type="submit">Save name ${icon('arrow')}</button></form>`;
   else content = `<span class="eyebrow">TAKE A LITTLE BREAK</span><h2>The Corner Table</h2><p>${automaticSaveBlocked ? 'Your previous save could not be loaded and is kept untouched. Choose Save or New Restaurant to replace it when you are ready.' : 'Your restaurant is saved automatically on this browser every 30 seconds.'}</p><div class="settings-actions"><button data-action="save">${icon('save')}Save restaurant<span>Save the current service</span></button><button data-action="load">${icon('clock')}Load saved restaurant<span>Return to your most recent save</span></button><button data-action="new-game">${icon('plus')}New restaurant<span>Start with a bistro or a blank plot</span></button><button data-action="help">${icon('help')}How to play<span>Controls and a few helpful tips</span></button></div><p class="settings-note">${savedAt ? `Last saved ${new Date(savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : `Browser save · Version ${game.version}`} · Made for a good little service.</p>`;
@@ -506,6 +519,13 @@ app.addEventListener('click', (event) => {
     act({ type: 'PRICE', recipeId: entry.recipeId, price: entry.price + Number(button.dataset.delta) });
   }
   else if (action === 'scenario') act({ type: 'SCENARIO', id: button.dataset.id });
+  else if (action === 'move-selected') {
+    const object = game.objects.find((item) => item.id === ui.selected);
+    if (!object) return;
+    ui.rotation = object.rotation || 0;
+    ui.panel = null;
+    chooseTool({ type: 'MOVE', id: object.id, itemType: object.type, color: object.color });
+  }
   else if (action === 'remove-selected') { act({ type: 'REMOVE', id: ui.selected }); ui.selected = null; renderInspector(); }
   else if (action === 'close-inspector') { ui.selected = null; renderInspector(); ui.dirty = true; render(); }
   else if (action === 'rotate-camera') scene?.rotate(Number(button.dataset.direction) * Math.PI / 4);

@@ -37,13 +37,14 @@ export function createScene(container, callbacks = {}) {
   let hoveredId = null, lastTime = performance.now();
   const startedAt = lastTime;
   const materials = new Map(), geometries = new Set(), textures = new Set();
+  const modelBaseHeights = new Map();
   const thumbnailCache=new Map();let thumbnailTarget=null;
   const objects = new Map(), people = new Map(), floorMeshes = new Map(), tableProps = new Map(), stockProps=new Map(), wareProps=new Map();
   const objectLayer = new THREE.Group(), floorLayer = new THREE.Group(), peopleLayer = new THREE.Group(), propsLayer = new THREE.Group();
   scene.add(floorLayer, objectLayer, peopleLayer, propsLayer);
   const strokeLayer = new THREE.Group(); scene.add(strokeLayer); strokeLayer.visible = false;
   let strokeSignature = '';
-  const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hitPoint = new THREE.Vector3();
+  const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.036), hitPoint = new THREE.Vector3();
 
   function material(color, extra = {}) {
     const key = `${color}:${JSON.stringify(extra)}`;
@@ -282,6 +283,7 @@ export function createScene(container, callbacks = {}) {
       default: cabinet(g);
     }
     if(['window','door'].includes(type))for(const connection of connections||[])if(connection.z)wallArm(g,type,connection.z);
+    if(!modelBaseHeights.has(type))modelBaseHeights.set(type,new THREE.Box3().setFromObject(g).min.y);
     return g;
   }
 
@@ -374,19 +376,34 @@ export function createScene(container, callbacks = {}) {
       floorLayer.add(group); floorMeshes.set(cellKey(tile.x,tile.z),group);
     }
   }
+  function surfaceHeight(x,z) { return floorMeshes.has(cellKey(Math.round(x),Math.round(z)))?0.1:0.036; }
+  function objectHeight(type,x,z) {
+    const surface=surfaceHeight(x,z);
+    if(surface===0.1||['painting','clock'].includes(type))return surface;
+    const standingType=['cuttingboard','fryer'].includes(type)?'counter':type;
+    return surface-(modelBaseHeights.get(standingType)||0);
+  }
+  function personHeight(data,group) { const surface=surfaceHeight(data.x,data.z);return surface===0.1?surface:surface-group.userData.baseY; }
+  function movingGroup() { return tool?.type==='MOVE'?(game?.objects||[]).filter(data=>data.id===tool.id||data.parentId===tool.id):[]; }
+  function wallConnections(data,x=data.x,z=data.z,rotation=data.rotation,ignored=new Set(),structure=new Map((game?.objects||[]).filter(other=>architectural(other.type)).map(other=>[cellKey(other.x,other.z),other]))) {
+    const connections=[],r=angle(rotation);
+    for(const [dx,dz]of [[-1,0],[1,0],[0,-1],[0,1]]){
+      const other=structure.get(cellKey(x+dx,z+dz));
+      if(!other||ignored.has(other.id))continue;
+      connections.push({x:Math.round(dx*Math.cos(r)-dz*Math.sin(r)),z:Math.round(dx*Math.sin(r)+dz*Math.cos(r))});
+    }
+    return connections;
+  }
   function syncObjects() {
     const ids=new Set();
     const structure=new Map((game?.objects||[]).filter(data=>architectural(data.type)).map(data=>[cellKey(data.x,data.z),data]));
-    for(const data of game?.objects || []) {
-      const connections=[];
-      if(architectural(data.type))for(const [dx,dz]of [[-1,0],[1,0],[0,-1],[0,1]])if(structure.has(cellKey(data.x+dx,data.z+dz))){
-        const r=angle(data.rotation);connections.push({x:Math.round(dx*Math.cos(r)-dz*Math.sin(r)),z:Math.round(dx*Math.sin(r)+dz*Math.cos(r))});
-      }
-      ids.add(data.id); const signature = [data.type,data.x,data.z,data.rotation,data.color,JSON.stringify(connections)].join(':');
+    for(const data of [...(game?.objects||[])].sort((a,b)=>Boolean(a.parentId)-Boolean(b.parentId))) {
+      const connections=architectural(data.type)?wallConnections(data,data.x,data.z,data.rotation,new Set(),structure):[],height=surfaceHeight(data.x,data.z);
+      ids.add(data.id); const signature = [data.type,data.x,data.z,data.rotation,data.color,data.parentId,height,JSON.stringify(connections)].join(':');
       let group=objects.get(data.id);
       if(group?.userData.signature===signature) continue;
       if(group) { clearChildren(group); objectLayer.remove(group); }
-      group=model(data.type,data.color,connections); group.position.set(data.x+0.5,0.1,data.z+0.5); group.rotation.y=angle(data.rotation);
+      group=model(data.type,data.color,connections); group.position.set(data.x+0.5,objectHeight(data.type,data.x,data.z),data.z+0.5); group.rotation.y=angle(data.rotation);
       group.userData={objectId:data.id,signature,data}; objectLayer.add(group); objects.set(data.id,group);
     }
     for(const [id,group] of objects) if(!ids.has(id)) { clearChildren(group); objectLayer.remove(group); objects.delete(id); }
@@ -402,7 +419,7 @@ export function createScene(container, callbacks = {}) {
         if(Math.abs(distance)>1.6 || Math.abs(dx*nz-dz*nx)>0.55) continue;
         if(!nearest || Math.abs(distance)<Math.abs(nearest.distance)) nearest={wall,nx,nz,distance};
       }
-      group.position.set(data.x+0.5,0.1,data.z+0.5);group.rotation.y=angle(data.rotation);group.userData.hostWallId=null;
+      group.position.set(data.x+0.5,surfaceHeight(data.x,data.z),data.z+0.5);group.rotation.y=angle(data.rotation);group.userData.hostWallId=null;
       if(nearest) {
         const side=nearest.distance<0?-1:1, nx=nearest.nx*side, nz=nearest.nz*side;
         const mountDistance=data.type==='clock'?0.55:0.555;
@@ -433,10 +450,11 @@ export function createScene(container, callbacks = {}) {
     const carried=new THREE.Group();carried.position.set(0.24,0.76,0.28);carried.visible=false;body.add(carried);
     const indicator=new THREE.Group(); indicator.position.y=1.7; g.add(indicator);
     const token=cyl(indicator,0.12,0.035,material('#e3c982'),0,0,0,12); token.rotation.x=Math.PI/2; indicator.visible=false;
-    g.userData={objectId:data.id,data,isStaff,seed,body,head,leftLeg,rightLeg,leftArm,rightArm,carried,indicator,appearance:`${data.name}:${isStaff}`};return g;
+    const baseY=new THREE.Box3().setFromObject(body).min.y;
+    g.userData={objectId:data.id,data,isStaff,seed,body,head,leftLeg,rightLeg,leftArm,rightArm,carried,indicator,baseY,appearance:`${data.name}:${isStaff}`};return g;
   }
   function makePerson(data,isStaff){
-    const group=personModel(data,isStaff);group.position.set(data.x+0.5,0.1,data.z+0.5);peopleLayer.add(group);return group;
+    const group=personModel(data,isStaff);group.position.set(data.x+0.5,personHeight(data,group),data.z+0.5);peopleLayer.add(group);return group;
   }
   function syncPeople() {
     const ids=new Set();
@@ -509,39 +527,67 @@ export function createScene(container, callbacks = {}) {
     if(x<l.minX || x>l.maxX || z<l.minZ || z>l.maxZ) return false;
     if(tool?.type==='FLOOR') return true;
     if(tool?.type==='LAND') return true;
-    const occupant=(game?.objects||[]).find(o=>o.x===x&&o.z===z);
-    if(tool?.type==='PLACE'&&['cuttingboard','fryer'].includes(tool.itemType)){
-      const counter=(game?.objects||[]).find(o=>o.type==='counter'&&o.x===x&&o.z===z);
-      return Boolean(counter)&&!(game.objects||[]).some(o=>o.parentId===counter.id);
+    const moving=movingGroup(),ignored=new Set(moving.map(data=>data.id));
+    const occupant=(game?.objects||[]).find(o=>!ignored.has(o.id)&&o.x===x&&o.z===z);
+    const relocating=tool?.type==='MOVE',source=moving.find(data=>data.id===tool.id);
+    const supported=['PLACE','MOVE'].includes(tool?.type)&&['cuttingboard','fryer'].includes(tool.itemType);
+    if(relocating&&source){
+      const support=supported?(game.objects||[]).find(o=>o.type==='counter'&&o.x===x&&o.z===z):null;
+      const nextRotation=support?support.rotation:rotation;
+      if(source.x===x&&source.z===z&&source.rotation===nextRotation)return true;
+      if([...(game.staff||[]),...(game.guests||[])].some(actor=>Math.round(actor.x)===x&&Math.round(actor.z)===z))return false;
     }
-    if(tool?.type==='HIRE')return floorMeshes.has(cellKey(x,z))&&(!occupant||occupant.type==='door');
+    if(supported){
+      const counter=(game?.objects||[]).find(o=>o.type==='counter'&&o.x===x&&o.z===z);
+      return Boolean(counter)&&!(game.objects||[]).some(o=>o.parentId===counter.id&&!ignored.has(o.id));
+    }
+    if(tool?.type==='HIRE')return !occupant||occupant.type==='door';
     if(tool?.type==='PLACE'&&['wall','window','door'].includes(tool.itemType)){
       if(tool.itemType==='door'&&['wall','window'].includes(occupant?.type))return true;
       return !occupant || occupant.type===tool.itemType;
     }
-    return !occupant && floorMeshes.has(cellKey(x,z));
+    return !occupant;
+  }
+  function cloneForGhost(data) {
+    const source=objects.get(data.id);
+    if(!source)return model(data.type,data.color);
+    const group=source.clone(true);
+    group.position.set(0,0,0);group.rotation.set(0,0,0);group.scale.set(1,1,1);group.visible=true;
+    group.traverse(node=>{if(node.geometry){node.geometry=node.geometry.clone();geometries.add(node.geometry);}});
+    return group;
   }
   function rebuildGhost() {
-    const next=tool?.type==='PLACE'?tool.itemType:tool?.type==='HIRE'?`hire:${tool.candidateId}:${tool.candidate?.name}`:null;
+    const moving=movingGroup(),source=moving.find(data=>data.id===tool?.id),isStructure=source&&architectural(source.type);
+    let next=tool?.type==='PLACE'?tool.itemType:tool?.type==='HIRE'?`hire:${tool.candidateId}:${tool.candidate?.name}`:null;
+    if(source){
+      const models=moving.map(data=>{const group=objects.get(data.id);return `${group?.uuid}:${group?.children.map(child=>child.uuid).join(',')}`;}).join(';');
+      next=`move:${source.id}:${models}${isStructure?`:${hover?.x}:${hover?.z}:${rotation}:${floorSignature}`:''}`;
+    }
     if(next===ghostType && ghost?.userData.color===tool?.color) return;
     if(ghost) { clearChildren(ghost); scene.remove(ghost); ghost=null; }
     ghostType=next;
     if(next) {
-      ghost=tool.type==='HIRE'?personModel(tool.candidate||{id:tool.candidateId,name:'Employee'},true):model(next,tool.color);ghost.userData.color=tool.color;
+      if(source){
+        ghost=isStructure?model(source.type,source.color,wallConnections(source,hover?.x??source.x,hover?.z??source.z,rotation,new Set(moving.map(data=>data.id)))):cloneForGhost(source);
+        for(const child of moving.filter(data=>data.id!==source.id))ghost.add(cloneForGhost(child));
+      }else ghost=tool.type==='HIRE'?personModel(tool.candidate||{id:tool.candidateId,name:'Employee'},true):model(tool.itemType,tool.color);
+      ghost.userData.color=tool.color;
       ghost.traverse(n=>{if(n.isMesh){n.material=material(tool.type==='HIRE'?`#${n.material.color.getHexString()}`:'#8fc695',{transparent:true,opacity:0.58,depthWrite:false,roughness:0.7});n.castShadow=false;}});
       scene.add(ghost);
     }
   }
   function updateHoverVisual() {
+    rebuildGhost();
     const cell=hover;
-    cursor.visible=Boolean(cell && tool); if(cell) cursor.position.set(cell.x+0.5,0.12,cell.z+0.5);
+    cursor.visible=Boolean(cell && tool); if(cell) cursor.position.set(cell.x+0.5,surfaceHeight(cell.x,cell.z)+0.02,cell.z+0.5);
     if(ghost) {
       ghost.visible=Boolean(cell)&&!strokeLayer.visible;
       if(cell) {
         const host=objects.get(cell.objectId)?.userData.data;
-        const doorHost=tool?.itemType==='door'&&['wall','window'].includes(host?.type);
+        const doorHost=tool?.type==='PLACE'&&tool.itemType==='door'&&['wall','window'].includes(host?.type);
         const supportHost=['cuttingboard','fryer'].includes(tool?.itemType)?(game?.objects||[]).find(o=>o.type==='counter'&&o.x===cell.x&&o.z===cell.z):null;
-        ghost.position.set(cell.x+0.5,0.12,cell.z+0.5);ghost.rotation.y=angle(doorHost?host.rotation:supportHost?supportHost.rotation:rotation);
+        const height=tool.type==='HIRE'?personHeight(cell,ghost):objectHeight(tool.itemType,cell.x,cell.z);
+        ghost.position.set(cell.x+0.5,height,cell.z+0.5);ghost.rotation.y=angle(doorHost?host.rotation:supportHost?supportHost.rotation:rotation);
         const good=validCell(cell.x,cell.z), m=material(good?'#8fc695':'#d67969',{transparent:true,opacity:0.58,depthWrite:false,roughness:0.7});
         if(tool?.type!=='HIRE')ghost.traverse(n=>{if(n.isMesh)n.material=m;});cursor.material=material(good?'#90c8a0':'#d67969',{transparent:true,opacity:0.4,depthWrite:false});
       }
@@ -565,25 +611,28 @@ export function createScene(container, callbacks = {}) {
       const mat=material(good?'#9cb593':'#d47972',{transparent:true,opacity:0.6,depthWrite:false,roughness:0.8});
       if(tool.type==='FLOOR')box(preview,0.99,0.035,0.99,mat,0,0.015,0);
       preview.traverse(node=>{if(node.isMesh){node.material=mat;node.castShadow=false;}});
-      preview.position.set(cell.x+0.5,0.12,cell.z+0.5);preview.rotation.y=stroke.axis==='x'?0:Math.PI/2;strokeLayer.add(preview);
+      preview.position.set(cell.x+0.5,tool.type==='FLOOR'?0.12:objectHeight(tool.itemType,cell.x,cell.z),cell.z+0.5);preview.rotation.y=stroke.axis==='x'?0:Math.PI/2;strokeLayer.add(preview);
     }
   }
   function pick(event) {
     const rect=renderer.domElement.getBoundingClientRect(); pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);
     raycaster.setFromCamera(pointer,camera);
+    const ignored=new Set(movingGroup().map(data=>data.id));
     const hits=raycaster.intersectObjects(tool?objectLayer.children:[...objectLayer.children,...peopleLayer.children],true).filter(hit=>{
-      for(let node=hit.object;node;node=node.parent) if(!node.visible)return false;
+      for(let node=hit.object;node;node=node.parent) if(!node.visible||ignored.has(node.userData.objectId))return false;
       return true;
     });
     let objectId=null;
     if(hits.length) { let obj=hits[0].object; while(obj&&!obj.userData.objectId)obj=obj.parent; objectId=obj?.userData.objectId; }
     if(!raycaster.ray.intersectPlane(plane,hitPoint))return null;
+    const floorHit=raycaster.intersectObjects(floorLayer.children,true)[0];
+    if(floorHit)hitPoint.copy(floorHit.point);
     let x=Math.floor(hitPoint.x),z=Math.floor(hitPoint.z);
     const objectData=(objects.get(objectId)||people.get(objectId))?.userData.data;
     const doorHost=tool?.type==='PLACE'&&tool.itemType==='door'&&['wall','window'].includes(objectData?.type);
-    const supportTool=tool?.type==='PLACE'&&['cuttingboard','fryer'].includes(tool.itemType);
+    const supportTool=['PLACE','MOVE'].includes(tool?.type)&&['cuttingboard','fryer'].includes(tool.itemType);
     const supportHost=supportTool?(objectData?.type==='counter'?objectData:(game?.objects||[]).find(o=>o.id===objectData?.parentId&&o.type==='counter')):null;
-    if(objectData&&((tool?.type!=='FLOOR'&&tool?.type!=='PLACE')||doorHost||supportHost)){x=Math.floor((supportHost||objectData).x);z=Math.floor((supportHost||objectData).z);}
+    if(objectData&&((!['FLOOR','PLACE','MOVE'].includes(tool?.type))||doorHost||supportHost)){x=Math.floor((supportHost||objectData).x);z=Math.floor((supportHost||objectData).z);}
     if(x<0||x>23||z<0||z>23)return null;
     return {x,z,...(objectId?{objectId}:{})};
   }
@@ -727,8 +776,10 @@ export function createScene(container, callbacks = {}) {
     for(const group of people.values()) {
       const u=group.userData,d=u.data, tx=Number(d.x)+0.5,tz=Number(d.z)+0.5;
       const dx=tx-group.position.x,dz=tz-group.position.z,distance=Math.hypot(dx,dz),moving=distance>0.025;
-      if(distance>4)group.position.set(tx,0.1,tz);
+      const ground=personHeight(d,group);
+      if(distance>4)group.position.set(tx,ground,tz);
       else if(moving) { const lerp=1-Math.exp(-dt*10);group.position.x+=dx*lerp;group.position.z+=dz*lerp;group.rotation.y=Math.atan2(dx,dz); }
+      group.position.y+=(ground-group.position.y)*(1-Math.exp(-dt*14));
       const state=String(d.state||d.task||'').toLowerCase(),sit=state==='eating'||state==='waitingfood'||state==='waiting_food';
       const walk=moving && game?.speed!==0 ? Math.sin(elapsed*10+u.seed)*0.43 : 0;
       u.leftLeg.rotation.x=sit?-1.12:walk;u.rightLeg.rotation.x=sit?-1.12:-walk;u.leftArm.rotation.x=-walk*0.6;u.rightArm.rotation.x=walk*0.6;
@@ -752,7 +803,7 @@ export function createScene(container, callbacks = {}) {
     resize,
     thumbnail,
     personThumbnail,
-    screenPosition(x,z) { const p=new THREE.Vector3(x+0.5,0.1,z+0.5).project(camera);return {x:(p.x+1)*width/2,y:(1-p.y)*height/2}; },
+    screenPosition(x,z) { const p=new THREE.Vector3(x+0.5,surfaceHeight(x,z),z+0.5).project(camera);return {x:(p.x+1)*width/2,y:(1-p.y)*height/2}; },
     dispose() {
       if(disposed)return;disposed=true;cancelAnimationFrame(frame);observer.disconnect();onCancel();
       for(const[name,fn]of Object.entries(listeners))canvas.removeEventListener(name,fn);
