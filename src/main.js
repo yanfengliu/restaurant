@@ -41,18 +41,20 @@ const ui = { panel: null, category: 'dining', tool: null, rotation: 0, selected:
 let game;
 let savedAt = 0;
 let lastSaveError = false;
+let automaticSaveBlocked = false;
 try {
   const saved = localStorage.getItem(SAVE_KEY);
-  game = saved ? deserialize(saved) : createGame('sandbox');
+  game = saved !== null ? deserialize(saved) : createGame('sandbox');
   if (!game || typeof game !== 'object' || !Array.isArray(game.objects)) throw new Error('Save does not contain a restaurant.');
 } catch {
   game = createGame('sandbox');
   lastSaveError = true;
+  automaticSaveBlocked = true;
 }
 
 app.innerHTML = `
   <main id="game" aria-label="Corner Table restaurant management game">
-    <div id="scene" aria-label="3D restaurant. Drag to move the camera, scroll to zoom, click an object to inspect it."></div>
+    <div id="scene" aria-label="3D restaurant. Shift-drag or middle-drag to pan, right-drag to orbit, scroll to zoom, click an object to inspect it."></div>
     <header class="topbar">
       <button class="brand" data-action="settings" title="Restaurant settings"><span class="brand-mark">${icon('table')}</span><span>CORNER<span class="brand-second">TABLE</span></span></button>
       <div class="restaurant-heading"><button id="restaurant-name" data-action="rename" title="Rename restaurant"></button><span id="restaurant-subtitle">A little place. A big possibility.</span></div>
@@ -84,7 +86,7 @@ app.innerHTML = `
       <div class="time-controls" aria-label="Simulation speed"><button class="icon-button pause-button" data-action="pause" title="Pause or resume (Space)" aria-label="Pause or resume">${icon('pause')}</button>${[1, 2, 3].map((speed) => `<button class="speed-button" data-action="speed" data-speed="${speed}" aria-label="${speed} times speed">${speed}×</button>`).join('')}</div>
       <div class="session-controls"><button class="icon-button" data-action="save" title="Save restaurant" aria-label="Save restaurant">${icon('save')}</button><button class="icon-button" data-action="settings" title="Save, load, or start a new restaurant" aria-label="Game settings">${icon('settings')}</button></div>
     </footer>
-    <div class="view-caption"><span class="live-dot"></span><span id="view-label">NEIGHBORHOOD VIEW</span><span class="caption-separator">/</span><span id="hover-label">Drag to explore · Scroll to zoom</span></div>
+    <div class="view-caption"><span class="live-dot"></span><span id="view-label">NEIGHBORHOOD VIEW</span><span class="caption-separator">/</span><span id="hover-label">Shift-drag to pan · Right-drag to orbit · Scroll to zoom</span></div>
     <div id="toast" role="status" aria-live="polite" hidden></div>
     <div id="modal" class="modal-backdrop" hidden></div>
   </main>`;
@@ -107,7 +109,7 @@ try {
     onHover: (tile) => {
       ui.hover = tile;
       const object = game.objects.find((item) => item.id === tile?.objectId);
-      document.querySelector('#hover-label').textContent = object ? `${ITEMS[object.type]?.name || object.type} · Click to inspect` : tile ? `Tile ${tile.x}, ${tile.z}${ui.tool ? ' · Click to place' : ''}` : 'Drag to explore · Scroll to zoom';
+      document.querySelector('#hover-label').textContent = object ? `${ITEMS[object.type]?.name || object.type} · Click to inspect` : tile ? `Tile ${tile.x}, ${tile.z}${ui.tool ? ' · Click to place' : ' · Shift-drag to pan · Right-drag to orbit'}` : 'Shift-drag to pan · Right-drag to orbit · Scroll to zoom';
     },
   });
   scene.update(game);
@@ -215,7 +217,7 @@ function renderPanel() {
       const locked = (game.stats.served || 0) < (recipe.unlock || 0);
       const missing = (recipe.equipment || []).filter((type) => !game.objects.some((object) => object.type === type));
       return `<article class="recipe-row"><span class="recipe-symbol">${/coffee|tea|drink|lemon|juice|beer/.test(recipe.id) ? '☕' : /salad/.test(recipe.id) ? '🥗' : /pizza/.test(recipe.id) ? '🍕' : /cake|bread|toast/.test(recipe.id) ? '🍞' : /pasta/.test(recipe.id) ? '🍝' : '🍽'}</span><div class="recipe-info"><strong>${escapeHtml(recipe.name)}</strong><small>${locked ? `Unlocks after ${recipe.unlock} guests` : missing.length ? `Needs ${escapeHtml(missing.map((type) => ITEMS[type]?.name || type).join(', '))}` : `Ingredients ${money(recipe.cost)} · Ready to serve`}</small></div><label class="price-input"><span>$</span><input type="number" aria-label="${escapeHtml(recipe.name)} price" data-price="${escapeHtml(recipe.id)}" min="1" max="150" step="1" value="${Number(entry.price || recipe.price)}" /></label><button class="switch ${entry.enabled ? 'on' : ''}" data-action="recipe" data-recipe="${escapeHtml(recipe.id)}" aria-label="${entry.enabled ? 'Remove' : 'Add'} ${escapeHtml(recipe.name)} ${entry.enabled ? 'from' : 'to'} menu" aria-pressed="${entry.enabled}" title="${entry.enabled ? 'On the menu' : 'Off the menu'}"><span></span></button></article>`;
-    }).join('')}</div><div class="panel-tip">${icon('star')}Higher prices increase margins. Guests also judge value, variety, and waiting time.</div>`;
+    }).join('')}</div><div class="panel-tip">${icon('star')}Higher prices increase margins. Guests also judge value and waiting time.</div>`;
   } else if (ui.panel === 'staff') {
     content = `<div class="panel-intro"><h2>Good food takes good people.</h2><p>Give each employee a main priority. Balance your kitchen, service, and cleaning as the restaurant grows.</p></div><div class="hire-options">${[['chef', 'Cooking', 'kitchen'], ['waiter', 'Serving', 'menu'], ['cleaner', 'Cleaning', 'clean']].map(([role, label, glyph]) => `<button data-action="hire" data-role="${role}" title="Hire an employee with ${label.toLowerCase()} priority">${icon(glyph)}<span>Hire for<strong>${label}</strong></span>${icon('plus')}</button>`).join('')}</div><div class="staff-list">${game.staff.length ? game.staff.map((staff, index) => `<article class="staff-row"><span class="staff-avatar color-${index % 4}">${escapeHtml(staff.name?.charAt(0) || 'S')}</span><div class="staff-info"><strong>${escapeHtml(staff.name)}</strong><small>${escapeHtml(staff.task || 'Ready for the next task')} · ${money(staff.wage)}/hour</small></div><label class="priority-select"><span class="sr-only">Main priority for ${escapeHtml(staff.name)}</span><select data-priority="${escapeHtml(staff.id)}">${[['chef', 'Cooking'], ['waiter', 'Serving'], ['cleaner', 'Cleaning']].map(([value, label]) => `<option value="${value}" ${staff.role === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><button class="icon-button subtle" data-action="fire" data-id="${escapeHtml(staff.id)}" aria-label="Dismiss ${escapeHtml(staff.name)}" title="Dismiss employee">${icon('close')}</button></article>`).join('') : '<div class="empty-state">Your first employee is a hire away.<small>Start with cooking, serving, and cleaning priorities.</small></div>'}</div><div class="panel-tip">${icon('finance')}Hourly payroll: <strong>${money(game.staff.reduce((total, staff) => total + Number(staff.wage || 0), 0))}</strong></div>`;
   } else if (ui.panel === 'finance') {
@@ -308,8 +310,10 @@ function render() {
 }
 
 function save(silent = false) {
+  if (silent && automaticSaveBlocked) return false;
   try {
     localStorage.setItem(SAVE_KEY, serialize(game));
+    automaticSaveBlocked = false;
     savedAt = Date.now();
     if (!silent) toast('Restaurant saved on this browser.');
     return true;
@@ -325,10 +329,10 @@ function showModal(type) {
   modal.hidden = false;
   const close = `<button class="modal-close icon-button" data-action="close-modal" aria-label="Close dialog">${icon('close')}</button>`;
   let content;
-  if (type === 'help') content = `<span class="eyebrow">WELCOME TO CORNER TABLE</span><h2>A restaurant of your own.</h2><p>Make a welcoming room, put good food on the menu, and take care of the people in it.</p><div class="help-grid"><div>${icon('build')}<strong>Build your space</strong><p>Open Build, choose furniture, and click a tile. Leave clear paths between tables and kitchen equipment.</p></div><div>${icon('menu')}<strong>Make a menu</strong><p>Turn dishes on, set their prices, and build the equipment each recipe needs.</p></div><div>${icon('staff')}<strong>Find your people</strong><p>Hire employees for cooking, serving, and cleaning. Change their main priorities as service gets busy.</p></div><div>${icon('star')}<strong>Make guests happy</strong><p>Keep waits short, prices fair, the room clean, and toilets available. Good reviews bring more guests.</p></div></div><div class="shortcut-list"><span><kbd>Drag</kbd> Move camera</span><span><kbd>Scroll</kbd> Zoom</span><span><kbd>Q</kbd><kbd>E</kbd> Rotate camera</span><span><kbd>R</kbd> Rotate item</span><span><kbd>Space</kbd> Pause</span><span><kbd>Esc</kbd> Cancel</span><span><kbd>B</kbd> Build</span><span><kbd>M</kbd> Menu</span><span><kbd>Delete</kbd> Remove</span></div><button class="primary-button" data-action="close-modal">Let's make something good ${icon('arrow')}</button>`;
+  if (type === 'help') content = `<span class="eyebrow">WELCOME TO CORNER TABLE</span><h2>A restaurant of your own.</h2><p>Make a welcoming room, put good food on the menu, and take care of the people in it.</p><div class="help-grid"><div>${icon('build')}<strong>Build your space</strong><p>Open Build, choose furniture, and click a tile. Leave clear paths between tables and kitchen equipment.</p></div><div>${icon('menu')}<strong>Make a menu</strong><p>Turn dishes on, set their prices, and build the equipment each recipe needs.</p></div><div>${icon('staff')}<strong>Find your people</strong><p>Hire employees for cooking, serving, and cleaning. Change their main priorities as service gets busy.</p></div><div>${icon('star')}<strong>Make guests happy</strong><p>Keep waits short, prices fair, the room clean, and toilets available. Good reviews reflect happy guests.</p></div></div><div class="shortcut-list"><span><kbd>Shift-drag</kbd> Pan camera</span><span><kbd>Right-drag</kbd> Orbit camera</span><span><kbd>Scroll</kbd> Zoom</span><span><kbd>Q</kbd><kbd>E</kbd> Rotate camera</span><span><kbd>R</kbd> Rotate item</span><span><kbd>Space</kbd> Pause</span><span><kbd>Esc</kbd> Cancel</span><span><kbd>B</kbd> Build</span><span><kbd>M</kbd> Menu</span><span><kbd>Delete</kbd> Remove</span></div><button class="primary-button" data-action="close-modal">Let's make something good ${icon('arrow')}</button>`;
   else if (type === 'new') content = `<span class="eyebrow">A FRESH START</span><h2>Your next great little place.</h2><p>Choose how to begin. A new restaurant replaces the current restaurant and its browser save.</p><label class="field-label">Restaurant name<input id="new-name" maxlength="40" value="The Corner Table" /></label><div class="new-game-options"><button data-action="start-game" data-mode="sandbox">${icon('table')}<strong>The neighborhood bistro</strong><span>A furnished restaurant and a small team. Jump straight into service.</span>${icon('arrow')}</button><button data-action="start-game" data-mode="empty">${icon('build')}<strong>A blank canvas</strong><span>An empty plot and a starting budget. Build every corner yourself.</span>${icon('arrow')}</button></div>`;
   else if (type === 'rename') content = `<span class="eyebrow">MAKE IT YOURS</span><h2>A name above the door.</h2><form id="rename-form"><label class="field-label">Restaurant name<input id="rename-name" maxlength="40" required value="${escapeHtml(game.name)}" /></label><button class="primary-button" type="submit">Save name ${icon('arrow')}</button></form>`;
-  else content = `<span class="eyebrow">TAKE A LITTLE BREAK</span><h2>The Corner Table</h2><p>Your restaurant is saved automatically on this browser every 30 seconds.</p><div class="settings-actions"><button data-action="save">${icon('save')}Save restaurant<span>Save the current service</span></button><button data-action="load">${icon('clock')}Load saved restaurant<span>Return to your most recent save</span></button><button data-action="new-game">${icon('plus')}New restaurant<span>Start with a bistro or a blank plot</span></button><button data-action="help">${icon('help')}How to play<span>Controls and a few helpful tips</span></button></div><p class="settings-note">${savedAt ? `Last saved ${new Date(savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Browser save · Version 1'} · Made for a good little service.</p>`;
+  else content = `<span class="eyebrow">TAKE A LITTLE BREAK</span><h2>The Corner Table</h2><p>${automaticSaveBlocked ? 'Your previous save could not be loaded and is kept untouched. Choose Save or New Restaurant to replace it when you are ready.' : 'Your restaurant is saved automatically on this browser every 30 seconds.'}</p><div class="settings-actions"><button data-action="save">${icon('save')}Save restaurant<span>Save the current service</span></button><button data-action="load">${icon('clock')}Load saved restaurant<span>Return to your most recent save</span></button><button data-action="new-game">${icon('plus')}New restaurant<span>Start with a bistro or a blank plot</span></button><button data-action="help">${icon('help')}How to play<span>Controls and a few helpful tips</span></button></div><p class="settings-note">${savedAt ? `Last saved ${new Date(savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Browser save · Version 1'} · Made for a good little service.</p>`;
   modal.innerHTML = `<section class="modal-card ${type === 'help' ? 'wide' : ''}" role="dialog" aria-modal="true" aria-label="${type === 'help' ? 'How to play' : type === 'new' ? 'New restaurant' : type === 'rename' ? 'Rename restaurant' : 'Game settings'}">${close}${content}</section>`;
   modal.querySelector('input, button')?.focus();
 }
@@ -381,6 +385,7 @@ app.addEventListener('click', (event) => {
       const loaded = deserialize(saved);
       if (!loaded || !Array.isArray(loaded.objects)) throw new Error('This save could not be read.');
       game = loaded;
+      automaticSaveBlocked = false;
       ui.selected = null;
       setTool(null);
       ui.dirty = true;
@@ -392,6 +397,7 @@ app.addEventListener('click', (event) => {
   } else if (action === 'start-game') {
     const name = document.querySelector('#new-name')?.value.trim() || 'The Corner Table';
     game = createGame(button.dataset.mode);
+    automaticSaveBlocked = false;
     dispatch(game, { type: 'RENAME', name });
     ui.selected = null;
     ui.panel = null;
@@ -463,12 +469,12 @@ function animate(now) {
     render();
     refresh = 0;
   }
-  if (Date.now() - savedAt > 30000) save(true);
+  if (!automaticSaveBlocked && Date.now() - savedAt > 30000) save(true);
   frame = requestAnimationFrame(animate);
 }
 render();
 frame = requestAnimationFrame(animate);
-if (lastSaveError) toast('The previous save could not be loaded. A fresh bistro is ready.', true);
+if (lastSaveError) toast('The previous save could not be loaded. It is kept untouched until you choose Save or New Restaurant.', true);
 window.addEventListener('resize', () => scene?.resize());
 if (import.meta.env.DEV) {
   window.__cornerTable = {
@@ -483,5 +489,3 @@ window.addEventListener('pagehide', () => {
   save(true);
   scene?.dispose();
 }, { once: true });
-
-

@@ -21,9 +21,9 @@ Open the localhost URL printed by Vite. The starter bistro begins service immedi
 - **Finances:** watch sales, expenses, cash, and service activity.
 - **Goals:** choose from six restaurant challenges or play freely.
 
-Drag to move the camera, scroll to zoom, and use **Q / E** to orbit. **B** opens Build, **M** opens Menu, **R** rotates furniture, **Delete** selects removal, **Space** pauses, and **Esc** cancels. The camera controls also offer an overhead view.
+**Shift-drag** or middle-drag to pan the camera, **right-drag** to orbit, and scroll to zoom. **Q / E** also rotate the view. **B** opens Build, **M** opens Menu, **R** rotates furniture, **Delete** selects removal, **Space** pauses, and **Esc** cancels. The camera controls also offer an overhead view.
 
-The game saves automatically in this browser every 30 seconds. The gear menu includes explicit save, load, and new restaurant controls. Browser storage is local to the browser and origin; clearing it removes the save.
+The game saves automatically in this browser every 30 seconds. The gear menu includes explicit save, load, and new restaurant controls. Browser storage is local to the browser and origin; clearing it removes the save. If a save cannot be loaded, automatic saving stops and the original save stays untouched until you explicitly choose Save or New Restaurant.
 
 ## Development
 
