@@ -11,11 +11,11 @@ Make the observed equipment, ingredient and tableware prerequisites govern a com
 
 ## Scope
 
-After milestone 1, add storage-limited stock, configurable deliveries, reusable dishes and washing, recipe dependency feedback, generic employees with serving/cooking/dishwashing/cleaning priorities, candidate skills and monthly wage display. Keep valid version 1 saves loadable. Broader catalog, calendar and scenario progression follow separately.
+After milestone 1, add cabinet-supported countertop appliances, storage-limited stock, recurring ingredient batches charged on delivery, prepaid/refundable tableware queues, reusable dishes and washing, recipe dependency feedback, generic employees with four task priorities, candidate skills and monthly wage display. Keep valid version 1 saves loadable. Broader catalog, calendar and scenario progression follow separately.
 
 ## Approach
 
-Engine/catalog/tests, interface, and scene each retain separate owners; root agrees the shared actions and save migration before dispatch. Use direct captures and primary developer descriptions, clearly separating observed mechanics from inferred timing. Native completion study is pending a quiet desktop window after two input interruptions.
+Engine/catalog/tests, interface, and scene each retain separate owners; root agrees shared actions and save migration before implementation. The quiet native follow-up verified deliveries, queue refunds, support requirements and the blank/up/X/down priority cycle. Use those captures and primary developer descriptions, separating observed mechanics from inferred scheduling, capacities and service timing; a complete native meal/washing cycle remains unverified.
 
 ## Acceptance criteria
 

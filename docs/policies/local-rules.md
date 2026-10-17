@@ -1,6 +1,7 @@
 # Local product rules
 
 - Match the studied reference's gameplay and visual behavior first; defer creative departures until that fidelity is established. Keep the product's own neutral name and authored assets, and use neutral product descriptions in code and commit messages.
+- Target desktop browsers only; prioritize desktop controls and window sizes, with no separate mobile implementation or testing.
 - Use external games and developer posts as design research, and keep their attribution in research notes rather than product code or commit messages.
 - Visual quality matters: study actual pixels and developer posts, then inspect rendered scenes, panels, camera angles, and real controls.
 - Maintain an ignored `output/gallery/` visual progress gallery for the user's information and update it at meaningful visual milestones; keep its page and images outside Git.
