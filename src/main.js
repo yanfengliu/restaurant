@@ -13,6 +13,7 @@ const iconPaths = {
   menu: '<path d="M5 3v7c0 2 4 2 4 0V3M7 3v18M17 3c-4 5-4 10 0 10v8M17 3v10"/>',
   staff: '<circle cx="9" cy="7" r="3"/><path d="M3 21v-4a6 6 0 0 1 12 0v4M16 4a3 3 0 0 1 0 6M18 14a5 5 0 0 1 3 5v2"/>',
   finance: '<path d="M4 20V10h4v10M10 20V4h4v16M16 20v-7h4v7M2 21h20"/>',
+  coin: '<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v4c0 4 16 4 16 0V6M4 10v4c0 4 16 4 16 0v-4M4 14v4c0 4 16 4 16 0v-4"/>',
   goals: '<path d="M5 21V3h14l-2 4 2 4H5"/>',
   save: '<path d="M4 3h14l3 3v15H3V3Z"/><path d="M7 3v6h10V3M7 21v-8h10v8"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="m9 3-1 3-3 1-2 3 2 2-1 3 3 2 1 3h4l1-3 3-1 3-2-1-4 1-3-3-2-1-3Z"/>',
@@ -37,7 +38,8 @@ const iconPaths = {
   expand: '<path d="M3 9V3h6M15 3h6v6M21 15v6h-6M9 21H3v-6M3 3l6 6M21 3l-6 6M21 21l-6-6M3 21l6-6"/>',
 };
 const icon = (name, extra = '') => `<svg class="icon ${extra}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${iconPaths[name] || iconPaths.table}</svg>`;
-const ui = { panel: null, category: 'dining', tool: null, rotation: 0, selected: null, hover: null, view: 'isometric', dirty: true, modal: null, lastSpeed: 1 };
+const ui = { panel: null, category: 'construction', tool: null, rotation: 0, selected: null, hover: null, view: 'isometric', wallMode: 'full', azimuth: Math.PI * 3 / 4, dirty: true, modal: null, lastSpeed: 1 };
+const panKeys = new Set();
 let game;
 let savedAt = 0;
 let lastSaveError = false;
@@ -54,26 +56,28 @@ try {
 
 app.innerHTML = `
   <main id="game" aria-label="Corner Table restaurant management game">
-    <div id="scene" aria-label="3D restaurant. Shift-drag or middle-drag to pan, right-drag to orbit, scroll to zoom, click an object to inspect it."></div>
+    <div id="scene" aria-label="3D restaurant. WASD, Shift-drag or middle-drag to pan, right-drag to orbit, scroll to zoom, click an object to inspect it."></div>
     <header class="topbar">
-      <button class="brand" data-action="settings" title="Restaurant settings"><span class="brand-mark">${icon('table')}</span><span>CORNER<span class="brand-second">TABLE</span></span></button>
-      <div class="restaurant-heading"><button id="restaurant-name" data-action="rename" title="Rename restaurant"></button><span id="restaurant-subtitle">A little place. A big possibility.</span></div>
       <div class="top-stats" role="status" aria-label="Restaurant statistics">
-        <div class="stat cash-stat"><span class="stat-symbol">$</span><span><strong id="cash"></strong><small>AVAILABLE FUNDS</small></span></div>
-        <button class="stat stat-button" data-action="panel" data-panel="goals" title="Guest satisfaction and objectives">${icon('star')}<span><strong id="rating"></strong><small>GUEST RATING</small></span></button>
-        <button class="stat stat-button" data-action="panel" data-panel="staff" title="Hygiene is improved by staff with cleaning priority">${icon('clean')}<span><strong id="hygiene"></strong><small>HYGIENE</small></span></button>
+        <button class="stat stat-button" data-action="panel" data-panel="goals" title="Guest rating and objectives">${icon('star')}<strong id="rating"></strong><small>Rating</small></button>
+        <div class="stat cash-stat" title="Available funds">${icon('coin')}<strong id="cash"></strong><small>Funds</small></div>
+        <div class="stat visitor-stat" title="Guests currently visiting">${icon('staff')}<strong id="guest-count"></strong></div>
+        <button class="stat stat-button hygiene-stat" data-action="panel" data-panel="staff" title="Restaurant hygiene">${icon('clean')}<strong id="hygiene"></strong><small>Hygiene</small></button>
       </div>
       <div class="date-group"><span id="day"></span><strong id="time"></strong></div>
+      <div class="restaurant-heading"><button id="restaurant-name" data-action="rename" title="Rename restaurant"></button><span id="restaurant-subtitle"></span></div>
+      <div class="time-controls" aria-label="Simulation speed"><button class="icon-button pause-button" data-action="pause" title="Pause or resume (Space)" aria-label="Pause or resume">${icon('pause')}</button>${[1, 2, 3].map((speed) => `<button class="speed-button" data-action="speed" data-speed="${speed}" aria-label="${speed} times speed">${speed}×</button>`).join('')}</div>
       <button class="icon-button help-button" data-action="help" title="How to play (?)" aria-label="How to play">${icon('help')}</button>
     </header>
-    <div class="venue-bar"><button id="open-button" data-action="open" class="status-toggle"></button><span id="guest-count"></span><span class="venue-divider"></span><span id="service-label">SERVICE IN PROGRESS</span></div>
-    <aside id="overview" class="overview" aria-label="Restaurant overview"></aside>
+    <div class="venue-bar"><button id="open-button" data-action="open" class="status-toggle"></button><span id="service-label"></span></div>
+    <aside id="construction-hint" class="construction-hint" role="status" hidden></aside>
     <section id="panel" class="panel" aria-label="Management panel" hidden></section>
     <aside id="inspector" class="inspector" aria-label="Selected item" hidden></aside>
     <div id="tool-banner" class="tool-banner" hidden></div>
     <div class="camera-tools" aria-label="Camera controls">
       <button class="icon-button" data-action="rotate-camera" data-direction="-1" title="Rotate camera left (Q)" aria-label="Rotate camera left">${icon('rotate', 'flip')}</button>
       <button class="icon-button" data-action="view" title="Toggle overhead camera" aria-label="Toggle overhead camera">${icon('eye')}</button>
+      <button class="wall-mode-button" data-action="wall-mode" title="Change wall visibility" aria-label="Change wall visibility: full walls">${icon('build')}<span id="wall-mode-label">Full walls</span></button>
       <button class="icon-button" data-action="rotate-camera" data-direction="1" title="Rotate camera right (E)" aria-label="Rotate camera right">${icon('rotate')}</button>
       <span></span>
       <button class="icon-button" data-action="zoom" data-direction="1" title="Zoom in" aria-label="Zoom in">${icon('plus')}</button>
@@ -83,10 +87,9 @@ app.innerHTML = `
       <nav class="management-nav" aria-label="Manage restaurant">
         ${[['build', 'Build', 'B'], ['menu', 'Menu', 'M'], ['staff', 'Staff', ''], ['finance', 'Finances', ''], ['goals', 'Goals', '']].map(([key, label, shortcut]) => `<button data-action="panel" data-panel="${key}" class="nav-button" title="${label}${shortcut ? ` (${shortcut})` : ''}">${icon(key)}<span>${label}</span>${shortcut ? `<kbd>${shortcut}</kbd>` : ''}</button>`).join('')}
       </nav>
-      <div class="time-controls" aria-label="Simulation speed"><button class="icon-button pause-button" data-action="pause" title="Pause or resume (Space)" aria-label="Pause or resume">${icon('pause')}</button>${[1, 2, 3].map((speed) => `<button class="speed-button" data-action="speed" data-speed="${speed}" aria-label="${speed} times speed">${speed}×</button>`).join('')}</div>
       <div class="session-controls"><button class="icon-button" data-action="save" title="Save restaurant" aria-label="Save restaurant">${icon('save')}</button><button class="icon-button" data-action="settings" title="Save, load, or start a new restaurant" aria-label="Game settings">${icon('settings')}</button></div>
     </footer>
-    <div class="view-caption"><span class="live-dot"></span><span id="view-label">NEIGHBORHOOD VIEW</span><span class="caption-separator">/</span><span id="hover-label">Shift-drag to pan · Right-drag to orbit · Scroll to zoom</span></div>
+    <div class="view-caption"><span id="view-label">Isometric view</span><span class="caption-separator">·</span><span id="hover-label">WASD / Shift-drag to pan · Right-drag to orbit · Scroll to zoom</span></div>
     <div id="toast" role="status" aria-live="polite" hidden></div>
     <div id="modal" class="modal-backdrop" hidden></div>
   </main>`;
@@ -101,6 +104,14 @@ try {
       else if (ui.tool?.type === 'REMOVE') toast('Click the item you want to remove.');
       else { ui.selected = null; renderInspector(); }
     },
+    onTileStroke: ({ cells, axis }) => {
+      if (ui.modal || !Array.isArray(cells) || !cells.length) return;
+      if (ui.tool?.type === 'FLOOR') act({ type: 'FLOOR_STROKE', cells, style: ui.tool.style });
+      else if (ui.tool?.type === 'PLACE' && ['wall', 'window'].includes(ui.tool.itemType)) {
+        act({ type: 'STROKE', itemType: ui.tool.itemType, cells, rotation: axis === 'z' ? 90 : 0 });
+      }
+    },
+    onCameraChange: ({ azimuth }) => { if (Number.isFinite(azimuth)) ui.azimuth = azimuth; },
     onObjectClick: (id) => {
       if (ui.modal) return;
       if (ui.tool?.type === 'REMOVE') act({ type: 'REMOVE', id });
@@ -109,7 +120,7 @@ try {
     onHover: (tile) => {
       ui.hover = tile;
       const object = game.objects.find((item) => item.id === tile?.objectId);
-      document.querySelector('#hover-label').textContent = object ? `${ITEMS[object.type]?.name || object.type} · Click to inspect` : tile ? `Tile ${tile.x}, ${tile.z}${ui.tool ? ' · Click to place' : ' · Shift-drag to pan · Right-drag to orbit'}` : 'Shift-drag to pan · Right-drag to orbit · Scroll to zoom';
+      document.querySelector('#hover-label').textContent = object ? `${ITEMS[object.type]?.name || object.type} · Click to inspect` : tile && ui.tool ? `Tile ${tile.x}, ${tile.z} · Click or drag to build` : 'WASD / Shift-drag to pan · Right-drag to orbit · Scroll to zoom';
     },
   });
   scene.update(game);
@@ -177,7 +188,7 @@ function classify(type, item) {
 function setPanel(panel) {
   ui.panel = ui.panel === panel ? null : panel;
   ui.dirty = true;
-  if (ui.panel !== 'build') setTool(null);
+  if (ui.panel && ui.panel !== 'build') setTool(null);
   render();
 }
 
@@ -192,25 +203,38 @@ function setTool(tool) {
   ui.dirty = true;
 }
 
+function chooseTool(tool) {
+  setTool(tool);
+  if (window.matchMedia('(max-width: 620px)').matches) ui.panel = null;
+  render();
+}
+
+function buildPrice(type, item) {
+  const usedDoorGrant = game.doorGrantUsed ?? game.objects.some((object) => object.type === 'door');
+  return type === 'door' && !usedDoorGrant ? 0 : item.cost;
+}
+
 function renderToolBanner() {
   const banner = document.querySelector('#tool-banner');
   banner.hidden = !ui.tool;
   if (!ui.tool) return;
   const name = ui.tool.type === 'REMOVE' ? 'Remove item' : ui.tool.type === 'FLOOR' ? `${ui.tool.style} floor` : ITEMS[ui.tool.itemType]?.name || ui.tool.itemType;
-  banner.innerHTML = `${icon(ui.tool.type === 'REMOVE' ? 'trash' : 'build')}<span><strong>${escapeHtml(name)}</strong><small>${ui.tool.type === 'REMOVE' ? 'Click an item · 60% refund' : 'Click a tile to place · R to rotate'}</small></span><button data-action="rotate-item" title="Rotate item (R)">${icon('rotate')}<span>${ui.rotation}°</span></button><button class="icon-button" data-action="cancel" title="Cancel (Esc)" aria-label="Cancel building">${icon('close')}</button>`;
+  const drawing = ui.tool.type === 'FLOOR' || ['wall', 'window'].includes(ui.tool.itemType);
+  const hint = ui.tool.type === 'REMOVE' ? 'Click an item to remove · 60% refund' : drawing ? 'Drag a straight line or click a tile' : 'Click a tile to place · R to rotate';
+  banner.innerHTML = `${icon(ui.tool.type === 'REMOVE' ? 'trash' : 'build')}<span><strong>${escapeHtml(name)}</strong><small>${hint}</small></span><button data-action="show-build" title="Open construction catalog">${icon('build')}<span>Catalog</span></button>${ui.tool.type === 'PLACE' ? `<button data-action="rotate-item" title="Rotate item (R)">${icon('rotate')}<span>${ui.rotation}°</span></button>` : ''}<button class="icon-button" data-action="cancel" title="Cancel (Esc)" aria-label="Cancel building">${icon('close')}</button>`;
 }
 
 function renderPanel() {
   const panel = document.querySelector('#panel');
   panel.hidden = !ui.panel;
   if (!ui.panel) return;
-  const titles = { build: 'Build your restaurant', menu: 'Food & drink', staff: 'Your team', finance: 'The books', goals: 'A place to be proud of' };
+  const titles = { build: ui.category === 'construction' ? 'Construction' : categories.find((category) => category.id === ui.category)?.name || 'Construction', menu: 'Menu', staff: 'Employees', finance: 'Finances', goals: 'Scenario goals' };
   const heading = `<div class="panel-heading"><span>${icon(ui.panel)}${titles[ui.panel]}</span><button class="close-button" data-action="close-panel" aria-label="Close management panel">${icon('close')}</button></div>`;
   panel.className = `panel panel-${ui.panel}`;
   let content = '';
   if (ui.panel === 'build') {
     const entries = Object.entries(ITEMS).filter(([type, item]) => classify(type, item) === ui.category);
-    content = `<div class="category-tabs" role="tablist" aria-label="Build categories">${categories.map((category) => `<button role="tab" aria-selected="${ui.category === category.id}" class="${ui.category === category.id ? 'active' : ''}" data-action="category" data-category="${category.id}" title="${category.name}">${icon(category.icon)}<span>${category.name}</span></button>`).join('')}</div><div class="palette-caption"><span>${categories.find((category) => category.id === ui.category)?.name}</span><span>${ui.category === 'floors' ? 'Click tiles to paint' : 'Choose an item'}</span></div><div class="item-grid">${ui.category === 'floors' ? ['wood', 'tile', 'stone', 'checker'].map((style, index) => `<button class="item-card ${ui.tool?.style === style ? 'selected' : ''}" data-action="floor" data-style="${style}" title="${style} floor · Click a tile to paint" aria-label="Build ${style} floor">${itemArt('floor', ['#b98b5f', '#d6cdb7', '#93968a', '#d6bc8f'][index])}<span class="item-price">$12</span><span class="item-name">${style}</span></button>`).join('') : entries.map(([type, item]) => `<button class="item-card ${ui.tool?.itemType === type ? 'selected' : ''}" data-action="item" data-item="${escapeHtml(type)}" title="${escapeHtml(item.name)} · ${money(item.cost)}${item.description ? ` · ${escapeHtml(item.description)}` : ''}" aria-label="Build ${escapeHtml(item.name)}, ${money(item.cost)}">${itemArt(type, item.color)}<span class="item-price">${money(item.cost)}</span><span class="item-name">${escapeHtml(item.name)}</span></button>`).join('')}</div><div class="palette-footer"><button data-action="demolish" class="text-button ${ui.tool?.type === 'REMOVE' ? 'active' : ''}">${icon('trash')}Remove <kbd>Del</kbd></button><button data-action="expand" class="text-button" title="Buy a larger plot of land">${icon('expand')}Buy land</button></div>`;
+    content = `<div class="category-tabs" role="tablist" aria-label="Build categories">${categories.map((category) => `<button role="tab" aria-selected="${ui.category === category.id}" class="${ui.category === category.id ? 'active' : ''}" data-action="category" data-category="${category.id}" title="${category.name}">${icon(category.icon)}<span>${category.name}</span></button>`).join('')}</div><div class="palette-caption"><span>${categories.find((category) => category.id === ui.category)?.name}</span><span>${ui.category === 'floors' ? 'Drag or click to paint' : 'Choose an item'}</span></div><div class="item-grid">${ui.category === 'floors' ? ['peach', 'wood', 'tile', 'stone', 'checker'].map((style, index) => `<button class="item-card ${ui.tool?.style === style ? 'selected' : ''}" data-action="floor" data-style="${style}" title="${style} floor · Drag a line or click to paint" aria-label="Build ${style} floor">${itemArt('floor', ['#d99b76', '#b98b5f', '#d6cdb7', '#93968a', '#d6bc8f'][index])}<span class="item-price">$12</span><span class="item-name">${style}</span></button>`).join('') : entries.map(([type, item]) => `<button class="item-card ${ui.tool?.itemType === type ? 'selected' : ''}" data-action="item" data-item="${escapeHtml(type)}" title="${escapeHtml(item.name)} · ${money(buildPrice(type, item))}${item.description ? ` · ${escapeHtml(item.description)}` : ''}" aria-label="Build ${escapeHtml(item.name)}, ${money(buildPrice(type, item))}">${itemArt(type, item.color)}<span class="item-price">${money(buildPrice(type, item))}</span><span class="item-name">${escapeHtml(item.name)}</span></button>`).join('')}</div><div class="palette-footer"><button data-action="demolish" class="text-button ${ui.tool?.type === 'REMOVE' ? 'active' : ''}">${icon('trash')}Remove <kbd>Del</kbd></button><button data-action="expand" class="text-button" title="Buy a larger plot of land">${icon('expand')}Buy land</button></div>`;
   } else if (ui.panel === 'menu') {
     content = `<div class="panel-intro"><h2>Something for everyone.</h2><p>A thoughtful menu keeps guests happy. Equipment must be available before a dish can be served.</p></div><div class="recipe-list">${RECIPES.map((recipe) => {
       const entry = game.menu.find((item) => item.recipeId === recipe.id) || { price: recipe.price, enabled: false };
@@ -255,10 +279,17 @@ function renderGoals(compact = false) {
   }).join('')}</div>`;
 }
 
-function renderOverview() {
-  const stats = game.stats || {};
-  const overview = document.querySelector('#overview');
-  overview.innerHTML = `<div class="overview-kicker">YOUR LITTLE RESTAURANT</div><h1>A seat at the<br><em>corner table.</em></h1><div class="overview-line"></div><div class="service-summary"><span>${icon('menu')}<strong>${stats.served || 0}</strong> served</span><span>${icon('table')}<strong>${game.objects.filter((object) => /table/.test(object.type)).length}</strong> tables</span></div><button class="overview-goal" data-action="panel" data-panel="goals"><span>${icon('goals')}TODAY'S AMBITION</span>${icon('arrow')}</button>${renderGoals(true)}<p class="overview-note">${game.speed === 0 ? 'Take your time. A good room is worth planning.' : !game.open ? 'The door is closed. Make it yours before opening.' : stats.cleanliness < 65 ? 'A little cleaning will make a big difference.' : 'The door is open. Let the good things simmer.'}</p>`;
+function renderConstructionHint() {
+  const hint = document.querySelector('#construction-hint');
+  const stats = getStats(game);
+  const needsRoom = stats.hasRoom === false;
+  const needsEntrance = stats.hasRoom === true && stats.hasEntrance === false;
+  hint.hidden = !needsRoom && !needsEntrance;
+  hint.innerHTML = needsRoom
+    ? '<strong>Build an enclosed room</strong><span>Choose walls in Construction and drag four sides. An enclosed room receives peach flooring automatically.</span>'
+    : needsEntrance
+      ? '<strong>Add an entrance</strong><span>Choose a doorway and place it on a boundary wall.' + (!game.doorGrantUsed ? ' Your first doorway is free.' : '') + '</span>'
+      : '';
 }
 
 function renderInspector() {
@@ -274,7 +305,7 @@ function renderInspector() {
   }
   if (!object) return;
   const item = ITEMS[object.type] || {};
-  inspector.innerHTML = `<div class="panel-heading"><span>${escapeHtml(item.name || object.type)}</span><button class="close-button" data-action="close-inspector" aria-label="Close item details">${icon('close')}</button></div><div class="inspector-preview">${itemArt(object.type, item.color)}</div><div class="inspector-content"><small>TILE ${object.x}, ${object.z} · ${object.rotation || 0}°</small><p>${escapeHtml(item.description || 'Part of your restaurant. Keep clear paths around furniture so your guests and team can move freely.')}</p><button class="danger-button" data-action="remove-selected">${icon('trash')}Remove · ${money(Math.round((item.cost || 0) * .6))} refund</button></div>`;
+  inspector.innerHTML = `<div class="panel-heading"><span>${escapeHtml(item.name || object.type)}</span><button class="close-button" data-action="close-inspector" aria-label="Close item details">${icon('close')}</button></div><div class="inspector-preview">${itemArt(object.type, item.color)}</div><div class="inspector-content"><small>TILE ${object.x}, ${object.z} · ${object.rotation || 0}°</small><p>${escapeHtml(item.description || 'Part of your restaurant. Keep clear paths around furniture so your guests and team can move freely.')}</p><button class="danger-button" data-action="remove-selected">${icon('trash')}Remove · ${money(Math.round((object.purchaseCost ?? item.cost ?? 0) * .6))} refund</button></div>`;
 }
 
 function render() {
@@ -290,21 +321,21 @@ function render() {
   document.querySelector('#time').textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   const open = document.querySelector('#open-button');
   open.innerHTML = `<i class="${game.open ? 'open' : ''}"></i>${game.open ? 'OPEN FOR BUSINESS' : 'CLOSED'}<span>${game.open ? 'Close' : 'Open'}</span>`;
-  document.querySelector('#guest-count').textContent = `${game.guests.length} ${game.guests.length === 1 ? 'guest' : 'guests'} visiting`;
+  document.querySelector('#guest-count').textContent = `${game.guests.length}`;
   document.querySelector('#service-label').textContent = game.speed === 0 ? 'PAUSED' : game.open ? 'SERVICE IN PROGRESS' : 'TIME TO MAKE IT YOURS';
+  document.querySelector('#service-label').classList.toggle('paused', game.speed === 0);
   document.querySelector('#restaurant-subtitle').textContent = game.scenario?.title ? `${game.scenario.title} · ${game.scenario.id === 'sandbox' ? 'Free play' : game.scenario.complete ? 'Challenge complete' : 'Challenge in progress'}` : 'A little place. A big possibility.';
   for (const button of document.querySelectorAll('.nav-button')) button.classList.toggle('active', button.dataset.panel === ui.panel);
   for (const button of document.querySelectorAll('.speed-button')) button.classList.toggle('active', Number(button.dataset.speed) === game.speed);
   const pause = document.querySelector('.pause-button');
   pause.innerHTML = icon(game.speed === 0 ? 'play' : 'pause');
   pause.classList.toggle('active', game.speed === 0);
-  document.querySelector('#view-label').textContent = ui.view === 'top' ? 'FLOOR PLAN' : 'NEIGHBORHOOD VIEW';
-  document.querySelector('#overview').hidden = Boolean(ui.selected);
+  document.querySelector('#view-label').textContent = ui.view === 'top' ? 'Floor plan' : 'Isometric view';
   if (ui.dirty) {
     renderPanel();
     renderInspector();
     renderToolBanner();
-    renderOverview();
+    renderConstructionHint();
     ui.dirty = false;
   }
 }
@@ -324,12 +355,13 @@ function save(silent = false) {
 }
 
 function showModal(type) {
+  panKeys.clear();
   ui.modal = type;
   const modal = document.querySelector('#modal');
   modal.hidden = false;
   const close = `<button class="modal-close icon-button" data-action="close-modal" aria-label="Close dialog">${icon('close')}</button>`;
   let content;
-  if (type === 'help') content = `<span class="eyebrow">WELCOME TO CORNER TABLE</span><h2>A restaurant of your own.</h2><p>Make a welcoming room, put good food on the menu, and take care of the people in it.</p><div class="help-grid"><div>${icon('build')}<strong>Build your space</strong><p>Open Build, choose furniture, and click a tile. Leave clear paths between tables and kitchen equipment.</p></div><div>${icon('menu')}<strong>Make a menu</strong><p>Turn dishes on, set their prices, and build the equipment each recipe needs.</p></div><div>${icon('staff')}<strong>Find your people</strong><p>Hire employees for cooking, serving, and cleaning. Change their main priorities as service gets busy.</p></div><div>${icon('star')}<strong>Make guests happy</strong><p>Keep waits short, prices fair, the room clean, and toilets available. Good reviews reflect happy guests.</p></div></div><div class="shortcut-list"><span><kbd>Shift-drag</kbd> Pan camera</span><span><kbd>Right-drag</kbd> Orbit camera</span><span><kbd>Scroll</kbd> Zoom</span><span><kbd>Q</kbd><kbd>E</kbd> Rotate camera</span><span><kbd>R</kbd> Rotate item</span><span><kbd>Space</kbd> Pause</span><span><kbd>Esc</kbd> Cancel</span><span><kbd>B</kbd> Build</span><span><kbd>M</kbd> Menu</span><span><kbd>Delete</kbd> Remove</span></div><button class="primary-button" data-action="close-modal">Let's make something good ${icon('arrow')}</button>`;
+  if (type === 'help') content = `<span class="eyebrow">WELCOME TO CORNER TABLE</span><h2>A restaurant of your own.</h2><p>Make a welcoming room, put good food on the menu, and take care of the people in it.</p><div class="help-grid"><div>${icon('build')}<strong>Build your space</strong><p>Open Build and drag straight walls to enclose a room; peach flooring fills it automatically. Add a doorway, then place furniture on clear tiles.</p></div><div>${icon('menu')}<strong>Make a menu</strong><p>Turn dishes on, set their prices, and build the equipment each recipe needs.</p></div><div>${icon('staff')}<strong>Find your people</strong><p>Hire employees for cooking, serving, and cleaning. Change their main priorities as service gets busy.</p></div><div>${icon('star')}<strong>Make guests happy</strong><p>Keep waits short, prices fair, the room clean, and toilets available. Good reviews reflect happy guests.</p></div></div><div class="shortcut-list"><span><kbd>WASD</kbd> Pan camera</span><span><kbd>Shift-drag</kbd> Pan camera</span><span><kbd>Right-drag</kbd> Orbit camera</span><span><kbd>Scroll</kbd> Zoom</span><span><kbd>Q</kbd><kbd>E</kbd> Rotate camera</span><span><kbd>R</kbd> Rotate item</span><span><kbd>Space</kbd> Pause</span><span><kbd>Esc</kbd> Cancel</span><span><kbd>B</kbd> Build</span><span><kbd>M</kbd> Menu</span><span><kbd>Delete</kbd> Remove</span><span>Wall button: full / cutaway / low</span></div><button class="primary-button" data-action="close-modal">Let's make something good ${icon('arrow')}</button>`;
   else if (type === 'new') content = `<span class="eyebrow">A FRESH START</span><h2>Your next great little place.</h2><p>Choose how to begin. A new restaurant replaces the current restaurant and its browser save.</p><label class="field-label">Restaurant name<input id="new-name" maxlength="40" value="The Corner Table" /></label><div class="new-game-options"><button data-action="start-game" data-mode="sandbox">${icon('table')}<strong>The neighborhood bistro</strong><span>A furnished restaurant and a small team. Jump straight into service.</span>${icon('arrow')}</button><button data-action="start-game" data-mode="empty">${icon('build')}<strong>A blank canvas</strong><span>An empty plot and a starting budget. Build every corner yourself.</span>${icon('arrow')}</button></div>`;
   else if (type === 'rename') content = `<span class="eyebrow">MAKE IT YOURS</span><h2>A name above the door.</h2><form id="rename-form"><label class="field-label">Restaurant name<input id="rename-name" maxlength="40" required value="${escapeHtml(game.name)}" /></label><button class="primary-button" type="submit">Save name ${icon('arrow')}</button></form>`;
   else content = `<span class="eyebrow">TAKE A LITTLE BREAK</span><h2>The Corner Table</h2><p>${automaticSaveBlocked ? 'Your previous save could not be loaded and is kept untouched. Choose Save or New Restaurant to replace it when you are ready.' : 'Your restaurant is saved automatically on this browser every 30 seconds.'}</p><div class="settings-actions"><button data-action="save">${icon('save')}Save restaurant<span>Save the current service</span></button><button data-action="load">${icon('clock')}Load saved restaurant<span>Return to your most recent save</span></button><button data-action="new-game">${icon('plus')}New restaurant<span>Start with a bistro or a blank plot</span></button><button data-action="help">${icon('help')}How to play<span>Controls and a few helpful tips</span></button></div><p class="settings-note">${savedAt ? `Last saved ${new Date(savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Browser save · Version 1'} · Made for a good little service.</p>`;
@@ -352,11 +384,12 @@ app.addEventListener('click', (event) => {
   if (!button) return;
   const { action } = button.dataset;
   if (action === 'panel') setPanel(button.dataset.panel);
-  else if (action === 'close-panel') { ui.panel = null; setTool(null); render(); }
+  else if (action === 'close-panel') { ui.panel = null; ui.dirty = true; render(); }
+  else if (action === 'show-build') { ui.panel = 'build'; ui.dirty = true; render(); }
   else if (action === 'category') { ui.category = button.dataset.category; ui.dirty = true; render(); }
-  else if (action === 'item') { setTool({ type: 'PLACE', itemType: button.dataset.item, color: ITEMS[button.dataset.item]?.color }); render(); }
-  else if (action === 'floor') { setTool({ type: 'FLOOR', style: button.dataset.style }); render(); }
-  else if (action === 'demolish') { setTool({ type: 'REMOVE' }); render(); }
+  else if (action === 'item') chooseTool({ type: 'PLACE', itemType: button.dataset.item, color: ITEMS[button.dataset.item]?.color });
+  else if (action === 'floor') chooseTool({ type: 'FLOOR', style: button.dataset.style });
+  else if (action === 'demolish') chooseTool({ type: 'REMOVE' });
   else if (action === 'cancel') { setTool(null); render(); }
   else if (action === 'rotate-item') { ui.rotation = (ui.rotation + 90) % 360; scene?.setRotation(ui.rotation); renderToolBanner(); }
   else if (action === 'expand') act({ type: 'EXPAND' });
@@ -372,6 +405,13 @@ app.addEventListener('click', (event) => {
   else if (action === 'rotate-camera') scene?.rotate(Number(button.dataset.direction) * Math.PI / 4);
   else if (action === 'zoom') scene?.zoom(Number(button.dataset.direction) * .2);
   else if (action === 'view') { ui.view = ui.view === 'top' ? 'isometric' : 'top'; scene?.setView(ui.view); render(); }
+  else if (action === 'wall-mode') {
+    const modes = ['full', 'cutaway', 'low'];
+    ui.wallMode = modes[(modes.indexOf(ui.wallMode) + 1) % modes.length];
+    scene?.setWallMode?.(ui.wallMode);
+    document.querySelector('#wall-mode-label').textContent = { full: 'Full walls', cutaway: 'Cutaway', low: 'Low walls' }[ui.wallMode];
+    button.setAttribute('aria-label', `Change wall visibility: ${ui.wallMode} walls`);
+  }
   else if (action === 'save') save();
   else if (action === 'settings') showModal('settings');
   else if (action === 'help') showModal('help');
@@ -431,10 +471,11 @@ document.addEventListener('keydown', (event) => {
     if (event.shiftKey && index === 0) { event.preventDefault(); focusable.at(-1)?.focus(); }
     else if (!event.shiftKey && index === focusable.length - 1) { event.preventDefault(); focusable[0]?.focus(); }
   }
-  if (/INPUT|SELECT|TEXTAREA/.test(event.target.tagName)) return;
+  if (/INPUT|SELECT|TEXTAREA/.test(event.target.tagName) || event.target.isContentEditable) return;
   if (event.key === 'Escape') { if (ui.modal) closeModal(); else { setTool(null); ui.panel = null; ui.selected = null; ui.dirty = true; render(); } return; }
   if (ui.modal || event.ctrlKey || event.metaKey || event.altKey) return;
-  if (event.code === 'Space') { event.preventDefault(); pause(); }
+  if (['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(event.code)) { event.preventDefault(); panKeys.add(event.code); }
+  else if (event.code === 'Space') { event.preventDefault(); pause(); }
   else if (event.key.toLowerCase() === 'b') setPanel('build');
   else if (event.key.toLowerCase() === 'm') setPanel('menu');
   else if (event.key.toLowerCase() === 'r' && ui.tool) { ui.rotation = (ui.rotation + 90) % 360; scene?.setRotation(ui.rotation); renderToolBanner(); }
@@ -443,28 +484,40 @@ document.addEventListener('keydown', (event) => {
   else if (event.key === 'Delete') { setTool({ type: 'REMOVE' }); render(); }
   else if (event.key === '?') showModal('help');
 });
+document.addEventListener('keyup', (event) => panKeys.delete(event.code));
+document.addEventListener('focusin', (event) => {
+  if (/INPUT|SELECT|TEXTAREA/.test(event.target.tagName) || event.target.isContentEditable) panKeys.clear();
+});
+window.addEventListener('blur', () => panKeys.clear());
 
 let frame = 0;
 let previous = performance.now();
 let refresh = 0;
-let overviewRefresh = 0;
+let liveRefresh = 0;
 let stopped = false;
 function animate(now) {
   if (stopped) return;
   const elapsed = Math.min((now - previous) / 1000, .1);
   previous = now;
+  if (!ui.modal && panKeys.size) {
+    const horizontal = Number(panKeys.has('KeyD')) - Number(panKeys.has('KeyA'));
+    const vertical = Number(panKeys.has('KeyS')) - Number(panKeys.has('KeyW'));
+    const distance = elapsed * 8 / (Math.hypot(horizontal, vertical) || 1);
+    scene?.pan?.((horizontal * Math.cos(ui.azimuth) + vertical * Math.sin(ui.azimuth)) * distance,
+      (-horizontal * Math.sin(ui.azimuth) + vertical * Math.cos(ui.azimuth)) * distance);
+  }
   tick(game, elapsed);
   scene?.update(game);
   refresh += elapsed;
-  overviewRefresh += elapsed;
+  liveRefresh += elapsed;
   if (refresh > .2) {
-    if (overviewRefresh > 2) {
+    if (liveRefresh > 2) {
       if (game.speed > 0) {
-        renderOverview();
+        renderConstructionHint();
         if (ui.panel && ui.panel !== 'build' && !document.querySelector('#panel input:focus, #panel select:focus')) renderPanel();
         if (!document.querySelector('#inspector select:focus')) renderInspector();
       }
-      overviewRefresh = 0;
+      liveRefresh = 0;
     }
     render();
     refresh = 0;
