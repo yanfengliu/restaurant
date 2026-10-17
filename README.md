@@ -1,1 +1,41 @@
-# restaurant
+# Corner Table
+
+A 3D restaurant management game about turning a little neighborhood bistro into a local favorite.
+
+## Play locally
+
+Use Node.js 24.12.0 (pinned in `.nvmrc`).
+
+```sh
+npm ci
+npm run dev
+```
+
+Open the localhost URL printed by Vite. The starter bistro begins service immediately. Open the gear menu to begin on an empty plot instead.
+
+## Make it yours
+
+- **Build:** place furniture and equipment, paint floors, remove items for a 60% refund, and buy more land.
+- **Menu:** enable recipes and set prices. Each recipe lists the equipment it needs.
+- **Staff:** hire employees and choose cooking, serving, or cleaning as their main priority.
+- **Finances:** watch sales, expenses, cash, and service activity.
+- **Goals:** choose from six restaurant challenges or play freely.
+
+Drag to move the camera, scroll to zoom, and use **Q / E** to orbit. **B** opens Build, **M** opens Menu, **R** rotates furniture, **Delete** selects removal, **Space** pauses, and **Esc** cancels. The camera controls also offer an overhead view.
+
+The game saves automatically in this browser every 30 seconds. The gear menu includes explicit save, load, and new restaurant controls. Browser storage is local to the browser and origin; clearing it removes the save.
+
+## Development
+
+Vanilla JavaScript modules, Vite 8.3.4, and Three.js 0.186.1. Geometry, interface illustrations, and game content are authored in the project. No art download or account is needed at runtime.
+
+```sh
+npm run check
+npm run audit
+```
+
+`check` checks JavaScript syntax, runs the Node simulation tests, and produces a production build. `audit` checks installed dependency advisories. `npm run preview` serves the production build locally.
+
+The development server exposes a read-only `window.__cornerTable` inspection helper for input-driven browser verification. Production builds omit that helper.
+
+Research and scope notes live in [docs/research.md](docs/research.md).
