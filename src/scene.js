@@ -695,7 +695,8 @@ export function createScene(container, callbacks = {}) {
     try{
       asset.add(createAsset());
       thumbnailScene.add(asset);asset.updateMatrixWorld(true);
-      let bounds=new THREE.Box3().setFromObject(asset);asset.position.y-=bounds.min.y;asset.updateMatrixWorld(true);bounds=new THREE.Box3().setFromObject(asset);
+      const framedAsset=portrait?asset.children[0].userData.body:asset;
+      let bounds=new THREE.Box3().setFromObject(framedAsset);asset.position.y-=bounds.min.y;asset.updateMatrixWorld(true);bounds=new THREE.Box3().setFromObject(framedAsset);
       if(portrait)bounds.min.y=Math.max(bounds.min.y,bounds.max.y-0.8);
       const center=bounds.getCenter(new THREE.Vector3()),extent=bounds.getSize(new THREE.Vector3()),span=Math.max(extent.x,extent.y,extent.z,0.5);
       if(!portrait){shadowMaterial=new THREE.MeshBasicMaterial({color:'#6f746c',transparent:true,opacity:0.13,depthWrite:false});const shadow=addMesh(asset,new THREE.CircleGeometry(Math.max(extent.x,extent.z)*0.42,24),shadowMaterial,center.x,-asset.position.y-0.012,center.z);shadow.rotation.x=-Math.PI/2;}
