@@ -1,6 +1,6 @@
 # Outdoor layouts and furniture movement
 
-Status: proposed; implementation waits for the orchestrator's approval.
+Status: approved by the orchestrator on 2026-10-17; implementation in progress.
 Owner: engine worker, with interface and scene consumers coordinated by the orchestrator.
 Base: `f73de59`.
 
@@ -10,7 +10,7 @@ Allow furnishing and staffing owned bare ground. Movement keeps the purchased ob
 
 ## Shared action contract
 
-`MOVE { id, x, z, rotation? }` relocates one existing object, including walls, windows and doors. Coordinates must be integer cells inside owned land. An omitted rotation preserves the current rotation; a supplied rotation must be a finite number and normalizes to the nearest quarter turn, like placement. No charge, refund, event, ID allocation or random draw occurs. A moved door preserves its actual purchase cost and the first-door grant history.
+`MOVE { id, x, z, rotation? }` relocates one existing object, including walls, windows and doors. Coordinates must be integer cells inside owned land. An omitted rotation preserves the current rotation; a supplied rotation must be a finite number and normalizes to the nearest quarter turn, like placement. Movement itself creates no charge, refund, event, ID allocation or random draw; ordinary renovation consequences below still apply. A moved door preserves its actual purchase cost and the first-door grant history.
 
 A ground object needs an empty ground cell, ignoring itself and its own supported child. A cabinet carries its supported appliance to the same coordinates and rotation. Moving an appliance independently requires a compatible cabinet at the destination with no other child; its `parentId` changes and it inherits the destination cabinet's rotation. A supplied appliance rotation is validated but cannot override support alignment. Moving onto the current support is an unchanged success. A ground move to identical coordinates and normalized rotation is an unchanged success, including for an occupied object. Invalid coordinates, rotation or support still reject before this no-op decision.
 
@@ -31,15 +31,17 @@ These movement checks do not relax storage-sale rules. A stocked, prepaid or res
 
 ## Atomicity and renovation
 
-Finish all validation before writes. Rejections preserve the complete serialized state, including events, money, supplies, random seeds and `nextId`. Accepted moves change only object coordinates/rotation/parent where relevant and the existing renovation effects on actor paths and blocked-task markers. They preserve object order, purchase cost, ID, supply ownership, quantities, delivery deadlines, wage accrual, cash and financial totals. Capacity is unchanged.
+Finish all validation before writes. Rejections preserve the complete serialized state, including events, money, supplies, random seeds and `nextId`. Accepted moves change object coordinates/rotation/parent where relevant and trigger existing renovation effects. They preserve object order, purchase cost, ID, supply ownership, quantities, delivery deadlines, wage accrual, cash and financial totals. Capacity is unchanged.
 
-After a structural move, call the existing `floorEnclosedRooms` once: former floors remain and any newly closed boundary gains only its missing interior peach floors at no charge. MOVE never replaces a destination wall or window, unlike a newly placed door. Call `rebuildPaths` once after moving the complete group. This invalidates the access cache, replans guests and employees and preserves carrying links and wash-return reservations when a route becomes blocked. Existing renovation behavior may make an arriving guest leave when their chair becomes unreachable. Do not create a second pathfinding implementation or change service timing.
+After a structural move, call the existing `floorEnclosedRooms` once: former floors remain and any newly closed boundary gains only its missing interior peach floors at no charge. MOVE never replaces a destination wall or window, unlike a newly placed door. Call `rebuildPaths` once after moving the complete group. This invalidates the access cache, replans guests and employees and preserves carrying links and wash-return reservations when a route becomes blocked. Existing renovation behavior may make an arriving guest leave when their chair becomes unreachable, updating their happiness, lost statistics and departure event/ID sequence. These effects remain observable on a real accepted move; only rejected moves and exact no-ops guarantee full byte identity. Do not create a second pathfinding implementation or change service timing.
 
 ## Outdoor behavior and persistence
 
 Remove the floor prerequisite from PLACE and HIRE. Keep owned-land, world bounds, guest collisions, support requirements, costs and staff limits. Floors remain independently purchasable, structural closure still creates interior floors, and room/entrance status retains its existing meaning.
 
 Dining seats require an adjacent table and chair without a floor prerequisite. Entry and all actor paths already cross bare ground, so no pathfinding allowance is needed. Update the corresponding warning and the version 2 guest-seat validator. Do not change the frozen version 1 validator, its old floor-dependent reserved-seat rule, literal migration fixtures or the schema version. Existing version 2 saves remain valid; newly valid outdoor guests reload and continue normally.
+
+`getStats.hasUsableSeating` reports whether at least one dining chair has an entry route. Engine enclosure advice and the interface construction hint use this same field: usable outdoor service does not require a room or door, while blocked seats still receive route advice. Existing `hasRoom`, `hasEntrance` and `buildingReady` telemetry remains unchanged.
 
 No new furniture types, prices, opening budgets, scenarios, dishwasher behavior or timing changes enter this work unit.
 

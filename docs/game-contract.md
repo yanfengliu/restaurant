@@ -10,7 +10,7 @@ The engine uses seeded randomness and no browser APIs. `dispatch(game, action)` 
 
 Coordinates are integer cell indices in a 24 × 24 world; rendered centers are `(x + 0.5, z + 0.5)`, initial owned land is x/z 4–19 inclusive and visitor entry is `(11, 3)`. Rotations normalize to 0, 90, 180 or 270 degrees.
 
-Actions are `PLACE { itemType, x, z, rotation }`, `STROKE { itemType: 'wall' | 'window', cells, rotation }`, `REMOVE { id }`, `FLOOR { x, z, style }`, `FLOOR_STROKE { cells, style }` and `EXPAND`.
+Actions are `PLACE { itemType, x, z, rotation }`, `MOVE { id, x, z, rotation? }`, `STROKE { itemType: 'wall' | 'window', cells, rotation }`, `REMOVE { id }`, `FLOOR { x, z, style }`, `FLOOR_STROKE { cells, style }` and `EXPAND`.
 
 Strokes accept 1–24 unique contiguous cells in one row or column, in either order; validate every cell and the full charge before changing anything. Wall/window runs align their rotation with the stroke axis; identical structural segments are no-ops retaining IDs and alignment, while other occupied cells reject the stroke.
 
@@ -18,7 +18,11 @@ Walls and windows can be built on bare land. A closed wall/window/door boundary 
 
 A door can replace a wall/window, preserving its ID, alignment and floor. The first successful door is free; subsequent doors cost the catalog price. `doorGrantUsed` persists after sale, and `purchaseCost` records the actual price for 60% rounded resale, so a granted door cannot generate money.
 
-Furniture needs a floor, except Building and Decoration items. One ground object occupies a cell; a counter may additionally support exactly one cutting board or fryer at the same ground coordinates. The child records `parentId`, inherits parent rotation and adds no second path blocker. Freestanding preparation stations remain valid.
+All furniture can be placed on owned bare ground or flooring. One ground object occupies a cell; a counter may additionally support exactly one cutting board or fryer at the same ground coordinates. The child records `parentId`, inherits parent rotation and adds no second path blocker. Freestanding preparation stations remain valid. An adjacent table and chair provide a dining seat with either surface.
+
+MOVE preserves type, ID, purchase cost, supplies, prepaid deliveries, return reservations, cash and expenses. The destination must be an empty owned integer cell with no current actor; a supported appliance instead requires a cabinet without another child. A cabinet carries its child; independently moved children adopt the new cabinet's ID and rotation. Omitted rotation preserves alignment, supplied finite degrees normalize to quarter turns, and a child always inherits support alignment. Identical moves are unchanged successes even when the item is busy; invalid actions reject the complete state unchanged. A real move retains ordinary renovation consequences, including departing unreachable arriving guests and their lost statistic, happiness and departure event/ID allocation.
+
+Reserved dining furniture, a guest's toilet destination, committed meal sources, current employee task targets, reserved sinks and dirty-dish locations cannot move. Every member of a parent/child group is checked. Stored stock, clean dishes and incoming tableware do not prevent movement; a wash-return cabinet may move until it becomes the employee's current return target. Later return paths resolve its current coordinates. Walls, windows and doors also move without replacing other segments, retain purchase/grant history and create missing interior floors only if the resulting boundary closes. All real moves replan existing actor paths through the renovation mechanism.
 
 Storage is shelf 12 units/$100, large shelf 24/$400, fridge 12/$150 and cabinet 10 tableware units/$50. Boards cost $50 and countertop fryers $100. Other item prices remain catalog-defined; fridge capacity is a playable inference.
 
@@ -30,7 +34,7 @@ Occupied dining furniture, occupied toilets, committed meal sources, active task
 
 Authoritative `calendarSeconds` starts at January 1 midnight. A day is 15 simulation seconds, a month is 30 days/450 seconds and a year has twelve months; `day` is absolute and `time` is the derived 0–24 phase. These are declared timing defaults, with no claimed native calibration.
 
-`HIRE { candidateId, x, z }` chooses one of three persisted candidates and places a generic employee on an owned, floored, clear tile without an upfront fee. It replaces the chosen candidate using separate persisted `candidateSeed`, preserving the guest/service random stream. Specialist `{ role }` hiring is retired.
+`HIRE { candidateId, x, z }` chooses one of three persisted candidates and places a generic employee on an owned clear tile, outdoors or on flooring, without an upfront fee. It replaces the chosen candidate using separate persisted `candidateSeed`, preserving the guest/service random stream. Specialist `{ role }` hiring is retired.
 
 Employees carry `skills: { cooking, speed, clumsiness }` in 0–1, `monthlyWage`, `wageAccrued` and four priorities. New candidate pay is `round(30 + 45*cooking + 45*speed + 30*(1-clumsiness))`. Cooking determines meal quality `0.6 + 0.4*cooking`, rather than cook duration; speed multiplies walking by `0.75 + 0.5*speed`.
 
@@ -80,13 +84,13 @@ Ingredient/tableware delivery records contain `{ status, nextDay, remainingSecon
 
 `getStats` retains financial/service/building/scenario fields, plus `availableRecipes` for enabled unlocked equipment-ready dishes and `cookableRecipes` for the currently supplied subset. It adds `monthlyWages`, `wagesAccrued`, `wagePeriodDays: 30`, candidates, supply warnings and `{ dayOfMonth, month, year, label }` calendar data. Deprecated `hourlyWages` is only the equivalent old-rate display.
 
-`hasRoom` means a closed structural boundary encloses an interior cell. `hasEntrance` requires an exterior door with walkable interior/exterior neighbors and an entry route; `buildingReady` combines them. Existing outdoor service remains available and staffing/menu warnings remain separate.
+`hasRoom` means a closed structural boundary encloses an interior cell. `hasEntrance` requires an exterior door with walkable interior/exterior neighbors and an entry route; `buildingReady` combines them. `hasUsableSeating` means at least one adjacent table/chair has an entry route, outdoors or indoors. It suppresses enclosure advice without changing building telemetry; unreachable seating still gets its own warning and staffing/menu warnings remain separate.
 
 ## Persistence and compatibility
 
 `serialize` returns version 2 JSON. `deserialize` accepts strings below 2 MB, validates version 1 against frozen six-recipe/item/role/graph rules before migration, then validates the new graph. Invalid values, capacities, parents, ownership, clocks, paths, funding or conservation throw an explanatory error without returning partial state.
 
-Version 1 migration preserves IDs/sequence, historical money/statistics, paths, task progress, construction grant and menu choices, then appends disabled Fries and allocates only new records. Old day/time become `calendarSeconds`; the future calendar follows the new rate. Old wages map to monthly ×22.5 with zero new accrual, since prior wages were already paid. Staff become generic with matching preferred groups, neutral speed 0.5 and mapped cooking quality; old cleaners receive equal normal cleaning/dishwashing priorities.
+Version 1 migration preserves IDs/sequence, historical money/statistics, paths, task progress, construction grant and menu choices, then appends disabled Fries and allocates only new records. Its frozen validator still requires floors under reserved dining seats; version 2 permits outdoor seats. Old day/time become `calendarSeconds`; the future calendar follows the new rate. Old wages map to monthly ×22.5 with zero new accrual, since prior wages were already paid. Staff become generic with matching preferred groups, neutral speed 0.5 and mapped cooking quality; old cleaners receive equal normal cleaning/dishwashing priorities.
 
 Queued legacy orders use `legacy-pending` with frozen one-time debits (burger 4.5, salad 3, pasta 4, steak 9, risotto 6, special 11), granting a dish only with successful preparation. Cooking/ready orders are `legacy-paid` and gain one dish without new ingredients/debit; physically carried ready meals keep reciprocal carrier/order links. Already-ready/served meals use quality 1; served legacy recipe identity is unknowable and uses an explicit fallback plate. Eating guests own their plate; positive-bill completed meals with an existing table become dirty there. No stock or storage is invented.
 

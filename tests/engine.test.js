@@ -231,7 +231,7 @@ test('placing, rotating, flooring and selling account for actual purchases and r
 test('invalid or unaffordable construction is atomic and gives usable errors', () => {
   const game = createGame('empty');
   for (const data of [
-    { type: 'PLACE', itemType: 'table', x: 5, z: 5 },
+    { type: 'PLACE', itemType: 'table', x: 5, z: 24 },
     { type: 'PLACE', itemType: 'plant', x: 0, z: 0 },
     { type: 'PLACE', itemType: 'plant', x: 4.1, z: 4 },
     { type: 'PLACE', itemType: 'toString', x: 4, z: 4 },

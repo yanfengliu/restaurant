@@ -22,6 +22,7 @@ const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 const tile = (value) => Math.round(value);
 const key = (x, z) => `${x},${z}`;
 const sameTile = (a, b) => tile(a.x) === tile(b.x) && tile(a.z) === tile(b.z);
+const normalizeRotation = (degrees) => ((Math.round((degrees % 360) / 90) * 90 % 360) + 360) % 360;
 const inside = (x, z) => Number.isInteger(x) && Number.isInteger(z) && x >= 0 && z >= 0 && x < 24 && z < 24;
 const owned = (game, x, z) => x >= game.land.minX && x <= game.land.maxX && z >= game.land.minZ && z <= game.land.maxZ;
 const recipeById = (id) => RECIPES.find((recipe) => recipe.id === id);
@@ -336,14 +337,13 @@ function placeObjects(game, itemType, cells, rotation) {
     const replacingWall = itemType === 'door' && existing && ['wall', 'window'].includes(existing.type);
     if (existing && !replacingWall && !parent) return outcome(false, 'That tile already contains furniture.');
     if (game.guests.some((guest) => sameTile(guest, { x, z }))) return outcome(false, 'Wait for the guest to leave this tile before building.');
-    if (!['Building', 'Decoration'].includes(item.category) && !game.floors.some((floor) => floor.x === x && floor.z === z)) return outcome(false, 'Lay a floor on this tile before placing furniture.');
     const cost = itemType === 'door' && !game.doorGrantUsed ? 0 : item.cost;
     totalCost += cost; changes.push({ x, z, existing: replacingWall ? existing : null, parent, cost });
   }
   if (!changes.length) return outcome(true, `${item.name} is already in place.`);
   if (totalCost > 0 && game.cash < totalCost) return outcome(false, `You need $${totalCost} to buy ${changes.length === 1 ? item.name.toLowerCase() : `${changes.length} ${item.name.toLowerCase()} segments`}.`);
   if (totalCost > 0) spend(game, totalCost);
-  const normalizedRotation = Number.isFinite(rotation) ? ((Math.round(rotation / 90) * 90 % 360) + 360) % 360 : 0;
+  const normalizedRotation = Number.isFinite(rotation) ? normalizeRotation(rotation) : 0;
   for (const change of changes) {
     if (change.existing) {
       change.existing.type = itemType; change.existing.purchaseCost = change.cost;
@@ -356,6 +356,35 @@ function placeObjects(game, itemType, cells, rotation) {
   if (STRUCTURAL_TYPES.has(itemType)) floorEnclosedRooms(game);
   rebuildPaths(game);
   return outcome(true, changes.length === 1 ? `${item.name} placed.` : `${changes.length} ${item.name.toLowerCase()} segments placed.`);
+}
+
+function relocateObject(game, action) {
+  const object = objectById(game, action.id);
+  if (!object) return outcome(false, 'Choose an existing piece of furniture to move.');
+  if (!inside(action.x, action.z) || !owned(game, action.x, action.z)) return outcome(false, 'Move furniture to an integer tile inside your owned land.');
+  if (action.rotation !== undefined && !Number.isFinite(action.rotation)) return outcome(false, 'Move furniture with a finite rotation in degrees.');
+  const group = [object, ...game.objects.filter((child) => child.parentId === object.id)];
+  const existing = game.objects.find((entry) => !entry.parentId && !group.includes(entry) && entry.x === action.x && entry.z === action.z);
+  const support = ITEMS[object.type].support;
+  const parent = support && existing?.type === support ? existing : null;
+  if (support && (!parent || game.objects.some((child) => child.parentId === parent.id && child.id !== object.id))) return outcome(false, 'Move this appliance onto an empty cabinet using its ground tile.');
+  if (existing && !parent) return outcome(false, 'The destination tile already contains furniture. Choose an empty tile.');
+  const rotation = parent?.rotation ?? (action.rotation === undefined ? object.rotation : normalizeRotation(action.rotation));
+  if (object.x === action.x && object.z === action.z && object.rotation === rotation && (!parent || object.parentId === parent.id)) return outcome(true, `${ITEMS[object.type].name} is already in place.`);
+  if ([...game.guests, ...game.staff].some((actor) => sameTile(actor, action))) return outcome(false, 'Wait for the guest or employee to leave the destination tile before moving furniture.');
+  for (const moving of group) {
+    if (game.guests.some((guest) => guest.state !== 'leaving' && (guest.tableId === moving.id || guest.seatId === moving.id))) return outcome(false, 'Wait until the guest has finished before moving their table or chair.');
+    if (moving.type === 'toilet' && game.guests.some((guest) => {
+      const position = guest.toiletReached ? guest : guest.path.at(-1) ?? guest;
+      return guest.state === 'toilet' && Math.abs(position.x - moving.x) + Math.abs(position.z - moving.z) <= 1.00001;
+    })) return outcome(false, 'Wait until the guest has finished using this toilet before moving it.');
+    if (game.orders.some((order) => order.sourceId === moving.id) || game.staff.some((member) => taskTarget(game, member)?.id === moving.id || member.sinkId === moving.id) || game.supplies.ware.some((ware) => ware.locationId === moving.id || ware.sinkId === moving.id)) return outcome(false, `Finish the active meal or task at this ${ITEMS[moving.type].name.toLowerCase()} before moving it.`);
+  }
+  for (const moving of group) Object.assign(moving, { x: action.x, z: action.z, rotation });
+  if (parent) object.parentId = parent.id;
+  if (STRUCTURAL_TYPES.has(object.type)) floorEnclosedRooms(game);
+  rebuildPaths(game);
+  return outcome(true, `${ITEMS[object.type].name} moved.`);
 }
 
 function layFloors(game, cells, style, noOpAllowed = false) {
@@ -434,8 +463,7 @@ function move(actor, seconds, tilesPerSecond = 1.8) {
 function seats(game) {
   return game.objects.filter((object) => object.type === 'chair').flatMap((chair) => {
     const table = game.objects.find((object) => object.type === 'table' && Math.abs(object.x - chair.x) + Math.abs(object.z - chair.z) === 1);
-    const hasFloor = game.floors.some((floor) => floor.x === chair.x && floor.z === chair.z) && game.floors.some((floor) => floor.x === table?.x && floor.z === table?.z);
-    return table && hasFloor ? [{ chair, table }] : [];
+    return table ? [{ chair, table }] : [];
   });
 }
 
@@ -785,13 +813,16 @@ export function dispatch(game, action) {
     case 'PLACE': {
       return placeObjects(game, action.itemType, [{ x: action.x, z: action.z }], action.rotation);
     }
+    case 'MOVE': {
+      return relocateObject(game, action);
+    }
     case 'STROKE': {
       if (!['wall', 'window'].includes(action.itemType)) return outcome(false, 'Choose wall or window for a construction stroke.');
       const cells = strokeCells(action.cells);
       if (!cells) return outcome(false, 'A stroke needs 1 to 24 unique, contiguous tiles in one straight row or column.');
       const alongX = cells.length === 1 || cells[0].z === cells[1].z;
       const rotation = action.rotation === undefined ? (alongX ? 0 : 90) : action.rotation;
-      if (!Number.isFinite(rotation) || cells.length > 1 && ((Math.round(rotation / 90) * 90 % 180) + 180) % 180 !== (alongX ? 0 : 90)) return outcome(false, 'Align the wall stroke rotation with its row (0°) or column (90°).');
+      if (!Number.isFinite(rotation) || cells.length > 1 && normalizeRotation(rotation) % 180 !== (alongX ? 0 : 90)) return outcome(false, 'Align the wall stroke rotation with its row (0°) or column (90°).');
       return placeObjects(game, action.itemType, cells, rotation);
     }
     case 'REMOVE': {
@@ -820,7 +851,7 @@ export function dispatch(game, action) {
       const selected = game.candidates.find((candidate) => candidate.id === action.candidateId);
       if (!selected) return outcome(false, 'Choose an available employee candidate.');
       if (game.staff.length >= 20) return outcome(false, 'Your restaurant already has the maximum of 20 employees.');
-      if (!inside(action.x, action.z) || !owned(game, action.x, action.z) || !game.floors.some((floor) => floor.x === action.x && floor.z === action.z) || blockers(game).has(key(action.x, action.z))) return outcome(false, 'Place the employee on a clear floor tile inside your land.');
+      if (!inside(action.x, action.z) || !owned(game, action.x, action.z) || blockers(game).has(key(action.x, action.z))) return outcome(false, 'Place the employee on a clear tile inside your owned land.');
       const member = { ...structuredClone(selected), id: id(game, 'staff'), role: 'employee', wageAccrued: 0, priorities: Object.fromEntries(TASK_GROUPS.map((group) => [group, 'normal'])), energy: 100, x: action.x, z: action.z, task: 'idle', path: [], timer: 0 };
       game.staff.push(member); game.candidates = game.candidates.filter((candidate) => candidate.id !== selected.id); game.candidates.push(candidate(game));
       event(game, `${member.name} joined the team.`);
@@ -903,18 +934,19 @@ export function dispatch(game, action) {
 }
 
 export function getStats(game) {
-  const seatCount = seats(game).length, recipes = availableMenu(game), warnings = [];
+  const diningSeats = seats(game), seatCount = diningSeats.length, recipes = availableMenu(game), warnings = [];
+  const hasUsableSeating = diningSeats.some(({ chair }) => pathTo(game, ENTRY, chair, true) !== null);
   const recipeStatus = getRecipeStatus(game);
   const readiness = buildingReadiness(game);
-  if (!readiness.hasRoom) warnings.push('Close a wall boundary to create a room and its default flooring.');
-  else if (!readiness.hasEntrance) warnings.push('Add a reachable door between the enclosed room and outside.');
-  if (!seatCount) warnings.push('Add a table and an adjacent chair on flooring to seat guests.');
+  if (!hasUsableSeating && !readiness.hasRoom) warnings.push('Close a wall boundary to create a room and its default flooring, or place an accessible outdoor table and chair.');
+  else if (!hasUsableSeating && !readiness.hasEntrance) warnings.push('Add a reachable door to the enclosed room, or place an accessible outdoor table and chair.');
+  if (!seatCount) warnings.push('Add a table and an adjacent chair to seat guests.');
   if (!game.staff.some((member) => member.priorities.cooking !== 'off')) warnings.push('Enable cooking for an employee to prepare meals.');
   if (!game.staff.some((member) => member.priorities.serving !== 'off')) warnings.push('Enable serving for an employee to take orders and deliver meals.');
   if (!recipes.length) warnings.push('Enable a recipe and provide its required kitchen equipment.');
   if (!game.objects.some((object) => object.type === 'toilet')) warnings.push('Guests would appreciate a toilet.');
   if (game.stats.cleanliness < 60) warnings.push('The restaurant needs cleaning. Hire a cleaner and provide a sink or bin.');
-  if (seatCount && !seats(game).some(({ chair }) => pathTo(game, ENTRY, chair, true))) warnings.push('Your dining room is unreachable. Add a clear entrance.');
+  if (seatCount && !hasUsableSeating) warnings.push('Your dining seats are unreachable. Clear a route or add an entrance.');
   if (game.cash < 250) warnings.push('Cash is running low. Review menu prices and staffing costs.');
   if (recipeStatus.some((status) => status.enabled && status.canOrder && !status.canPrepare)) warnings.push('An enabled dish needs ingredients or clean tableware before cooking can start.');
   if (game.staff.some((member) => member.blocked)) warnings.push('An employee task is blocked. Clear access to the highlighted station.');
@@ -923,7 +955,7 @@ export function getStats(game) {
     tables: game.objects.filter((object) => object.type === 'table').length, staff: game.staff.length, orders: game.orders.length,
     profit: game.stats.revenue - game.stats.expenses, occupancy: seatCount ? game.guests.filter((guest) => guest.state !== 'leaving').length / seatCount : 0,
     availableRecipes: recipeStatus.filter((status) => status.canOrder).map((status) => status.recipeId), cookableRecipes: recipeStatus.filter((status) => status.enabled && status.canPrepare).map((status) => status.recipeId), warnings, bankrupt: game.bankrupt,
-    hourlyWages: game.staff.reduce((total, member) => total + member.monthlyWage / 22.5, 0), monthlyWages: game.staff.reduce((total, member) => total + member.monthlyWage, 0), wagesAccrued: game.staff.reduce((total, member) => total + member.wageAccrued, 0), wagePeriodDays: 30, candidates: game.candidates, calendar: calendarInfo(game), ...readiness,
+    hourlyWages: game.staff.reduce((total, member) => total + member.monthlyWage / 22.5, 0), monthlyWages: game.staff.reduce((total, member) => total + member.monthlyWage, 0), wagesAccrued: game.staff.reduce((total, member) => total + member.wageAccrued, 0), wagePeriodDays: 30, candidates: game.candidates, calendar: calendarInfo(game), hasUsableSeating, ...readiness,
     scenarioProgress: game.scenario.goals.map((goal) => ({ ...goal, value: values[goal.stat] ?? 0, complete: (values[goal.stat] ?? 0) >= goal.target })),
   };
 }
@@ -1134,7 +1166,7 @@ function validateV2Save(game) {
     if (!GUEST_STATES.includes(guest.state) || typeof guest.name !== 'string' || !finite(guest.hunger, 0, 100) || !finite(guest.patience) || !finite(guest.happiness, 0, 100) || !finite(guest.bill, 0, 150) || !finite(guest.mealTime, 0, 1000) || typeof guest.toiletNeed !== 'boolean') fail('a guest has invalid needs or state');
     const chair = objectById(game, guest.seatId), table = objectById(game, guest.tableId);
     if (guest.state !== 'leaving') {
-      if (chair?.type !== 'chair' || table?.type !== 'table' || seatsInUse.has(chair.id) || Math.abs(chair.x - table.x) + Math.abs(chair.z - table.z) !== 1 || !floors.has(key(chair.x, chair.z)) || !floors.has(key(table.x, table.z))) fail('a guest has a missing or duplicate reserved seat');
+      if (chair?.type !== 'chair' || table?.type !== 'table' || seatsInUse.has(chair.id) || Math.abs(chair.x - table.x) + Math.abs(chair.z - table.z) !== 1) fail('a guest has a missing or duplicate reserved seat');
       seatsInUse.add(chair.id);
       if (['waiting', 'ordered', 'eating'].includes(guest.state) && (!at(guest, chair) || guest.path.length)) fail('a seated guest must remain at their reserved chair');
       if (guest.state === 'arriving' && !at(guest.path.at(-1) ?? guest, chair)) fail('an arriving guest path must end at their chair');
