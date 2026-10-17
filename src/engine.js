@@ -228,7 +228,7 @@ export function getSupplies(game) {
     return { id: object.id, capacity: ITEMS[object.type].capacity, used: usedStorage(game, object.id), reserved: reservedStorage(game, object.id), contents };
   }), deliveries: {
     ingredient: { status: ingredientActive ? (plan.cost > game.cash || ingredientAccessReason ? 'blocked' : 'waiting') : 'idle', nextDay, remainingSeconds, progress: clamp(1 - remainingSeconds / (nextDay === 10 ? 135 : 150), 0, 1), nextCost: plan.cost, scheduledCost: ingredients.reduce((sum, row) => sum + row.scheduledCost, 0), blockedReason: plan.cost > game.cash ? 'Insufficient cash for the next delivery.' : ingredientAccessReason ?? game.supplies.ingredientBlockedReason ?? '' },
-    tableware: { status: !queued ? 'idle' : wareBlocked ? 'blocked' : wareRemaining ? 'waiting' : 'due', nextDay: queued ? game.day + (wareRemaining / DAY_SECONDS) : null, remainingSeconds: wareRemaining, progress: queued ? clamp(1 - wareRemaining / 75, 0, 1) : 0, nextCost: 0, blockedReason: wareBlocked ? 'The delivery cabinet is inaccessible.' : '' },
+    tableware: { status: !queued ? 'idle' : wareBlocked ? 'blocked' : wareRemaining ? 'waiting' : 'due', nextDay: queued ? Math.floor((game.calendarSeconds + wareRemaining) / DAY_SECONDS) + 1 : null, remainingSeconds: wareRemaining, progress: queued ? clamp(1 - wareRemaining / 75, 0, 1) : 0, nextCost: 0, blockedReason: wareBlocked ? 'The delivery cabinet is inaccessible.' : '' },
   } };
 }
 

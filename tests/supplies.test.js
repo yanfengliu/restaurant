@@ -146,6 +146,20 @@ test('an inaccessible prepaid cabinet keeps its due queue refundable and resumes
   assert.equal(game.cash, cashAfterRemoval); assert.ok(game.cash >= paid); assert.equal(game.supplies.ware.length, 1); assert.equal(game.supplies.tablewareQueue.length, 0);
 });
 
+test('a tableware delivery keeps one integer calendar date while fractional days advance', () => {
+  const game = bare(); place(game, 'counter', 8, 8); run(game, 5.25);
+  doAction(game, { type: 'TABLEWARE_ORDER', tablewareId: 'plate', delta: 1 });
+  const expectedDay = 6;
+  assert.equal(getSupplies(game).deliveries.tableware.nextDay, expectedDay);
+  for (const seconds of [1.25, 9.5, 17.75, 32.25]) {
+    run(game, seconds);
+    assert.equal(getSupplies(game).deliveries.tableware.nextDay, expectedDay, 'The date must stay at the queued absolute deadline until arrival');
+  }
+  assert.equal(game.supplies.tablewareQueue.length, 1);
+  run(game, 14.25); assert.equal(game.supplies.tablewareQueue.length, 0);
+  assert.equal(getSupplies(game).deliveries.tableware.nextDay, null);
+});
+
 test('Fries can be added without staff only after all prerequisites, while later shortages keep the enabled menu visible', () => {
   const game = workshop();
   game.menu.find((entry) => entry.recipeId === 'steak').enabled = true;
