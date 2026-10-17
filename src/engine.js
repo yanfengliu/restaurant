@@ -64,7 +64,7 @@ export function createGame(mode = 'sandbox') {
   if (mode !== 'empty') {
     for (let x = 6; x <= 17; x++) for (let z = 6; z <= 16; z++) game.floors.push({ x, z, style: z <= 8 ? 'kitchen' : 'wood' });
     for (let x = 6; x <= 17; x++) { addObject(game, 'wall', x, 6); addObject(game, 'wall', x, 16); }
-    for (let z = 7; z <= 15; z++) { addObject(game, 'wall', 6, z); addObject(game, 'wall', 17, z); }
+    for (let z = 7; z <= 15; z++) { addObject(game, 'wall', 6, z, 90); addObject(game, 'wall', 17, z, 90); }
     game.objects = game.objects.filter((object) => !(object.x === 11 && object.z === 6));
     addObject(game, 'door', 11, 6);
     addObject(game, 'stove', 7, 7); addObject(game, 'prep', 8, 7); addObject(game, 'fridge', 9, 7);
@@ -74,7 +74,7 @@ export function createGame(mode = 'sandbox') {
     }
     addObject(game, 'toilet', 16, 14); addObject(game, 'sink', 16, 13);
     for (const [x, z] of [[7, 9], [16, 9], [7, 15], [15, 15]]) addObject(game, 'plant', x, z);
-    addObject(game, 'painting', 10, 7); addObject(game, 'clock', 15, 7); addObject(game, 'lamp', 7, 12); addObject(game, 'flowerbox', 10, 5);
+    addObject(game, 'painting', 10, 15); addObject(game, 'clock', 14, 15); addObject(game, 'lamp', 7, 12); addObject(game, 'flowerbox', 10, 5);
     addStaff(game, 'chef'); addStaff(game, 'waiter'); addStaff(game, 'cleaner');
     event(game, 'Welcome! Your restaurant is open. Build, hire and create your menu.');
   } else event(game, 'A fresh start. Lay floors, build a kitchen and dining room, then open your doors.');
@@ -170,9 +170,9 @@ function leave(game, guest, reason) {
   guest.exitBlocked = !sameTile(guest, ENTRY) && !guest.path.length;
   if (guest.orderId) {
     game.orders = game.orders.filter((order) => order.id !== guest.orderId);
-    for (const member of game.staff) if (member.orderId === guest.orderId || member.guestId === guest.id) resetStaff(member);
-    delete guest.orderId;
   }
+  for (const member of game.staff) if ((guest.orderId && member.orderId === guest.orderId) || member.guestId === guest.id) resetStaff(member);
+  delete guest.orderId;
 }
 
 function arrivals(game, seconds) {
@@ -530,33 +530,68 @@ function validateSave(game) {
     if (!inside(floor.x, floor.z) || !owned(game, floor.x, floor.z) || !['wood', 'tile', 'kitchen', 'stone', 'checker'].includes(floor.style) || floorTiles.has(key(floor.x, floor.z))) fail('floor placement or style is invalid');
     floorTiles.add(key(floor.x, floor.z));
   }
+  const solidTiles = new Map(game.objects.filter((object) => ITEMS[object.type].solid).map((object) => [key(object.x, object.z), object]));
+  const guestIds = new Set(game.guests.map((guest) => guest.id));
+  const at = (position, target) => target && Math.abs(position.x - target.x) + Math.abs(position.z - target.z) < 0.00001;
+  const destination = (actor) => actor.path.at(-1) ?? actor;
+  const destinationAdjacent = (actor, target) => target && Math.abs(destination(actor).x - target.x) + Math.abs(destination(actor).z - target.z) <= 1.00001;
   for (const actor of [...game.staff, ...game.guests]) {
     if (!actorPosition(actor) || !Array.isArray(actor.path) || actor.path.length > 576 || actor.path.some((point) => !inside(point.x, point.z)) || !finite(actor.timer, 0)) fail('an actor position, path or timer is invalid');
+    if (!Number.isInteger(actor.x) && !Number.isInteger(actor.z)) fail('an actor position must follow a grid edge');
+    const isGuest = guestIds.has(actor.id), ownChair = isGuest && objectById(game, actor.seatId);
+    const occupiedTile = solidTiles.get(key(tile(actor.x), tile(actor.z)));
+    if (occupiedTile && occupiedTile.id !== ownChair?.id) fail('an actor position overlaps solid furniture outside their reserved seat');
     let previous = actor;
-    for (const point of actor.path) {
+    for (const [index, point] of actor.path.entries()) {
       if (Math.abs(point.x - previous.x) + Math.abs(point.z - previous.z) > 1.00001) fail('an actor path skips intervening tiles');
+      const blocked = solidTiles.get(key(point.x, point.z));
+      const chairEndpoint = isGuest && blocked?.id === ownChair?.id && actor.state === 'arriving' && index === actor.path.length - 1;
+      const chairOrigin = isGuest && blocked?.id === ownChair?.id && index === 0 && sameTile(actor, point);
+      if (blocked && !chairEndpoint && !chairOrigin) fail('an actor path crosses solid furniture');
       previous = point;
     }
   }
   for (const member of game.staff) if (!ROLES.includes(member.role) || typeof member.name !== 'string' || !finite(member.wage, 0, 1000) || !finite(member.skill, 0.1, 10) || !finite(member.energy, 0, 100) || !['idle', 'taking-order', 'cooking', 'pickup', 'serving', 'cleaning'].includes(member.task)) fail('a staff member has an invalid role, task or attributes');
   const reserved = new Set();
   for (const guest of game.guests) {
-    if (!GUEST_STATES.includes(guest.state) || typeof guest.name !== 'string' || !finite(guest.hunger, 0, 100) || !finite(guest.patience) || !finite(guest.happiness, 0, 100) || !finite(guest.bill, 0, 150) || !finite(guest.mealTime, 0, 1000)) fail('a guest has invalid needs or state');
+    if (!GUEST_STATES.includes(guest.state) || typeof guest.name !== 'string' || !finite(guest.hunger, 0, 100) || !finite(guest.patience) || !finite(guest.happiness, 0, 100) || !finite(guest.bill, 0, 150) || !finite(guest.mealTime, 0, 1000) || typeof guest.toiletNeed !== 'boolean') fail('a guest has invalid needs or state');
     if (guest.state !== 'leaving') {
-      if (objectById(game, guest.tableId)?.type !== 'table' || objectById(game, guest.seatId)?.type !== 'chair' || reserved.has(guest.seatId)) fail('a guest has a missing or duplicate reserved seat');
+      const table = objectById(game, guest.tableId), chair = objectById(game, guest.seatId);
+      if (table?.type !== 'table' || chair?.type !== 'chair' || reserved.has(guest.seatId) || Math.abs(table.x - chair.x) + Math.abs(table.z - chair.z) !== 1 || !floorTiles.has(key(table.x, table.z)) || !floorTiles.has(key(chair.x, chair.z))) fail('a guest has a missing or duplicate reserved seat');
       reserved.add(guest.seatId);
+      if (['waiting', 'ordered', 'eating'].includes(guest.state) && (!at(guest, chair) || guest.path.length)) fail('a seated guest must remain at their reserved chair');
+      if (guest.state === 'arriving' && !at(destination(guest), chair)) fail('an arriving guest path must end at their reserved chair');
     }
-    if (guest.orderId && !game.orders.some((order) => order.id === guest.orderId && order.guestId === guest.id)) fail('a guest order link is invalid');
+    if (guest.state === 'ordered') {
+      if (!game.orders.some((order) => order.id === guest.orderId && order.guestId === guest.id)) fail('an ordered guest is missing their meal order');
+    } else if (guest.orderId !== undefined) fail('a guest order link does not match their dining state');
+    if (['arriving', 'waiting', 'ordered'].includes(guest.state) && guest.bill !== 0 || ['eating', 'toilet'].includes(guest.state) && guest.bill <= 0) fail('a guest bill does not match their dining state');
+    if (guest.state === 'toilet' && (typeof guest.toiletReached !== 'boolean' || !game.objects.some((object) => object.type === 'toilet' && destinationAdjacent(guest, object)))) fail('a guest toilet path or facility is missing');
+    if (guest.state === 'leaving' && (typeof guest.exitBlocked !== 'boolean' || !guest.exitBlocked && !at(destination(guest), ENTRY))) fail('a departing guest must have an exit path or a blocked exit');
   }
   for (const order of game.orders) {
-    if (!recipeById(order.recipeId) || !game.guests.some((guest) => guest.id === order.guestId && guest.orderId === order.id) || !['queued', 'cooking', 'ready'].includes(order.state) || !finite(order.price, 1, 150) || !finite(order.progress, 0, 10000)) fail('an order has an invalid recipe, guest or progress');
-    if (order.sourceId && !objectById(game, order.sourceId)) fail('an order cooking station is missing');
-    for (const field of ['staffId', 'waiterId']) if (order[field] && !game.staff.some((member) => member.id === order[field] && member.orderId === order.id)) fail('an order staff link is invalid');
+    const recipe = recipeById(order.recipeId), source = objectById(game, order.sourceId);
+    if (!recipe || !game.guests.some((guest) => guest.id === order.guestId && guest.orderId === order.id && guest.state === 'ordered') || !['queued', 'cooking', 'ready'].includes(order.state) || !finite(order.price, 1, 150) || !finite(order.progress, 0, 10000)) fail('an order has an invalid recipe, guest or progress');
+    if (order.state !== 'queued' && source?.type !== (recipe.equipment.includes('stove') ? 'stove' : 'prep')) fail('a cooking or ready order requires its recipe-compatible cooking station');
+    if (order.state === 'queued' && (order.sourceId !== undefined || order.progress !== 0) || order.state === 'cooking' && order.progress >= recipe.cookTime || order.state === 'ready' && order.progress < recipe.cookTime) fail('an order cooking progress does not match its state');
+    if (order.staffId !== undefined && (order.state === 'ready' || !game.staff.some((member) => member.id === order.staffId && member.orderId === order.id && member.task === 'cooking' && member.role === 'chef'))) fail('an order chef link is invalid');
+    if (order.waiterId !== undefined && (order.state !== 'ready' || !game.staff.some((member) => member.id === order.waiterId && member.orderId === order.id && ['pickup', 'serving'].includes(member.task) && member.role === 'waiter'))) fail('an order waiter link is invalid');
   }
+  const assignedGuests = new Set();
   for (const member of game.staff) {
-    if (member.orderId && !game.orders.some((order) => order.id === member.orderId)) fail('a staff order link is invalid');
-    if (member.guestId && !game.guests.some((guest) => guest.id === member.guestId)) fail('a staff guest link is invalid');
-    if (member.taskTarget && !objectById(game, member.taskTarget)) fail('a staff station link is invalid');
+    const order = game.orders.find((entry) => entry.id === member.orderId), guest = game.guests.find((entry) => entry.id === member.guestId), target = objectById(game, member.taskTarget);
+    if (member.task === 'idle' && (member.path.length || ['orderId', 'guestId', 'taskTarget'].some((field) => member[field] !== undefined))) fail('idle staff cannot retain an active assignment');
+    if (member.task === 'taking-order' && (member.role !== 'waiter' || guest?.state !== 'waiting' || member.orderId !== undefined || member.taskTarget !== undefined || !destinationAdjacent(member, guest))) fail('a waiter taking an order requires a reachable waiting guest');
+    if (member.task === 'cooking') {
+      const recipe = order && recipeById(order.recipeId);
+      if (member.role !== 'chef' || !order || !['queued', 'cooking'].includes(order.state) || order.staffId !== member.id || target?.type !== (recipe?.equipment.includes('stove') ? 'stove' : 'prep') || order.state === 'cooking' && order.sourceId !== target.id || member.guestId !== undefined || !destinationAdjacent(member, target)) fail('a cooking chef requires a reciprocal order and reachable cooking station');
+    }
+    if (['pickup', 'serving'].includes(member.task) && (member.role !== 'waiter' || !order || order.state !== 'ready' || order.waiterId !== member.id || guest?.id !== order.guestId || guest?.state !== 'ordered' || member.taskTarget !== undefined || !destinationAdjacent(member, member.task === 'pickup' ? objectById(game, order.sourceId) : guest))) fail('a serving waiter requires a reciprocal ready meal, guest and delivery path');
+    if (member.task === 'cleaning' && (member.role !== 'cleaner' || !['bin', 'sink'].includes(target?.type) || member.orderId !== undefined || member.guestId !== undefined || !destinationAdjacent(member, target))) fail('a cleaner requires a reachable sink or waste bin');
+    if (member.guestId !== undefined) {
+      if (assignedGuests.has(member.guestId)) fail('multiple waiters are assigned to the same guest');
+      assignedGuests.add(member.guestId);
+    }
   }
   const menuIds = new Set();
   for (const entry of game.menu) {

@@ -30,6 +30,17 @@ test('starter restaurant has four usable tables, eight seats, kitchen, facilitie
   assert.deepEqual(deserialize(serialize(game)), game);
 });
 
+test('the starter perimeter forms a continuous boundary with a clear entrance', () => {
+  const game = createGame();
+  const horizontalWalls = game.objects.filter((object) => object.type === 'wall' && [6, 16].includes(object.z));
+  const verticalWalls = game.objects.filter((object) => object.type === 'wall' && [6, 17].includes(object.x) && object.z > 6 && object.z < 16);
+  assert.equal(horizontalWalls.length, 23); assert.equal(verticalWalls.length, 18);
+  for (const wall of horizontalWalls) assert.equal(wall.rotation, 0, 'North/south wall panels must span the x axis');
+  for (const wall of verticalWalls) assert.equal(wall.rotation, 90, 'East/west wall panels must span the z axis');
+  assert.ok(game.objects.some((object) => object.type === 'door' && object.x === 11 && object.z === 6));
+  assert.equal(getStats(game).warnings.some((warning) => warning.includes('unreachable')), false);
+});
+
 test('placing, rotating, flooring and selling account for actual purchases and refunds', () => {
   const game = createGame('empty'), initial = game.cash;
   action(game, { type: 'FLOOR', x: 5, z: 5, style: 'tile' });
@@ -206,6 +217,65 @@ test('save round trips active movement and kitchen tasks without changing future
   assert.deepEqual(restored, game);
   run(game, 100, 0.25); run(restored, 100, 0.25);
   assert.equal(serialize(restored), serialize(game));
+});
+
+test('8000 consecutive quarter-second saves preserve service states and future behavior', () => {
+  const original = createGame();
+  let restored = createGame();
+  const observedTasks = new Set(), observedStates = new Set();
+  for (let step = 0; step < 8000; step++) {
+    tick(original, 0.25); tick(restored, 0.25);
+    restored = deserialize(serialize(restored));
+    for (const member of restored.staff) observedTasks.add(member.task);
+    for (const guest of restored.guests) observedStates.add(guest.state);
+  }
+  assert.equal(serialize(restored), serialize(original));
+  for (const task of ['idle', 'taking-order', 'cooking', 'pickup', 'serving', 'cleaning']) assert.ok(observedTasks.has(task), `The persistence check must cover ${task}`);
+  for (const state of ['arriving', 'waiting', 'ordered', 'eating', 'toilet', 'leaving']) assert.ok(observedStates.has(state), `The persistence check must cover ${state}`);
+  assert.ok(restored.stats.served > 100);
+});
+
+test('save validation rejects solid crossings, incompatible cooking sources and missing reciprocal task links', () => {
+  const starter = createGame();
+  const crossedStove = structuredClone(starter), chef = crossedStove.staff.find((member) => member.role === 'chef');
+  chef.path = [{ x: 7, z: 7 }]; chef.task = 'cleaning';
+  assert.throws(() => deserialize(serialize(crossedStove)), /path crosses solid furniture/);
+  const insideStove = structuredClone(starter);
+  Object.assign(insideStove.staff[0], { x: 7, z: 7 });
+  assert.throws(() => deserialize(serialize(insideStove)), /position overlaps solid furniture/);
+  const cooking = createGame();
+  until(cooking, () => cooking.orders.some((order) => order.state === 'cooking'));
+  const malformedCooking = [
+    (game, order) => { delete order.sourceId; },
+    (game, order) => { order.sourceId = game.objects.find((object) => object.type === 'table').id; },
+    (game, order) => { delete game.staff.find((member) => member.id === order.staffId).taskTarget; },
+    (game, order) => { delete game.staff.find((member) => member.id === order.staffId).orderId; },
+    (game, order) => { delete order.staffId; },
+    (game, order) => { game.staff.find((member) => member.id === order.staffId).role = 'cleaner'; },
+    (game, order) => { delete game.guests.find((guest) => guest.id === order.guestId).orderId; },
+  ];
+  for (const mutate of malformedCooking) {
+    const corrupted = structuredClone(cooking), order = corrupted.orders.find((entry) => entry.state === 'cooking');
+    mutate(corrupted, order);
+    assert.throws(() => deserialize(serialize(corrupted)), /Cannot load restaurant/);
+  }
+  const ready = createGame();
+  until(ready, () => ready.orders.some((order) => order.state === 'ready' && order.waiterId));
+  for (const mutate of [
+    (game, order) => { delete order.sourceId; },
+    (game, order) => { delete game.staff.find((member) => member.id === order.waiterId).guestId; },
+    (game, order) => { delete order.waiterId; },
+  ]) {
+    const corrupted = structuredClone(ready), order = corrupted.orders.find((entry) => entry.state === 'ready' && entry.waiterId);
+    mutate(corrupted, order);
+    assert.throws(() => deserialize(serialize(corrupted)), /Cannot load restaurant/);
+  }
+  const unassignedWaiter = structuredClone(starter);
+  unassignedWaiter.staff.find((member) => member.role === 'waiter').task = 'taking-order';
+  assert.throws(() => deserialize(serialize(unassignedWaiter)), /waiting guest/);
+  const unassignedCleaner = structuredClone(starter);
+  unassignedCleaner.staff.find((member) => member.role === 'cleaner').task = 'cleaning';
+  assert.throws(() => deserialize(serialize(unassignedCleaner)), /cleaner requires/);
 });
 
 test('renovation replans moving actors through adjacent tiles and keeps active saves valid', () => {

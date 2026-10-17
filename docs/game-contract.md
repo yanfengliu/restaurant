@@ -30,4 +30,8 @@ Orders move through `queued`, `cooking`, `ready` and `served`; staff have role-s
 
 Save strings are versioned JSON; `deserialize` rejects invalid types, nonfinite numbers, invalid object types, duplicate IDs, impossible actor links and invalid coordinates, and throws an explanatory `Error` rather than partially loading corrupt state.
 
+Saved paths must follow adjacent grid tiles without crossing solid furniture; guests may occupy their own chair or end an arrival path there, and a guest returning through their current chair tile during path replanning is valid.
+
+Active tasks require reciprocal role, actor, order and station links; cooking and ready meals require a station compatible with their recipe, while an interrupted cooking order may remain unassigned until another chef takes it.
+
 The engine uses seeded random numbers and no browser APIs; tests run with Node's test runner.
