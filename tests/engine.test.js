@@ -20,6 +20,15 @@ function action(game, data) {
   return result;
 }
 
+const row = (minX, maxX, z) => Array.from({ length: maxX - minX + 1 }, (_, index) => ({ x: minX + index, z }));
+const column = (x, minZ, maxZ) => Array.from({ length: maxZ - minZ + 1 }, (_, index) => ({ x, z: minZ + index }));
+
+function rectangle(game, itemType = 'wall') {
+  const edges = [row(6, 12, 6), column(12, 6, 12), row(6, 12, 12).reverse(), column(6, 6, 12).reverse()];
+  for (const cells of edges) action(game, { type: 'STROKE', itemType, cells });
+  return edges;
+}
+
 test('starter restaurant has four usable tables, eight seats, kitchen, facilities and all roles', () => {
   const game = createGame();
   const stats = getStats(game);
@@ -28,6 +37,162 @@ test('starter restaurant has four usable tables, eight seats, kitchen, facilitie
   assert.deepEqual(stats.warnings, []);
   assert.equal(new Set(game.objects.map((object) => `${object.x},${object.z}`)).size, game.objects.length);
   assert.deepEqual(deserialize(serialize(game)), game);
+  assert.ok(game.floors.some((floor) => floor.style === 'peach'));
+  assert.equal(game.floors.some((floor) => floor.style === 'wood'), false);
+  assert.equal(stats.buildingReady, true);
+});
+
+test('basic construction prices are explicit and charged per newly purchased segment', () => {
+  assert.deepEqual(Object.fromEntries(['wall', 'table', 'chair', 'fridge', 'counter'].map((type) => [type, ITEMS[type].cost])), { wall: 12, table: 50, chair: 25, fridge: 150, counter: 50 });
+  const game = createGame('empty'), cash = game.cash;
+  action(game, { type: 'STROKE', itemType: 'wall', cells: row(6, 8, 6) });
+  assert.equal(game.cash, cash - 36); assert.equal(game.stats.expenses, 36);
+  assert.equal(game.objects.length, 3);
+  for (const object of game.objects) assert.equal(object.purchaseCost, 12);
+});
+
+test('four inclusive strokes share corners and automatically floor only the closed interior', () => {
+  const game = createGame('empty'), startingCash = game.cash;
+  const edges = [row(6, 12, 6), column(12, 6, 12), row(6, 12, 12).reverse(), column(6, 6, 12).reverse()];
+  for (const cells of edges.slice(0, 3)) {
+    action(game, { type: 'STROKE', itemType: 'wall', cells });
+    assert.equal(getStats(game).hasRoom, false); assert.equal(game.floors.length, 0);
+  }
+  action(game, { type: 'STROKE', itemType: 'wall', cells: edges[3] });
+  assert.equal(game.objects.length, 24); assert.equal(game.cash, startingCash - 24 * 12);
+  assert.equal(new Set(game.objects.map((object) => `${object.x},${object.z}`)).size, 24);
+  assert.equal(game.floors.length, 25);
+  for (const floor of game.floors) assert.ok(floor.style === 'peach' && floor.x > 6 && floor.x < 12 && floor.z > 6 && floor.z < 12);
+  assert.equal(getStats(game).hasRoom, true); assert.equal(getStats(game).hasEntrance, false); assert.equal(getStats(game).buildingReady, false);
+  const beforeRepeat = serialize(game);
+  action(game, { type: 'STROKE', itemType: 'wall', cells: edges[1] });
+  assert.equal(serialize(game), beforeRepeat, 'Shared segments must not rotate, charge, allocate IDs or otherwise mutate');
+  assert.deepEqual(deserialize(serialize(game)), game);
+});
+
+test('construction strokes reject invalid shapes, collisions, guests and insufficient funds atomically', () => {
+  const game = createGame('empty');
+  const invalid = [
+    { itemType: 'wall', cells: [] },
+    { itemType: 'wall', cells: [{ x: 6, z: 6 }, { x: 6, z: 6 }] },
+    { itemType: 'wall', cells: [{ x: 6, z: 6 }, { x: 7, z: 7 }] },
+    { itemType: 'wall', cells: [{ x: 6, z: 6 }, { x: 8, z: 6 }] },
+    { itemType: 'wall', cells: [{ x: 6, z: 6 }, { x: 7.5, z: 6 }] },
+    { itemType: 'wall', cells: row(0, 24, 6) },
+    { itemType: 'wall', cells: row(3, 6, 6) },
+    { itemType: 'wall', cells: column(6, 6, 9), rotation: 0 },
+    { itemType: 'door', cells: row(6, 9, 6) },
+    { itemType: 'wall', cells: [null] },
+  ];
+  for (const data of invalid) {
+    const before = serialize(game), result = dispatch(game, { type: 'STROKE', ...data });
+    assert.equal(result.ok, false); assert.equal(serialize(game), before);
+  }
+  action(game, { type: 'PLACE', itemType: 'plant', x: 10, z: 8 });
+  const beforeCollision = serialize(game);
+  assert.equal(dispatch(game, { type: 'STROKE', itemType: 'wall', cells: row(6, 10, 8) }).ok, false);
+  assert.equal(serialize(game), beforeCollision);
+  game.cash = 35;
+  const beforeFunds = serialize(game);
+  assert.equal(dispatch(game, { type: 'STROKE', itemType: 'wall', cells: row(6, 9, 6) }).ok, false);
+  assert.equal(serialize(game), beforeFunds);
+  const active = createGame();
+  until(active, () => active.guests.some((guest) => guest.z > 4 && guest.z < 4.5));
+  const beforeGuest = serialize(active);
+  assert.equal(dispatch(active, { type: 'STROKE', itemType: 'wall', cells: row(10, 12, 4) }).ok, false);
+  assert.equal(serialize(active), beforeGuest);
+});
+
+test('single placement can close a room, preserve custom floors and retain floors after reopening walls', () => {
+  const game = createGame('empty');
+  action(game, { type: 'FLOOR', x: 8, z: 8, style: 'checker' });
+  for (const cells of [row(6, 12, 6), row(6, 12, 12), column(6, 6, 12), column(12, 6, 8), column(12, 10, 12)]) action(game, { type: 'STROKE', itemType: 'wall', cells });
+  assert.equal(game.floors.length, 1); assert.equal(getStats(game).hasRoom, false);
+  action(game, { type: 'PLACE', itemType: 'wall', x: 12, z: 9, rotation: 90 });
+  assert.equal(game.floors.length, 25); assert.equal(game.floors.find((floor) => floor.x === 8 && floor.z === 8).style, 'checker');
+  const floors = JSON.stringify(game.floors), wall = game.objects.find((object) => object.x === 12 && object.z === 9);
+  action(game, { type: 'REMOVE', id: wall.id });
+  assert.equal(getStats(game).hasRoom, false); assert.equal(JSON.stringify(game.floors), floors);
+  assert.deepEqual(deserialize(serialize(game)), game);
+});
+
+test('window rooms and free door replacements retain alignment, floors and grant history across saves', () => {
+  const game = createGame('empty'); rectangle(game, 'window');
+  const host = game.objects.find((object) => object.x === 6 && object.z === 9), hostId = host.id;
+  assert.equal(host.rotation, 90); assert.equal(getStats(game).hasRoom, true);
+  const cash = game.cash, floors = JSON.stringify(game.floors);
+  action(game, { type: 'PLACE', itemType: 'door', x: 6, z: 9, rotation: 0 });
+  assert.equal(host.id, hostId); assert.equal(host.type, 'door'); assert.equal(host.rotation, 90); assert.equal(host.purchaseCost, 0);
+  assert.equal(game.cash, cash); assert.equal(game.doorGrantUsed, true); assert.equal(JSON.stringify(game.floors), floors);
+  assert.equal(getStats(game).buildingReady, true);
+  action(game, { type: 'REMOVE', id: host.id }); assert.equal(game.cash, cash, 'Selling the free door cannot create a refund');
+  const restored = deserialize(serialize(game));
+  assert.equal(restored.doorGrantUsed, true);
+  action(restored, { type: 'PLACE', itemType: 'door', x: 6, z: 9, rotation: 90 });
+  assert.equal(restored.cash, cash - ITEMS.door.cost); assert.equal(JSON.stringify(restored.floors), floors);
+  assert.equal(restored.objects.find((object) => object.x === 6 && object.z === 9).purchaseCost, ITEMS.door.cost);
+});
+
+test('construction readiness requires a real exterior entrance with clear access on both sides', () => {
+  const isolated = createGame('empty');
+  action(isolated, { type: 'PLACE', itemType: 'door', x: 4, z: 4 });
+  assert.equal(getStats(isolated).hasRoom, false); assert.equal(getStats(isolated).hasEntrance, false);
+  const game = createGame('empty'); rectangle(game);
+  action(game, { type: 'PLACE', itemType: 'door', x: 6, z: 6 });
+  assert.equal(getStats(game).hasEntrance, false, 'A corner door without an adjacent interior cell is not an entrance');
+  action(game, { type: 'PLACE', itemType: 'door', x: 9, z: 6 });
+  assert.equal(getStats(game).hasEntrance, true);
+  action(game, { type: 'PLACE', itemType: 'plant', x: 9, z: 5 });
+  assert.equal(getStats(game).hasEntrance, false, 'A blocked exterior threshold is unusable');
+  action(game, { type: 'REMOVE', id: game.objects.find((object) => object.type === 'plant').id });
+  action(game, { type: 'PLACE', itemType: 'stove', x: 9, z: 7 });
+  assert.equal(getStats(game).hasEntrance, false, 'A blocked interior threshold is unusable');
+  action(game, { type: 'REMOVE', id: game.objects.find((object) => object.type === 'stove').id });
+  assert.equal(getStats(game).buildingReady, true);
+});
+
+test('floor strokes charge only changed cells and reject the entire stroke before altering floors', () => {
+  const game = createGame('empty'), cash = game.cash;
+  action(game, { type: 'FLOOR_STROKE', cells: row(6, 9, 8), style: 'wood' });
+  assert.equal(game.cash, cash - 48);
+  const noOp = serialize(game);
+  action(game, { type: 'FLOOR_STROKE', cells: row(6, 9, 8).reverse(), style: 'wood' });
+  assert.equal(serialize(game), noOp);
+  action(game, { type: 'FLOOR_STROKE', cells: row(7, 10, 8), style: 'peach' });
+  assert.equal(game.cash, cash - 96); assert.equal(game.floors.length, 5);
+  assert.equal(game.floors.find((floor) => floor.x === 6).style, 'wood');
+  for (const data of [
+    { cells: [{ x: 7, z: 8 }, { x: 9, z: 8 }], style: 'stone' },
+    { cells: row(3, 6, 8), style: 'stone' },
+    { cells: row(7, 10, 8), style: 'invalid' },
+  ]) {
+    const before = serialize(game);
+    assert.equal(dispatch(game, { type: 'FLOOR_STROKE', ...data }).ok, false); assert.equal(serialize(game), before);
+  }
+  game.cash = 35;
+  const beforeFunds = serialize(game);
+  assert.equal(dispatch(game, { type: 'FLOOR_STROKE', cells: row(7, 10, 8), style: 'stone' }).ok, false);
+  assert.equal(serialize(game), beforeFunds);
+  assert.deepEqual(deserialize(serialize(game)), game);
+});
+
+test('v1 saves migrate first-door history conservatively and reject unsupported prices or grant values', () => {
+  const oldStarter = createGame(); delete oldStarter.doorGrantUsed;
+  for (const object of oldStarter.objects) delete object.purchaseCost;
+  assert.equal(deserialize(serialize(oldStarter)).doorGrantUsed, true);
+  const oldEmpty = createGame('empty'); delete oldEmpty.doorGrantUsed;
+  assert.equal(deserialize(serialize(oldEmpty)).doorGrantUsed, false);
+  const valid = createGame('empty'); action(valid, { type: 'PLACE', itemType: 'wall', x: 6, z: 6 });
+  for (const purchaseCost of [-1, 13, 1000000, null, '12', 6]) {
+    const corrupted = structuredClone(valid); corrupted.objects[0].purchaseCost = purchaseCost;
+    assert.throws(() => deserialize(serialize(corrupted)), /purchase cost/);
+  }
+  for (const doorGrantUsed of [null, 'true', 0, false]) {
+    const corrupted = createGame(); corrupted.doorGrantUsed = doorGrantUsed;
+    assert.throws(() => deserialize(serialize(corrupted)), /first-door grant/);
+  }
+  const corruptedFloor = createGame('empty'); corruptedFloor.floors.push({ x: 6, z: 6, style: 'invalid' });
+  assert.throws(() => deserialize(serialize(corruptedFloor)), /floor placement or style/);
 });
 
 test('the starter perimeter forms a continuous boundary with a clear entrance', () => {

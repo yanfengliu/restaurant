@@ -7,6 +7,8 @@ const ROLES = ['chef', 'waiter', 'cleaner'];
 const WAGES = { chef: 6, waiter: 4, cleaner: 2 };
 const NAMES = ['Alex', 'Sam', 'Jordan', 'Taylor', 'Riley', 'Morgan', 'Jamie', 'Casey', 'Robin', 'Charlie', 'Avery', 'Drew'];
 const GUEST_STATES = ['arriving', 'waiting', 'ordered', 'eating', 'toilet', 'leaving'];
+const STRUCTURAL_TYPES = new Set(['wall', 'window', 'door']);
+const FLOOR_STYLES = new Set(['wood', 'tile', 'kitchen', 'stone', 'checker', 'peach']);
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 const tile = (value) => Math.round(value);
 const key = (x, z) => `${x},${z}`;
@@ -35,8 +37,9 @@ function spend(game, amount) {
 
 function outcome(ok, message) { return { ok, message }; }
 
-function addObject(game, type, x, z, rotation = 0) {
+function addObject(game, type, x, z, rotation = 0, purchaseCost) {
   const object = { id: id(game, 'object'), type, x, z, rotation };
+  if (purchaseCost !== undefined) object.purchaseCost = purchaseCost;
   game.objects.push(object);
   return object;
 }
@@ -58,15 +61,15 @@ export function createGame(mode = 'sandbox') {
     menu: RECIPES.map((recipe) => ({ recipeId: recipe.id, price: recipe.price, enabled: recipe.unlock === 0 })),
     stats: { served: 0, lost: 0, revenue: 0, expenses: 0, rating: 3.8, cleanliness: 100 },
     events: [], scenario: { ...structuredClone(selected), complete: false },
-    seed: 741852, nextId: 1, elapsed: 0, accumulator: 0, arrivalIn: 3, bankrupt: false, unlocks: [], completedScenarios: [],
+    seed: 741852, nextId: 1, elapsed: 0, accumulator: 0, arrivalIn: 3, bankrupt: false, unlocks: [], completedScenarios: [], doorGrantUsed: mode !== 'empty',
     daily: { served: 0, revenue: 0, expenses: 0 },
   };
   if (mode !== 'empty') {
-    for (let x = 6; x <= 17; x++) for (let z = 6; z <= 16; z++) game.floors.push({ x, z, style: z <= 8 ? 'kitchen' : 'wood' });
+    for (let x = 6; x <= 17; x++) for (let z = 6; z <= 16; z++) game.floors.push({ x, z, style: z <= 8 ? 'kitchen' : 'peach' });
     for (let x = 6; x <= 17; x++) { addObject(game, 'wall', x, 6); addObject(game, 'wall', x, 16); }
     for (let z = 7; z <= 15; z++) { addObject(game, 'wall', 6, z, 90); addObject(game, 'wall', 17, z, 90); }
     game.objects = game.objects.filter((object) => !(object.x === 11 && object.z === 6));
-    addObject(game, 'door', 11, 6);
+    addObject(game, 'door', 11, 6, 0, 0);
     addObject(game, 'stove', 7, 7); addObject(game, 'prep', 8, 7); addObject(game, 'fridge', 9, 7);
     addObject(game, 'sink', 13, 7); addObject(game, 'bin', 14, 7); addObject(game, 'counter', 12, 8);
     for (const [x, z] of [[9, 10], [13, 10], [9, 13], [13, 13]]) {
@@ -79,6 +82,96 @@ export function createGame(mode = 'sandbox') {
     event(game, 'Welcome! Your restaurant is open. Build, hire and create your menu.');
   } else event(game, 'A fresh start. Lay floors, build a kitchen and dining room, then open your doors.');
   return game;
+}
+
+function roomLayout(game) {
+  const boundary = new Set(game.objects.filter((object) => STRUCTURAL_TYPES.has(object.type)).map((object) => key(object.x, object.z)));
+  const outside = new Set(), queue = [];
+  const enqueue = (x, z) => {
+    const cellKey = key(x, z);
+    if (!inside(x, z) || boundary.has(cellKey) || outside.has(cellKey)) return;
+    outside.add(cellKey); queue.push({ x, z });
+  };
+  for (let edge = 0; edge < 24; edge++) { enqueue(edge, 0); enqueue(edge, 23); enqueue(0, edge); enqueue(23, edge); }
+  for (let index = 0; index < queue.length; index++) {
+    const { x, z } = queue[index];
+    for (const [dx, dz] of [[0, 1], [1, 0], [-1, 0], [0, -1]]) enqueue(x + dx, z + dz);
+  }
+  const interior = [];
+  for (let x = game.land.minX; x <= game.land.maxX; x++) for (let z = game.land.minZ; z <= game.land.maxZ; z++) {
+    if (!boundary.has(key(x, z)) && !outside.has(key(x, z))) interior.push({ x, z });
+  }
+  return { interior, outside };
+}
+
+function floorEnclosedRooms(game) {
+  const floors = new Set(game.floors.map((floor) => key(floor.x, floor.z)));
+  for (const cell of roomLayout(game).interior) if (!floors.has(key(cell.x, cell.z))) game.floors.push({ ...cell, style: 'peach' });
+}
+
+function buildingReadiness(game) {
+  const { interior, outside } = roomLayout(game), roomTiles = new Set(interior.map((cell) => key(cell.x, cell.z)));
+  const blocked = blockers(game);
+  const hasRoom = interior.length > 0;
+  const hasEntrance = hasRoom && game.objects.some((object) => {
+    if (object.type !== 'door') return false;
+    const neighbors = [[0, 1], [1, 0], [-1, 0], [0, -1]].map(([dx, dz]) => key(object.x + dx, object.z + dz)).filter((cellKey) => !blocked.has(cellKey));
+    return neighbors.some((cellKey) => roomTiles.has(cellKey)) && neighbors.some((cellKey) => outside.has(cellKey)) && pathTo(game, ENTRY, object) !== null;
+  });
+  return { hasRoom, hasEntrance, buildingReady: hasRoom && hasEntrance };
+}
+
+function strokeCells(cells) {
+  if (!Array.isArray(cells) || !cells.length || cells.length > 24 || cells.some((cell) => !cell || !inside(cell.x, cell.z))) return null;
+  if (new Set(cells.map((cell) => key(cell.x, cell.z))).size !== cells.length) return null;
+  const alongX = cells.every((cell) => cell.z === cells[0].z), alongZ = cells.every((cell) => cell.x === cells[0].x);
+  if (!alongX && !alongZ) return null;
+  const sorted = cells.map(({ x, z }) => ({ x, z })).sort((a, b) => alongX ? a.x - b.x : a.z - b.z);
+  if (sorted.some((cell, index) => index > 0 && Math.abs(cell.x - sorted[index - 1].x) + Math.abs(cell.z - sorted[index - 1].z) !== 1)) return null;
+  return sorted;
+}
+
+function placeObjects(game, itemType, cells, rotation) {
+  const item = Object.hasOwn(ITEMS, itemType) ? ITEMS[itemType] : null;
+  if (!item) return outcome(false, `Unknown furniture type: ${String(itemType)}.`);
+  const changes = [];
+  let totalCost = 0;
+  for (const { x, z } of cells) {
+    if (!inside(x, z) || !owned(game, x, z)) return outcome(false, 'Place furniture on a tile inside your owned land.');
+    const existing = game.objects.find((object) => object.x === x && object.z === z);
+    if (existing && STRUCTURAL_TYPES.has(itemType) && existing.type === itemType) continue;
+    const replacingWall = itemType === 'door' && existing && ['wall', 'window'].includes(existing.type);
+    if (existing && !replacingWall) return outcome(false, 'That tile already contains furniture.');
+    if (game.guests.some((guest) => sameTile(guest, { x, z }))) return outcome(false, 'Wait for the guest to leave this tile before building.');
+    if (!['Building', 'Decoration'].includes(item.category) && !game.floors.some((floor) => floor.x === x && floor.z === z)) return outcome(false, 'Lay a floor on this tile before placing furniture.');
+    const cost = itemType === 'door' && !game.doorGrantUsed ? 0 : item.cost;
+    totalCost += cost; changes.push({ x, z, existing: replacingWall ? existing : null, cost });
+  }
+  if (!changes.length) return outcome(true, `${item.name} is already in place.`);
+  if (totalCost > 0 && game.cash < totalCost) return outcome(false, `You need $${totalCost} to buy ${changes.length === 1 ? item.name.toLowerCase() : `${changes.length} ${item.name.toLowerCase()} segments`}.`);
+  if (totalCost > 0) spend(game, totalCost);
+  const normalizedRotation = Number.isFinite(rotation) ? ((Math.round(rotation / 90) * 90 % 360) + 360) % 360 : 0;
+  for (const change of changes) {
+    if (change.existing) {
+      change.existing.type = itemType; change.existing.purchaseCost = change.cost;
+    } else addObject(game, itemType, change.x, change.z, normalizedRotation, change.cost);
+  }
+  if (itemType === 'door') game.doorGrantUsed = true;
+  if (STRUCTURAL_TYPES.has(itemType)) floorEnclosedRooms(game);
+  rebuildPaths(game);
+  return outcome(true, changes.length === 1 ? `${item.name} placed.` : `${changes.length} ${item.name.toLowerCase()} segments placed.`);
+}
+
+function layFloors(game, cells, style, noOpAllowed = false) {
+  if (!FLOOR_STYLES.has(style)) return outcome(false, 'Choose peach, wood, tile, kitchen, stone or checker flooring.');
+  if (cells.some(({ x, z }) => !inside(x, z) || !owned(game, x, z))) return outcome(false, 'Lay floors on a tile inside your owned land.');
+  const changes = cells.map(({ x, z }) => ({ x, z, existing: game.floors.find((floor) => floor.x === x && floor.z === z) })).filter((cell) => cell.existing?.style !== style);
+  if (!changes.length) return outcome(noOpAllowed, 'These tiles already have that flooring.');
+  const cost = changes.length * 12;
+  if (game.cash < cost) return outcome(false, `You need $${cost} to lay ${changes.length === 1 ? 'this floor tile' : `${changes.length} floor tiles`}.`);
+  spend(game, cost);
+  for (const cell of changes) if (cell.existing) cell.existing.style = style; else game.floors.push({ x: cell.x, z: cell.z, style });
+  return outcome(true, changes.length === 1 ? 'Floor laid.' : `${changes.length} floor tiles laid.`);
 }
 
 function blockers(game) {
@@ -393,16 +486,16 @@ export function dispatch(game, action) {
   if (!action || typeof action.type !== 'string') return outcome(false, 'Choose a valid restaurant action.');
   switch (action.type) {
     case 'PLACE': {
-      const item = Object.hasOwn(ITEMS, action.itemType) ? ITEMS[action.itemType] : null, { x, z } = action;
-      if (!item) return outcome(false, `Unknown furniture type: ${String(action.itemType)}.`);
-      if (!inside(x, z) || !owned(game, x, z)) return outcome(false, 'Place furniture on a tile inside your owned land.');
-      if (game.objects.some((object) => object.x === x && object.z === z)) return outcome(false, 'That tile already contains furniture.');
-      if (game.guests.some((guest) => sameTile(guest, { x, z }))) return outcome(false, 'Wait for the guest to leave this tile before building.');
-      if (!['Building', 'Decoration'].includes(item.category) && !game.floors.some((floor) => floor.x === x && floor.z === z)) return outcome(false, 'Lay a floor on this tile before placing furniture.');
-      if (game.cash < item.cost) return outcome(false, `You need $${item.cost} to buy ${item.name.toLowerCase()}.`);
-      const rotation = Number.isFinite(action.rotation) ? ((Math.round(action.rotation / 90) * 90 % 360) + 360) % 360 : 0;
-      spend(game, item.cost); addObject(game, action.itemType, x, z, rotation); rebuildPaths(game);
-      return outcome(true, `${item.name} placed.`);
+      return placeObjects(game, action.itemType, [{ x: action.x, z: action.z }], action.rotation);
+    }
+    case 'STROKE': {
+      if (!['wall', 'window'].includes(action.itemType)) return outcome(false, 'Choose wall or window for a construction stroke.');
+      const cells = strokeCells(action.cells);
+      if (!cells) return outcome(false, 'A stroke needs 1 to 24 unique, contiguous tiles in one straight row or column.');
+      const alongX = cells.length === 1 || cells[0].z === cells[1].z;
+      const rotation = action.rotation === undefined ? (alongX ? 0 : 90) : action.rotation;
+      if (!Number.isFinite(rotation) || cells.length > 1 && ((Math.round(rotation / 90) * 90 % 180) + 180) % 180 !== (alongX ? 0 : 90)) return outcome(false, 'Align the wall stroke rotation with its row (0°) or column (90°).');
+      return placeObjects(game, action.itemType, cells, rotation);
     }
     case 'REMOVE': {
       const object = objectById(game, action.id);
@@ -411,18 +504,16 @@ export function dispatch(game, action) {
       if (object.type === 'toilet' && game.guests.some((guest) => guest.state === 'toilet' && guest.toiletReached && Math.abs(guest.x - object.x) + Math.abs(guest.z - object.z) <= 1.00001)) return outcome(false, 'Wait until the guest has finished using this toilet before selling it.');
       if (game.staff.some((member) => member.taskTarget === object.id && member.task === 'cooking') || game.orders.some((order) => order.sourceId === object.id)) return outcome(false, 'Wait for meals at this station to be served before selling it.');
       game.objects = game.objects.filter((entry) => entry.id !== object.id);
-      const refund = Math.round(ITEMS[object.type].cost * 0.6); game.cash += refund; rebuildPaths(game);
+      const refund = Math.round((object.purchaseCost ?? ITEMS[object.type].cost) * 0.6); game.cash += refund; rebuildPaths(game);
       return outcome(true, `${ITEMS[object.type].name} sold for $${refund}.`);
     }
     case 'FLOOR': {
-      const { x, z } = action;
-      if (!inside(x, z) || !owned(game, x, z)) return outcome(false, 'Lay floors on a tile inside your owned land.');
-      if (!['wood', 'tile', 'kitchen', 'stone', 'checker'].includes(action.style)) return outcome(false, 'Choose wood, tile, kitchen, stone or checker flooring.');
-      const existing = game.floors.find((floor) => floor.x === x && floor.z === z);
-      if (existing?.style === action.style) return outcome(false, 'This tile already has that flooring.');
-      if (game.cash < 12) return outcome(false, 'You need $12 to lay this floor tile.');
-      spend(game, 12); if (existing) existing.style = action.style; else game.floors.push({ x, z, style: action.style });
-      return outcome(true, 'Floor laid.');
+      return layFloors(game, [{ x: action.x, z: action.z }], action.style);
+    }
+    case 'FLOOR_STROKE': {
+      const cells = strokeCells(action.cells);
+      if (!cells) return outcome(false, 'A floor stroke needs 1 to 24 unique, contiguous tiles in one straight row or column.');
+      return layFloors(game, cells, action.style, true);
     }
     case 'HIRE': {
       if (!ROLES.includes(action.role)) return outcome(false, 'Choose chef, waiter or cleaner as the staff role.');
@@ -482,6 +573,9 @@ export function dispatch(game, action) {
 
 export function getStats(game) {
   const seatCount = seats(game).length, recipes = availableMenu(game), warnings = [];
+  const readiness = buildingReadiness(game);
+  if (!readiness.hasRoom) warnings.push('Close a wall boundary to create a room and its default flooring.');
+  else if (!readiness.hasEntrance) warnings.push('Add a reachable door between the enclosed room and outside.');
   if (!seatCount) warnings.push('Add a table and an adjacent chair on flooring to seat guests.');
   if (!game.staff.some((member) => member.role === 'chef')) warnings.push('Hire a chef to prepare meals.');
   if (!game.staff.some((member) => member.role === 'waiter')) warnings.push('Hire a waiter to take orders and serve food.');
@@ -495,7 +589,7 @@ export function getStats(game) {
     tables: game.objects.filter((object) => object.type === 'table').length, staff: game.staff.length, orders: game.orders.length,
     profit: game.stats.revenue - game.stats.expenses, occupancy: seatCount ? game.guests.filter((guest) => guest.state !== 'leaving').length / seatCount : 0,
     availableRecipes: recipes.map((entry) => entry.recipeId), warnings, bankrupt: game.bankrupt,
-    hourlyWages: game.staff.reduce((total, member) => total + member.wage, 0),
+    hourlyWages: game.staff.reduce((total, member) => total + member.wage, 0), ...readiness,
     scenarioProgress: game.scenario.goals.map((goal) => ({ ...goal, value: values[goal.stat] ?? 0, complete: (values[goal.stat] ?? 0) >= goal.target })),
   };
 }
@@ -525,10 +619,14 @@ function validateSave(game) {
   const occupied = new Set(), floorTiles = new Set();
   for (const object of game.objects) {
     if (!Object.hasOwn(ITEMS, object.type) || !inside(object.x, object.z) || !owned(game, object.x, object.z) || ![0, 90, 180, 270].includes(object.rotation) || occupied.has(key(object.x, object.z))) fail('furniture type, placement or rotation is invalid');
+    if (object.purchaseCost !== undefined && (!finite(object.purchaseCost, 0, ITEMS[object.type].cost) || object.purchaseCost !== ITEMS[object.type].cost && !(object.type === 'door' && object.purchaseCost === 0))) fail('a furniture purchase cost is not a supported paid or free price');
     occupied.add(key(object.x, object.z));
   }
+  const existingDoor = game.objects.some((object) => object.type === 'door');
+  if (game.doorGrantUsed === undefined) game.doorGrantUsed = existingDoor;
+  if (typeof game.doorGrantUsed !== 'boolean' || existingDoor && !game.doorGrantUsed) fail('the first-door grant must record whether a door has been placed');
   for (const floor of game.floors) {
-    if (!inside(floor.x, floor.z) || !owned(game, floor.x, floor.z) || !['wood', 'tile', 'kitchen', 'stone', 'checker'].includes(floor.style) || floorTiles.has(key(floor.x, floor.z))) fail('floor placement or style is invalid');
+    if (!inside(floor.x, floor.z) || !owned(game, floor.x, floor.z) || !FLOOR_STYLES.has(floor.style) || floorTiles.has(key(floor.x, floor.z))) fail('floor placement or style is invalid');
     floorTiles.add(key(floor.x, floor.z));
   }
   const solidTiles = new Map(game.objects.filter((object) => ITEMS[object.type].solid).map((object) => [key(object.x, object.z), object]));

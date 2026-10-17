@@ -1,10 +1,10 @@
 export const ITEMS = {
-  table: { name: 'Dining table', category: 'Dining', cost: 180, color: '#b88152', solid: true },
-  chair: { name: 'Dining chair', category: 'Dining', cost: 65, color: '#e2ae68', solid: true },
-  counter: { name: 'Service counter', category: 'Dining', cost: 240, color: '#b77e51', solid: true },
+  table: { name: 'Dining table', category: 'Dining', cost: 50, color: '#b88152', solid: true },
+  chair: { name: 'Dining chair', category: 'Dining', cost: 25, color: '#e2ae68', solid: true },
+  counter: { name: 'Service counter', category: 'Dining', cost: 50, color: '#b77e51', solid: true },
   stove: { name: 'Range cooker', category: 'Kitchen', cost: 750, color: '#a4adb3', solid: true },
   prep: { name: 'Preparation station', category: 'Kitchen', cost: 320, color: '#b4bfc0', solid: true },
-  fridge: { name: 'Refrigerator', category: 'Kitchen', cost: 450, color: '#dae4e1', solid: true },
+  fridge: { name: 'Refrigerator', category: 'Kitchen', cost: 150, color: '#dae4e1', solid: true },
   sink: { name: 'Kitchen sink', category: 'Kitchen', cost: 220, color: '#c6d7d8', solid: true },
   bin: { name: 'Waste bin', category: 'Kitchen', cost: 70, color: '#546660', solid: true },
   toilet: { name: 'Toilet', category: 'Facilities', cost: 280, color: '#eef0e6', solid: true },
@@ -13,7 +13,7 @@ export const ITEMS = {
   clock: { name: 'Wall clock', category: 'Decoration', cost: 65, color: '#e9e1ca', solid: true },
   flowerbox: { name: 'Flower box', category: 'Decoration', cost: 95, color: '#9d7759', solid: true },
   lamp: { name: 'Floor lamp', category: 'Decoration', cost: 120, color: '#e5c37d', solid: true },
-  wall: { name: 'Wall', category: 'Building', cost: 35, color: '#e6ddc5', solid: true },
+  wall: { name: 'Wall', category: 'Building', cost: 12, color: '#e6ddc5', solid: true },
   door: { name: 'Doorway', category: 'Building', cost: 90, color: '#976e48', solid: false },
   window: { name: 'Window wall', category: 'Building', cost: 65, color: '#bfd9d6', solid: true },
 };
