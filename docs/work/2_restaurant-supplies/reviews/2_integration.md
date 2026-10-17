@@ -39,7 +39,7 @@ The coordinator's actual-controls evidence was composed from the initial purchas
 | ID | Finding | Disposition and reason | Repair or follow-up |
 |---|---|---|---|
 | F4 | Ready station meal renderer read the wrong field | Coordinator accepted; code and actual ready-meal pixels pass independent inspection. | `8d24168`, included in `b1d2c1`; original ready close-up shows food at the stationary fryer. |
-| F5 | Shared-table guest dishes overlapped | Coordinator accepted; integrated seat-offset and rotation repair passes independent inspection. | `8d24168`, included in `b1d2c1`; actual shared-table pixels pending. |
+| F5 | Shared-table guest dishes overlapped | Coordinator accepted; code and subsequent actual shared-table pixels pass independent inspection. | `8d24168`, included in `b1d2c1`; the evidence follow-up below closes the initially pending rendered check. |
 | F6 | Hidden status indicator misframes candidate portraits | Coordinator accepted; reviewer independently confirmed the pixels and source mechanism. | Focused scene repair assigned to the interface owner; requires new exact-revision review and corrected candidate/employee pixels. |
 
 The coordinator plans a focused next review of F6's repair and final pixels. The current round records the defect and successful unchanged-engine evidence; it does not approve the defective portrait revision.
@@ -54,4 +54,8 @@ The coordinator plans a focused next review of F6's repair and final pixels. The
 
 ## Round outcome
 
-The deep integrated code review and focused probes found no additional engine/interface blocker, and the actual-controls record passed the connected service, active save and shortage/recovery flow. F4 is closed by code and inspected pixels; F5's code repair passes, with shared-table pixels pending. F6 is an open material portrait-framing defect requiring repair and focused re-review, so this round does not approve final integration. Claude coverage remains unavailable, and inferred mechanics remain distinct from observed reference parity.
+The deep integrated code review and focused probes found no additional engine/interface blocker, and the actual-controls record passed the connected service, active save and shortage/recovery flow. F4 is closed by code and inspected pixels. F5's rendered check was initially pending; the evidence follow-up below closes it. F6 is an open material portrait-framing defect requiring repair and focused re-review, so this round does not approve final integration. Claude coverage remains unavailable, and inferred mechanics remain distinct from observed reference parity.
+
+### Evidence follow-up: shared-table closure
+
+The first retained report commit `592a0eb` correctly recorded that F5's pixels had not yet arrived. The subsequent actual-controls capture was inspected at its original 500 × 350 pixels: `output/playwright/supplies-shared-table-close.png`, SHA-256 `b299a6ccdfcc26f4ab163fd40484dd927c2fed3a29d1b39c2c015fbcb7c57331`. It shows two food dishes on separate edges of the same table rather than overlapping. The reviewer read `tmp/browser/shared-table.raw.log`: at elapsed 39.25, table object-52 had eating guest-93 on chair object-53 with burger plate ware-77 and guest-95 on chair object-54 with pasta bowl ware-85, each with reciprocal guest ownership. The script reached this state through New Restaurant and speed controls, with read-only inspection and no direct state mutation. This evidence closes F5 for the exercised unrotated two-seat table; the rotation behavior was checked statically above. The earlier pending statements describe the report's initial evidence state and are retained for provenance. F6 and final viewport inspection remain open for the next focused round.
