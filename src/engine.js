@@ -408,6 +408,7 @@ export function dispatch(game, action) {
       const object = objectById(game, action.id);
       if (!object) return outcome(false, 'Choose an existing piece of furniture to sell.');
       if (game.guests.some((guest) => guest.state !== 'leaving' && (guest.tableId === object.id || guest.seatId === object.id))) return outcome(false, 'Wait until the guest has finished before selling their table or chair.');
+      if (object.type === 'toilet' && game.guests.some((guest) => guest.state === 'toilet' && guest.toiletReached && Math.abs(guest.x - object.x) + Math.abs(guest.z - object.z) <= 1.00001)) return outcome(false, 'Wait until the guest has finished using this toilet before selling it.');
       if (game.staff.some((member) => member.taskTarget === object.id && member.task === 'cooking') || game.orders.some((order) => order.sourceId === object.id)) return outcome(false, 'Wait for meals at this station to be served before selling it.');
       game.objects = game.objects.filter((entry) => entry.id !== object.id);
       const refund = Math.round(ITEMS[object.type].cost * 0.6); game.cash += refund; rebuildPaths(game);

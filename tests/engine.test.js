@@ -204,6 +204,36 @@ test('cleaners restore hygiene while neglect reduces it and toilets influence gu
   assert.ok(getStats(noToilet).warnings.some((warning) => warning.includes('toilet')));
 });
 
+test('removing facilities preserves valid paused saves and refuses occupied toilets atomically', () => {
+  const occupied = createGame();
+  until(occupied, () => occupied.guests.some((guest) => guest.state === 'toilet' && guest.toiletReached));
+  action(occupied, { type: 'SPEED', speed: 0 });
+  const before = serialize(occupied), toilet = occupied.objects.find((object) => object.type === 'toilet');
+  const denied = dispatch(occupied, { type: 'REMOVE', id: toilet.id });
+  assert.equal(denied.ok, false); assert.match(denied.message, /finished using this toilet/);
+  assert.equal(serialize(occupied), before, 'Rejected removal must preserve cash, events, actors and fixtures');
+  assert.deepEqual(deserialize(serialize(occupied)), occupied);
+
+  const approaching = createGame();
+  until(approaching, () => approaching.guests.some((guest) => guest.state === 'toilet' && !guest.toiletReached));
+  action(approaching, { type: 'SPEED', speed: 0 });
+  const approachingGuest = approaching.guests.find((guest) => guest.state === 'toilet');
+  const approachingCash = approaching.cash;
+  action(approaching, { type: 'REMOVE', id: approaching.objects.find((object) => object.type === 'toilet').id });
+  assert.equal(approachingGuest.state, 'leaving');
+  assert.equal(approaching.cash, approachingCash + Math.round(ITEMS.toilet.cost * 0.6));
+  assert.deepEqual(deserialize(serialize(approaching)), approaching);
+
+  const cleaning = createGame();
+  cleaning.stats.cleanliness = 50;
+  until(cleaning, () => cleaning.staff.some((member) => member.task === 'cleaning'));
+  action(cleaning, { type: 'SPEED', speed: 0 });
+  const cleaner = cleaning.staff.find((member) => member.task === 'cleaning');
+  action(cleaning, { type: 'REMOVE', id: cleaner.taskTarget });
+  assert.equal(cleaner.task, 'idle');
+  assert.deepEqual(deserialize(serialize(cleaning)), cleaning);
+});
+
 test('pause freezes the whole game and speed applies once with deterministic fixed steps', () => {
   const paused = createGame(); action(paused, { type: 'SPEED', speed: 0 });
   const before = serialize(paused); tick(paused, 60); assert.equal(serialize(paused), before);

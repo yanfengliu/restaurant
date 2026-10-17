@@ -34,4 +34,6 @@ Saved paths must follow adjacent grid tiles without crossing solid furniture; gu
 
 Active tasks require reciprocal role, actor, order and station links; cooking and ready meals require a station compatible with their recipe, while an interrupted cooking order may remain unassigned until another chef takes it.
 
+Occupied tables, chairs, toilets and stations holding unfinished meals cannot be sold; removing a facility that an actor is approaching replans or cancels the assignment immediately, so paused saves remain valid after public construction actions.
+
 The engine uses seeded random numbers and no browser APIs; tests run with Node's test runner.
