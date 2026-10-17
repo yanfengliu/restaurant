@@ -4,7 +4,7 @@ const TAU = Math.PI * 2;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const cellKey = (x, z) => `${x},${z}`;
 const angle = value => (Number(value) || 0) * Math.PI / 180;
-const floorColors = { wood: '#c09568', tile: '#e5dfca', tiles: '#e5dfca', checker: '#ede5cd', carpet: '#ad5952', concrete: '#a8aaa2', dark: '#605445', white: '#ede9d9' };
+const floorColors = { wood: '#c09568', tile: '#e5dfca', tiles: '#e5dfca', kitchen: '#e5dfca', stone: '#929b99', checker: '#ede5cd', carpet: '#ad5952', concrete: '#a8aaa2', dark: '#605445', white: '#ede9d9' };
 
 /** A self-contained, procedural restaurant world. Coordinates identify one-unit cells. */
 export function createScene(container, callbacks = {}) {
@@ -26,7 +26,7 @@ export function createScene(container, callbacks = {}) {
 
   const camera = new THREE.OrthographicCamera(-20, 20, 15, -15, 0.1, 160);
   const target = new THREE.Vector3(12, 0, 11.8);
-  let azimuth = Math.PI / 4, elevation = 0.79, zoomLevel = 1, view = 'isometric';
+  let azimuth = Math.PI * 3 / 4, elevation = 0.79, zoomLevel = 1, view = 'isometric';
   let width = 1, height = 1, disposed = false, frame = 0, game = null, tool = null, rotation = 0;
   let hover = null, ghost = null, ghostType = null, floorSignature = '', landSignature = '';
   let hoveredId = null, lastTime = performance.now();
@@ -189,12 +189,12 @@ export function createScene(container, callbacks = {}) {
   box(world, 24, 0.16, 24, material('#a1b783'), 12, -0.05, 12);
   const grassPatch = material('#9bb07d');
   for (let x = 0; x < 24; x++) for (let z = 0; z < 24; z++) if ((x * 17 + z * 7) % 5 === 0) box(world, 1, 0.004, 1, grassPatch, x + 0.5, 0.034, z + 0.5);
-  box(world, 30, 0.16, 2, material('#b9b6a6'), 12, -0.015, 25);
-  box(world, 34, 0.1, 5.5, material('#666f6b'), 12, -0.08, 28.75);
-  box(world, 32, 0.015, 0.1, palette.cream, 12, -0.019, 26.5);
-  for (let i = -3; i < 30; i += 3) box(world, 1.35, 0.015, 0.11, palette.cream, i, -0.019, 29.1);
-  for (let i = -2; i < 28; i++) box(world, 0.015, 0.012, 1.92, material('#aaa99c'), i, 0.071, 25);
-  box(world, 1.7, 0.05, 5, material('#b9b6a6'), 12, 0.015, 21.5);
+  box(world, 30, 0.16, 2, material('#b9b6a6'), 12, -0.015, -1);
+  box(world, 34, 0.1, 5.5, material('#666f6b'), 12, -0.08, -4.75);
+  box(world, 32, 0.015, 0.1, palette.cream, 12, -0.019, -2.5);
+  for (let i = -3; i < 30; i += 3) box(world, 1.35, 0.015, 0.11, palette.cream, i, -0.019, -5.1);
+  for (let i = -2; i < 28; i++) box(world, 0.015, 0.012, 1.92, material('#aaa99c'), i, 0.071, -1);
+  box(world, 1.7, 0.05, 5, material('#b9b6a6'), 11.5, 0.015, 2.5);
   // A quiet street frames the plot without hiding the dining room.
   function tree(x, z, scale = 1) {
     const t = new THREE.Group(); t.position.set(x, 0, z); t.scale.setScalar(scale);
@@ -211,7 +211,7 @@ export function createScene(container, callbacks = {}) {
     for (const pz of [-0.32,0.32]) box(carGroup,0.04,0.12,0.18,palette.cream,1.16,0.5,pz);
     world.add(carGroup); return carGroup;
   }
-  car(3,27.6,'#bc735d'); car(24,30.1,'#c4c6b2');
+  car(3,-3.6,'#bc735d'); car(24,-6.1,'#c4c6b2');
   const ownership = new THREE.Group(); scene.add(ownership);
   const cursor = box(scene, 1.01, 0.025, 1.01, material('#d4c47f', { transparent:true, opacity:0.42, depthWrite:false }), 0,0.055,0); cursor.visible = false;
   const hoverOutline = new THREE.BoxHelper(new THREE.Object3D(), '#ffedb0');
@@ -235,7 +235,7 @@ export function createScene(container, callbacks = {}) {
     if (view === 'decor') return material(((tile.x * 7 + tile.z * 3) % 5) ? '#b6c694' : '#d0cc9e');
     const base = floorColors[tile.style] || floorColors.wood;
     const col = new THREE.Color(base); const variance = ((tile.x * 13 + tile.z * 19) % 7 - 3) * 0.008;
-    if (['checker','tile','tiles'].includes(tile.style) && (tile.x + tile.z) % 2) col.multiplyScalar(tile.style === 'checker' ? 0.49 : 0.92); else col.offsetHSL(0,0,variance);
+    if (['checker','tile','tiles','kitchen'].includes(tile.style) && (tile.x + tile.z) % 2) col.multiplyScalar(tile.style === 'checker' ? 0.49 : 0.92); else col.offsetHSL(0,0,variance);
     return material(`#${col.getHexString()}`);
   }
   function syncFloors() {
