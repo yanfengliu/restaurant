@@ -12,6 +12,10 @@
     {
       "id": 2,
       "theme": "restaurant-supplies"
+    },
+    {
+      "id": 3,
+      "theme": "restaurant-layout"
     }
   ]
 }
