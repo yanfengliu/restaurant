@@ -145,5 +145,11 @@ vite.config.ts.timestamp-*
 # Astro generated types
 .astro/
 
+# Local development and verification resources
+.worktrees/
+tmp/
+output/
+.playwright-cli/
+
 # Turbo Repo
 .turbo
