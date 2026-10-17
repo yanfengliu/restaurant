@@ -1,7 +1,7 @@
 # Design research
 
 Research accessed 2026-10-17 for Corner Table, an original browser restaurant management game.
-The sources below inform the visual direction and management loop; they are not specifications for complete behavioral parity.
+The current priority is matching the observed reference behavior and visuals before creative departures; observations and remaining gaps below bound what has actually been verified.
 
 ## Sources and observations
 
@@ -53,7 +53,7 @@ The nine native screenshots below were inspected as returned by the capture tool
 | `reference-live-08-hiring.png` | `68403c68658718c2f5c4570a89ae961c6e5a933837f00dc9f5eaa028c04b3db9` |
 | `reference-live-09-priorities.png` | `4283a94a8c93970e538b6e95c90b4534e091677bae81ff8dc2f4d79050cdab3b` |
 
-The inspected browser screenshot `output/playwright/current-room.png` had SHA-256 `c91f22294108cba3907708b00a17a47f828b39e008a33f3af5fc1ab1714af56b`. Its warm olive environment, isometric room, wood floor, and dark wall caps follow the researched direction. It differs visibly in lower cream walls, a more open front cutaway, finer floor texture, bundled seating, a large light branding header, and editorial text at the right of the room. The native game instead emphasizes tall saturated brick walls, compact dark bars, and a larger furnishing catalog. These are qualitative comparisons across different maps and scales, not a pixel-match score.
+The inspected browser screenshot `output/playwright/current-room.png` had SHA-256 `c91f22294108cba3907708b00a17a47f828b39e008a33f3af5fc1ab1714af56b`. Its warm olive environment, isometric room, wood floor, and dark wall caps follow the researched direction. It differs visibly in lower cream walls, a more open front cutaway, finer floor texture, limited seating variants, a large light branding header, and editorial text at the right of the room. Both products place tables and chairs independently. The native game emphasizes tall saturated brick walls, compact dark bars, and a larger furnishing catalog. These are qualitative comparisons across different maps and scales, not a pixel-match score.
 
 The native cooking, serving, payment, dirty-dish, restroom, cleaning, delivery, and long-term economy loops were not exercised to completion. Corner Table's tests and browser checks therefore establish its own behavior only; complete gameplay or visual parity is not verified.
 

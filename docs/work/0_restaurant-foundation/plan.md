@@ -1,6 +1,6 @@
 # Corner Table playable restaurant foundation
 
-Status: active
+Status: complete
 Owner: Codex orchestrator
 Created: 2026-10-17
 Updated: 2026-10-17
@@ -32,4 +32,4 @@ Use Vite, plain JavaScript and procedural Three.js assets; share a serializable 
 
 ## Outcome
 
-Active. Integrated candidate 79f3d2a builds and passed 22 simulation checks, including 8,000 sequential active saves; dependency audit reported zero vulnerabilities. Browser inputs verified natural service/payment, placement, rotation and pause. Two independent review rounds are retained; occupied-facility removal, save-failure preservation and camera-copy repairs are awaiting final integration and review. An immediate post-placement demolition probe initially ran before the new mesh rendered; the stable rendered hit is being rechecked before treating that probe as a product defect. The reference was installed during this session; a separate worker owns direct native gameplay study. The ignored gallery is informational and no deployment is requested.
+Foundation checkpoint merged and pushed to main at 5b575c9; product code was verified at f48688d. All 23 simulation checks, including 8,000 sequential active saves, syntax checks and production build passed; dependency audit reported zero vulnerabilities. Browser inputs verified natural service/payment, placement/rotation, 60% refunds, floor painting, menu prices/toggles, hiring/priorities/dismissal, six challenges, exact save/load/reload, malformed and empty-save retention, explicit recovery, Shift panning and right-button orbit. Five fixed and three exploratory views plus 1024px and 390px layouts were inspected; the current console had zero errors and warnings. The immediate demolition probe was corrected to wait for rendered geometry and then passed. Independent review rounds 0–2 are retained; F0–F3 are closed. Nine native reference states were captured and compared; native service completion remains unobserved. Full reference fidelity remains the ongoing goal, with controls, construction, visuals and supplies identified for subsequent milestones. The gallery remains ignored and informational. No remote CI is configured and no deployment was performed.

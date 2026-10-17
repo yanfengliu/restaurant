@@ -4,6 +4,10 @@
     {
       "id": 0,
       "theme": "restaurant-foundation"
+    },
+    {
+      "id": 1,
+      "theme": "restaurant-controls"
     }
   ]
 }
