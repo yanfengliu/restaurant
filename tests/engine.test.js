@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ITEMS, RECIPES, SCENARIOS } from '../src/catalog.js';
+import { readFileSync } from 'node:fs';
+import { ITEMS, RECIPES, SCENARIOS, TASK_GROUPS } from '../src/catalog.js';
 import { createGame, dispatch, tick, getStats, serialize, deserialize } from '../src/engine.js';
+
+const legacyFixtures = JSON.parse(readFileSync(new URL('./fixtures/v1-service.json', import.meta.url), 'utf8')).states;
 
 // Bound: deterministic in-memory simulation, public actions and persistence; browser controls/rendering are integration checks.
 function run(game, seconds, step = 1) {
@@ -18,6 +21,13 @@ function action(game, data) {
   const result = dispatch(game, data);
   assert.equal(result.ok, true, result.message);
   return result;
+}
+
+function hire(game, group, x = 11, z = 8) {
+  action(game, { type: 'HIRE', candidateId: game.candidates[0].id, x, z });
+  const member = game.staff.at(-1);
+  for (const taskGroup of TASK_GROUPS) action(game, { type: 'PRIORITY', id: member.id, taskGroup, priority: taskGroup === group ? 'high' : 'off' });
+  return member;
 }
 
 const row = (minX, maxX, z) => Array.from({ length: maxX - minX + 1 }, (_, index) => ({ x: minX + index, z }));
@@ -177,10 +187,11 @@ test('floor strokes charge only changed cells and reject the entire stroke befor
 });
 
 test('v1 saves migrate first-door history conservatively and reject unsupported prices or grant values', () => {
-  const oldStarter = createGame(); delete oldStarter.doorGrantUsed;
+  const oldStarter = structuredClone(legacyFixtures.queued); delete oldStarter.doorGrantUsed;
   for (const object of oldStarter.objects) delete object.purchaseCost;
   assert.equal(deserialize(serialize(oldStarter)).doorGrantUsed, true);
-  const oldEmpty = createGame('empty'); delete oldEmpty.doorGrantUsed;
+  const oldEmpty = structuredClone(legacyFixtures.queued); delete oldEmpty.doorGrantUsed;
+  for (const field of ['objects', 'floors', 'staff', 'guests', 'orders']) oldEmpty[field] = [];
   assert.equal(deserialize(serialize(oldEmpty)).doorGrantUsed, false);
   const valid = createGame('empty'); action(valid, { type: 'PLACE', itemType: 'wall', x: 6, z: 6 });
   for (const purchaseCost of [-1, 13, 1000000, null, '12', 6]) {
@@ -239,8 +250,11 @@ test('invalid or unaffordable construction is atomic and gives usable errors', (
 test('empty mode can build a working restaurant entirely through public actions', () => {
   const game = createGame('empty');
   for (let x = 7; x <= 13; x++) for (let z = 6; z <= 12; z++) action(game, { type: 'FLOOR', x, z, style: 'wood' });
-  for (const [itemType, x, z] of [['prep', 8, 7], ['fridge', 9, 7], ['stove', 10, 7], ['table', 10, 10], ['chair', 9, 10], ['toilet', 12, 11]]) action(game, { type: 'PLACE', itemType, x, z });
-  action(game, { type: 'HIRE', role: 'chef' }); action(game, { type: 'HIRE', role: 'waiter' });
+  for (const [itemType, x, z] of [['prep', 8, 7], ['fridge', 9, 7], ['stove', 10, 7], ['counter', 11, 7], ['shelf', 12, 7], ['table', 10, 10], ['chair', 9, 10], ['toilet', 12, 11]]) action(game, { type: 'PLACE', itemType, x, z });
+  for (const ingredientId of ['tomato', 'avocado']) action(game, { type: 'INGREDIENT_BATCH', ingredientId, quantity: 6 });
+  action(game, { type: 'TABLEWARE_ORDER', tablewareId: 'plate', delta: 1 }); run(game, 135);
+  for (const recipeId of ['burger', 'pasta']) action(game, { type: 'TOGGLE_RECIPE', recipeId });
+  hire(game, 'cooking'); hire(game, 'serving', 12, 8);
   action(game, { type: 'TOGGLE_OPEN' });
   until(game, () => game.stats.served >= 1, 180);
   assert.ok(game.stats.revenue >= 14);
@@ -251,7 +265,8 @@ test('guests order, chefs cook, waiters serve and payment arrives only after dep
   until(game, () => game.guests.some((guest) => guest.state === 'ordered'));
   assert.equal(game.stats.served, 0); assert.equal(game.stats.revenue, 0);
   until(game, () => game.orders.some((order) => order.state === 'cooking'));
-  assert.ok(game.stats.expenses > 0);
+  assert.equal(game.stats.expenses, 0, 'Preparation uses prepaid stock and does not also charge the recipe cost');
+  assert.ok(game.orders.some((order) => order.ingredientsCommitted && order.wareId));
   until(game, () => game.guests.some((guest) => guest.state === 'eating'));
   assert.equal(game.stats.served, 0);
   until(game, () => game.stats.served > 0);
@@ -259,7 +274,7 @@ test('guests order, chefs cook, waiters serve and payment arrives only after dep
   assert.equal(game.stats.lost, 0);
 });
 
-test('normal starter service earns operational profit, charges wages/rent and never double reserves seats', () => {
+test('normal starter service funds supplies and monthly wages without double reserving seats', () => {
   const game = createGame();
   for (let elapsed = 0; elapsed < 960; elapsed++) {
     tick(game, 1);
@@ -267,10 +282,10 @@ test('normal starter service earns operational profit, charges wages/rent and ne
     assert.equal(new Set(reservations).size, reservations.length);
     assert.ok(reservations.length <= getStats(game).seats);
   }
-  assert.ok(game.stats.served >= 60);
+  assert.ok(game.stats.served >= 50, 'A staffed kitchen and washing loop sustain service across multiple shipments');
   assert.ok(game.stats.revenue > game.stats.expenses, JSON.stringify(getStats(game)));
-  assert.ok(game.stats.expenses > 12 * 48, 'Food and daily rent are charged in addition to wages');
-  assert.equal(game.day, 3); assert.equal(game.stats.lost, 0);
+  assert.ok(game.stats.expenses > 2 * 270, 'Ingredient arrivals are charged in addition to two monthly wage payments');
+  assert.equal(game.day, 65);
 });
 
 test('an enclosed dining room cannot be reached and guests never walk through a wall', () => {
@@ -315,10 +330,10 @@ test('closing stops arrivals while current diners can still pay', () => {
 
 test('missing staff, inaccessible kitchen and excessive prices cause dissatisfied departures', () => {
   const noWaiter = createGame();
-  action(noWaiter, { type: 'FIRE', id: noWaiter.staff.find((member) => member.role === 'waiter').id });
+  action(noWaiter, { type: 'FIRE', id: noWaiter.staff.find((member) => member.priorities.serving === 'high').id });
   run(noWaiter, 220); assert.equal(noWaiter.stats.served, 0); assert.ok(noWaiter.stats.lost > 0);
   const noChef = createGame();
-  action(noChef, { type: 'FIRE', id: noChef.staff.find((member) => member.role === 'chef').id });
+  action(noChef, { type: 'FIRE', id: noChef.staff.find((member) => member.priorities.cooking === 'high').id });
   run(noChef, 220); assert.equal(noChef.stats.served, 0); assert.ok(noChef.stats.lost > 0);
   const blockedKitchen = createGame();
   action(blockedKitchen, { type: 'TOGGLE_RECIPE', recipeId: 'salad' });
@@ -333,11 +348,12 @@ test('reassigning a chef during cooking preserves paid ingredients and can resum
   const game = createGame();
   until(game, () => game.orders.some((order) => order.state === 'cooking'));
   const order = game.orders.find((entry) => entry.state === 'cooking'), orderId = order.id;
-  action(game, { type: 'PRIORITY', id: order.staffId, role: 'cleaner' });
-  action(game, { type: 'HIRE', role: 'chef' });
-  const newChef = game.staff.find((member) => member.role === 'chef');
+  const stock = JSON.stringify(game.supplies.stocks);
+  action(game, { type: 'FIRE', id: order.staffId });
+  const newChef = hire(game, 'cooking');
   until(game, () => game.orders.some((entry) => entry.id === orderId && entry.staffId === newChef.id));
   assert.equal(game.orders.find((entry) => entry.id === orderId).state, 'cooking');
+  assert.equal(JSON.stringify(game.supplies.stocks), stock, 'Resuming a committed order cannot consume its ingredients twice');
   until(game, () => game.stats.served > 0);
   assert.doesNotThrow(() => deserialize(serialize(game)));
 });
@@ -348,21 +364,27 @@ test('menu requirements, unlocking and enabled recipes affect actual choices', (
   for (const entry of game.menu.filter((entry) => entry.enabled)) action(game, { type: 'TOGGLE_RECIPE', recipeId: entry.recipeId });
   assert.deepEqual(getStats(game).availableRecipes, []);
   run(game, 30); assert.equal(game.guests.length, 0);
+  for (const ingredientId of ['flour', 'tomato', 'steak']) action(game, { type: 'INGREDIENT_BATCH', ingredientId, quantity: 0 });
+  action(game, { type: 'INGREDIENT_BATCH', ingredientId: 'avocado', quantity: 8 });
   action(game, { type: 'TOGGLE_RECIPE', recipeId: 'salad' });
   until(game, () => game.stats.served >= 10, 400);
   assert.ok(game.unlocks.includes('steak')); action(game, { type: 'TOGGLE_RECIPE', recipeId: 'steak' });
   assert.ok(getStats(game).availableRecipes.includes('steak'));
   action(game, { type: 'TOGGLE_OPEN' }); run(game, 160);
-  const fridge = game.objects.find((object) => object.type === 'fridge'); action(game, { type: 'REMOVE', id: fridge.id });
+  action(game, { type: 'PLACE', itemType: 'wall', x: 9, z: 8 });
   assert.equal(getStats(game).availableRecipes.length, 0);
 });
 
 test('cleaners restore hygiene while neglect reduces it and toilets influence guests', () => {
   const clean = createGame(), dirty = createGame();
+  action(clean, { type: 'TOGGLE_OPEN' }); action(dirty, { type: 'TOGGLE_OPEN' });
   clean.stats.cleanliness = 40; dirty.stats.cleanliness = 40;
-  action(dirty, { type: 'FIRE', id: dirty.staff.find((member) => member.role === 'cleaner').id });
+  action(clean, { type: 'PRIORITY', id: clean.staff.find((member) => member.priorities.cleaning === 'normal').id, taskGroup: 'cleaning', priority: 'high' });
+  action(dirty, { type: 'FIRE', id: dirty.staff.find((member) => member.priorities.cleaning === 'normal').id });
   run(clean, 120); run(dirty, 120);
   assert.ok(clean.stats.cleanliness > 90); assert.ok(dirty.stats.cleanliness < 40);
+  action(clean, { type: 'TOGGLE_OPEN' }); action(dirty, { type: 'TOGGLE_OPEN' });
+  until(clean, () => clean.stats.served > 0); until(dirty, () => dirty.stats.served > 0);
   assert.ok(clean.stats.rating > dirty.stats.rating);
   const noToilet = createGame();
   action(noToilet, { type: 'REMOVE', id: noToilet.objects.find((object) => object.type === 'toilet').id });
@@ -394,8 +416,9 @@ test('removing facilities preserves valid paused saves and refuses occupied toil
   until(cleaning, () => cleaning.staff.some((member) => member.task === 'cleaning'));
   action(cleaning, { type: 'SPEED', speed: 0 });
   const cleaner = cleaning.staff.find((member) => member.task === 'cleaning');
-  action(cleaning, { type: 'REMOVE', id: cleaner.taskTarget });
-  assert.equal(cleaner.task, 'idle');
+  const beforeCleaningRemoval = serialize(cleaning);
+  assert.equal(dispatch(cleaning, { type: 'REMOVE', id: cleaner.taskTarget }).ok, false);
+  assert.equal(serialize(cleaning), beforeCleaningRemoval, 'An active station sale is refused without losing its assignment');
   assert.deepEqual(deserialize(serialize(cleaning)), cleaning);
 });
 
@@ -432,7 +455,7 @@ test('8000 consecutive quarter-second saves preserve service states and future b
 
 test('save validation rejects solid crossings, incompatible cooking sources and missing reciprocal task links', () => {
   const starter = createGame();
-  const crossedStove = structuredClone(starter), chef = crossedStove.staff.find((member) => member.role === 'chef');
+  const crossedStove = structuredClone(starter), chef = crossedStove.staff.find((member) => member.priorities.cooking === 'high');
   chef.path = [{ x: 7, z: 7 }]; chef.task = 'cleaning';
   assert.throws(() => deserialize(serialize(crossedStove)), /path crosses solid furniture/);
   const insideStove = structuredClone(starter);
@@ -466,11 +489,11 @@ test('save validation rejects solid crossings, incompatible cooking sources and 
     assert.throws(() => deserialize(serialize(corrupted)), /Cannot load restaurant/);
   }
   const unassignedWaiter = structuredClone(starter);
-  unassignedWaiter.staff.find((member) => member.role === 'waiter').task = 'taking-order';
-  assert.throws(() => deserialize(serialize(unassignedWaiter)), /waiting guest/);
+  unassignedWaiter.staff.find((member) => member.priorities.serving === 'high').task = 'taking-order';
+  assert.throws(() => deserialize(serialize(unassignedWaiter)), /target is missing|waiting guest/);
   const unassignedCleaner = structuredClone(starter);
-  unassignedCleaner.staff.find((member) => member.role === 'cleaner').task = 'cleaning';
-  assert.throws(() => deserialize(serialize(unassignedCleaner)), /cleaner requires/);
+  unassignedCleaner.staff.find((member) => member.priorities.cleaning === 'normal').task = 'cleaning';
+  assert.throws(() => deserialize(serialize(unassignedCleaner)), /target is missing|cleaner requires/);
 });
 
 test('renovation replans moving actors through adjacent tiles and keeps active saves valid', () => {
@@ -532,10 +555,14 @@ test('expansion is bounded, hiring and wages are explicit, and bankruptcy safely
   action(game, { type: 'EXPAND' }); action(game, { type: 'EXPAND' });
   assert.deepEqual(game.land, { minX: 0, maxX: 23, minZ: 0, maxZ: 23 });
   assert.equal(dispatch(game, { type: 'EXPAND' }).ok, false);
-  action(game, { type: 'HIRE', role: 'chef' });
+  action(game, { type: 'FLOOR', x: 5, z: 5, style: 'peach' });
+  const member = hire(game, 'cooking', 5, 5);
   const startingCash = game.cash; run(game, 20);
-  assert.ok(Math.abs(game.cash - (startingCash - 6)) < 1e-8);
-  game.cash = -499.99; action(game, { type: 'TOGGLE_OPEN' }); tick(game, 1);
+  assert.equal(game.cash, startingCash, 'Wages accrue until the month boundary');
+  assert.ok(Math.abs(member.wageAccrued - member.monthlyWage * 20 / 450) < 1e-8);
+  action(game, { type: 'FIRE', id: member.id });
+  assert.ok(Math.abs(game.cash - (startingCash - member.wageAccrued)) < 1e-8);
+  game.cash = -500.01; action(game, { type: 'TOGGLE_OPEN' }); tick(game, 1);
   assert.equal(game.bankrupt, true); assert.equal(game.open, false);
   assert.equal(dispatch(game, { type: 'TOGGLE_OPEN' }).ok, false);
   assert.ok(Number.isFinite(game.cash));

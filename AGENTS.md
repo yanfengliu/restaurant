@@ -20,7 +20,7 @@ The fleet sync owns any generated constitution block.
 
 ## Invariants and boundaries
 
-- Engine state is serializable and validated on load; save schema version is 1.
+- Engine state is serializable and validated on load; save schema version is 2, with validated version 1 migration.
 - Prices, cash, path access, staff priorities, and simulation speed have explicit engine validation.
 - Keep simulation logic in `src/engine.js`, catalog data in `src/catalog.js`, 3D rendering in `src/scene.js`, and interface state in `src/main.js`.
 - Product names, content, geometry, interface art, and code belong to this original game.

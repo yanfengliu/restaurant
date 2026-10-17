@@ -1,10 +1,14 @@
 export const ITEMS = {
   table: { name: 'Dining table', category: 'Dining', cost: 50, color: '#b88152', solid: true },
   chair: { name: 'Dining chair', category: 'Dining', cost: 25, color: '#e2ae68', solid: true },
-  counter: { name: 'Service counter', category: 'Dining', cost: 50, color: '#b77e51', solid: true },
+  counter: { name: 'Cabinet', category: 'Kitchen', cost: 50, color: '#b77e51', solid: true, storageKind: 'tableware', capacity: 10 },
+  cuttingboard: { name: 'Cutting board', category: 'Kitchen', cost: 50, color: '#c99c65', solid: false, support: 'counter' },
+  fryer: { name: 'Countertop fryer', category: 'Kitchen', cost: 100, color: '#a7adb0', solid: false, support: 'counter' },
+  shelf: { name: 'Small shelf', category: 'Kitchen', cost: 100, color: '#ad8056', solid: true, storageKind: 'shelf', capacity: 12 },
+  bigshelf: { name: 'Large shelf', category: 'Kitchen', cost: 400, color: '#ad8056', solid: true, storageKind: 'shelf', capacity: 24 },
   stove: { name: 'Range cooker', category: 'Kitchen', cost: 750, color: '#a4adb3', solid: true },
   prep: { name: 'Preparation station', category: 'Kitchen', cost: 320, color: '#b4bfc0', solid: true },
-  fridge: { name: 'Refrigerator', category: 'Kitchen', cost: 150, color: '#dae4e1', solid: true },
+  fridge: { name: 'Refrigerator', category: 'Kitchen', cost: 150, color: '#dae4e1', solid: true, storageKind: 'fridge', capacity: 12 },
   sink: { name: 'Kitchen sink', category: 'Kitchen', cost: 220, color: '#c6d7d8', solid: true },
   bin: { name: 'Waste bin', category: 'Kitchen', cost: 70, color: '#546660', solid: true },
   toilet: { name: 'Toilet', category: 'Facilities', cost: 280, color: '#eef0e6', solid: true },
@@ -18,14 +22,36 @@ export const ITEMS = {
   window: { name: 'Window wall', category: 'Building', cost: 65, color: '#bfd9d6', solid: true },
 };
 
+export const INGREDIENTS = {
+  potato: { name: 'Potato', storageKind: 'shelf', unitPrice: 1 },
+  flour: { name: 'Flour', storageKind: 'shelf', unitPrice: 1 },
+  tomato: { name: 'Tomato', storageKind: 'shelf', unitPrice: 2 },
+  coffee: { name: 'Coffee', storageKind: 'shelf', unitPrice: 2 },
+  avocado: { name: 'Avocado', storageKind: 'shelf', unitPrice: 2 },
+  steak: { name: 'Steak', storageKind: 'fridge', unitPrice: 5 },
+  chicken: { name: 'Chicken', storageKind: 'fridge', unitPrice: 5 },
+  rice: { name: 'Rice', storageKind: 'shelf', unitPrice: 1 },
+  mushroom: { name: 'Mushroom', storageKind: 'shelf', unitPrice: 2 },
+};
+
+export const TABLEWARE = Object.fromEntries([
+  ['plate', 'Plate'], ['stemglass', 'Stemmed glass'], ['pan', 'Pan'],
+  ['bowl', 'Bowl'], ['cup', 'Cup'], ['glass', 'Glass'],
+].map(([id, name]) => [id, { name, unitPrice: 15 }]));
+
+export const TASK_GROUPS = ['serving', 'cooking', 'dishwashing', 'cleaning'];
+
 export const RECIPES = [
-  { id: 'burger', name: 'House Burger', price: 18, cost: 4.5, equipment: ['stove', 'prep', 'fridge'], cookTime: 8, unlock: 0, color: '#d9a54d' },
-  { id: 'salad', name: 'Garden Salad', price: 14, cost: 3, equipment: ['prep', 'fridge'], cookTime: 5, unlock: 0, color: '#7da867' },
-  { id: 'pasta', name: 'Tomato Pasta', price: 20, cost: 4, equipment: ['stove', 'prep'], cookTime: 10, unlock: 0, color: '#e4935b' },
-  { id: 'steak', name: 'Pepper Steak', price: 32, cost: 9, equipment: ['stove', 'prep', 'fridge'], cookTime: 13, unlock: 10, color: '#ad6b54' },
-  { id: 'risotto', name: 'Mushroom Risotto', price: 26, cost: 6, equipment: ['stove', 'prep', 'fridge'], cookTime: 12, unlock: 25, color: '#d3bd8c' },
-  { id: 'chef-special', name: "Chef's Tasting Plate", price: 42, cost: 11, equipment: ['stove', 'prep', 'fridge', 'sink'], cookTime: 16, unlock: 50, color: '#bf8565' },
+  { id: 'burger', name: 'House Burger', price: 18, ingredients: { flour: 1, steak: 1, tomato: 1 }, tableware: 'plate', primary: 'stove', equipment: ['stove', 'prep', 'fridge'], cookTime: 8, unlock: 0, color: '#d9a54d' },
+  { id: 'salad', name: 'Garden Salad', price: 14, ingredients: { tomato: 1, avocado: 1 }, tableware: 'plate', primary: 'prep', equipment: ['prep', 'fridge'], cookTime: 5, unlock: 0, color: '#7da867' },
+  { id: 'pasta', name: 'Tomato Pasta', price: 20, ingredients: { flour: 1, tomato: 1 }, tableware: 'bowl', primary: 'stove', equipment: ['stove', 'prep'], cookTime: 10, unlock: 0, color: '#e4935b' },
+  { id: 'steak', name: 'Pepper Steak', price: 32, ingredients: { steak: 1 }, tableware: 'plate', primary: 'stove', equipment: ['stove', 'prep', 'fridge'], cookTime: 13, unlock: 10, color: '#ad6b54' },
+  { id: 'risotto', name: 'Mushroom Risotto', price: 26, ingredients: { rice: 1, mushroom: 1 }, tableware: 'bowl', primary: 'stove', equipment: ['stove', 'prep', 'fridge'], cookTime: 12, unlock: 25, color: '#d3bd8c' },
+  { id: 'chef-special', name: "Chef's Tasting Plate", price: 42, ingredients: { chicken: 1, avocado: 1 }, tableware: 'plate', primary: 'stove', equipment: ['stove', 'prep', 'fridge', 'sink'], cookTime: 16, unlock: 50, color: '#bf8565' },
+  { id: 'fries', name: 'Fries', price: 15, ingredients: { potato: 1 }, tableware: 'plate', primary: 'fryer', equipment: ['fryer', 'cuttingboard'], cookTime: 8, unlock: 0, color: '#e3bb55' },
 ];
+
+for (const recipe of RECIPES) recipe.cost = Object.entries(recipe.ingredients).reduce((sum, [id, quantity]) => sum + INGREDIENTS[id].unitPrice * quantity, 0);
 
 export const SCENARIOS = [
   { id: 'sandbox', title: 'Your neighborhood restaurant', description: 'Build at your own pace and make a place people love.', goals: [] },
