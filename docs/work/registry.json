@@ -8,6 +8,10 @@
     {
       "id": 1,
       "theme": "restaurant-controls"
+    },
+    {
+      "id": 2,
+      "theme": "restaurant-supplies"
     }
   ]
 }
