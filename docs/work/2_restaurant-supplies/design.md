@@ -84,9 +84,9 @@ The new UI uses candidate/group actions; the old `{ role }` hiring and priority 
 
 Add catalog exports `INGREDIENTS`, `TABLEWARE` and `TASK_GROUPS`; each ingredient declares ID, name, storage class and unit price, and each recipe declares concrete ingredients, tableware, equipment capabilities and primary cooking equipment.
 
-Add `getSupplies(game)` returning ingredient rows `{ id, name, storageKind, unitPrice, onHand, usable, batchQuantity, batchLimit, storageCapacity, storageFree, storageAvailable, nextQuantity, nextCost, blockedReason }`, tableware rows `{ id, name, unitPrice, clean, usable, inUse, dirty, returning, queued, broken, capacity, free, canAdd, canCancel }`, and per-storage `{ id, capacity, used, reserved }`.
+Add `getSupplies(game)` returning ingredient rows `{ id, name, storageKind, unitPrice, onHand, usable, batchQuantity, batchLimit, storageCapacity, storageFree, storageAvailable, scheduledCost, nextQuantity, nextCost, blockedReason }`, tableware rows `{ id, name, unitPrice, clean, usable, inUse, dirty, returning, queued, broken, capacity, free, canAdd, canCancel }`, and per-storage `{ id, capacity, used, reserved }`.
 
-Its `deliveries.ingredient` and `deliveries.tableware` records expose `{ status, nextDay, remainingSeconds, progress, nextCost, blockedReason }`, where status is `idle/waiting/due/blocked`, progress is 0–1, and a tableware arrival never has a second cost.
+Its `deliveries.ingredient` and `deliveries.tableware` records expose `{ status, nextDay, remainingSeconds, progress, nextCost, blockedReason }`, where status is `idle/waiting/due/blocked`, progress is 0–1, and a tableware arrival never has a second cost. Ingredient rows additionally expose `scheduledCost = batchQuantity × unitPrice`, and `deliveries.ingredient.scheduledCost` sums them; projected `nextQuantity/nextCost` remain capacity-limited.
 
 Add `getRecipeStatus(game)` returning rows `{ recipeId, enabled, unlocked, canEnable, canOrder, canPrepare, status, requirements, missing }`; status is `locked/missing-equipment/missing-stock/missing-tableware/ready`, and requirement rows are `{ kind, id, label, required, available, owned, met, reason }`.
 
@@ -164,7 +164,7 @@ Dishwashing jobs reserve a free return slot and choose a complete reachable tabl
 
 Clumsiness may break dirty ware once on its first carried grid step, incrementing the broken ledger and releasing its reserved return slot exactly once; probability `0.04 × clumsiness` is an initial bounded inference, and persisted `breakageChecked` prevents a reload from rerolling that carry.
 
-Cancellation never creates or deletes a ware unit: uncommitted regular orders have none; committed abandoned meals become dirty at their station; a carried meal becomes employee-owned dirty ware in a forced `meal-dispose` return phase before the cancelled order is deleted.
+Cancellation never creates or deletes a ware unit: uncommitted regular orders have none; committed abandoned meals become dirty at their station. A carried meal atomically transfers ware ownership and its source target to the employee's forced `meal-dispose` task, then its order may be deleted. This phase returns the dirty unit to its existing source station without requiring a sink, counter or `returnStorageId`; ordinary washing waits there until a complete route and return slot exist. An unreachable disposal route retains the carrier and protected source target with a blocked reason; sale and firing cannot destroy either link.
 
 Priority changes affect the next job and do not abandon a carried dish or half-cooked order; firing/renovation must preserve reciprocal links, finish/release a safe unheld phase or refuse the action atomically.
 
@@ -192,7 +192,7 @@ Remove future automatic daily rent and hourly wage debits; the observed pre-mont
 
 ## Version 1 migration and graph validation
 
-First validate the complete old graph with its existing rules; migrate a copied state and validate the resulting version 2 graph, with no partially returned game after failure.
+First validate the complete old graph with frozen version 1 recipe, role and graph rules, including its exact six-entry menu; new catalog prices, equipment and recipe length must not reinterpret valid old data. Migrate a copied state, append disabled Fries after legacy validation, and validate the resulting version 2 graph, with no partially returned game after failure.
 
 Preserve object/actor/order IDs, next ID sequence, clocks, positions, paths, task progress, menu choices, cash, revenue, expenses, existing construction grant and refunds; only new records allocate new IDs.
 
@@ -204,9 +204,9 @@ All wages through the load instant were already charged by version 1, so migrati
 
 Map old cooking skill to the new 0–1 quality statistic, preserve already completed preparation progress, and use speed 0.5 to preserve the old walking multiplier; future cooking duration follows each recipe rather than the previous skill-driven speed rule.
 
-For each existing cooking/ready order, grant and link one ware unit and mark `legacy-paid`; its old recipe charge has already happened, so it never pays for or consumes ingredients again.
+For each existing cooking/station-ready order, grant and link one ware unit and mark `legacy-paid`; its old recipe charge has already happened, so it never pays for or consumes ingredients again. A ready order whose assigned employee is already `serving` is physically carried in version 1: migrate that unit as `carriedMeal`, with reciprocal employee/order links and unchanged path/task/timer, rather than restoring it at the station.
 
-For a queued old order, grant its ware and mark `legacy-pending` with a frozen version 1 debit: burger 4.5, salad 3, pasta 4, steak 9, risotto 6, chef-special 11; debit that amount once when preparation starts, then mark `legacy-paid`, without also consuming new stock or reading a changed recipe-cost display.
+For a queued old order, mark `legacy-pending` without ware, using a frozen version 1 debit: burger 4.5, salad 3, pasta 4, steak 9, risotto 6, chef-special 11. Grant its ware only atomically with a successful one-time preparation debit, then mark `legacy-paid`, without also consuming new stock or reading a changed recipe-cost display. A queued cancellation therefore has no unit to strand at an absent source or counter.
 
 Eating guests receive a granted guest-owned unit; completed meals with an existing table become dirty units there, while historical completed meals without a remaining table create no new dish or charge.
 
