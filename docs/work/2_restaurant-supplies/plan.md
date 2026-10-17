@@ -1,6 +1,6 @@
 # Stock, service and employee priorities
 
-Status: active
+Status: complete
 Owner: Codex orchestrator
 Created: 2026-10-17
 Updated: 2026-10-17
@@ -19,16 +19,16 @@ Engine/catalog/tests, interface, and scene each retain separate owners; root agr
 
 ## Acceptance criteria
 
-- [ ] A player can equip storage and kitchen, choose quantities, receive capacity-limited supplies, enable a recipe only when its prerequisites are met, serve and collect payment, then collect and wash used tableware; shortages visibly stop further preparation.
-- [ ] Four independently adjustable employee task priorities and three candidate skills affect actual task selection, walking, food quality and breakage; wages have a coherent displayed period.
-- [ ] Saves preserve inventories, active orders, dirty dishes, deliveries and employee priorities; malformed graphs fail safely and valid earlier saves migrate without silent loss.
-- [ ] Actual desktop browser controls pass; rendered desktop views are inspected and compared with explicit observed matches, differences and unverified bounds. The ignored gallery, deterministic tests and independent review are complete before main merge/push; mobile is outside the user's scope.
+- [x] A player can equip storage and kitchen, choose quantities, receive capacity-limited supplies, enable a recipe only when its prerequisites are met, serve and collect payment, then collect and wash used tableware; shortages visibly stop further preparation.
+- [x] Four independently adjustable employee task priorities and three candidate skills affect actual task selection, walking, food quality and breakage; wages have a coherent displayed period.
+- [x] Saves preserve inventories, active orders, dirty dishes, deliveries and employee priorities; malformed graphs fail safely and valid earlier saves migrate without silent loss.
+- [x] Actual desktop browser controls pass; rendered desktop views are inspected and compared with explicit observed matches, differences and unverified bounds. The ignored gallery, deterministic tests and independent review are complete before main merge/push; mobile is outside the user's scope.
 
 ## Implementation steps
 
-- [ ] Root settles storage/delivery/task/save interfaces from evidence; scoped workers implement and verify the connected service loop.
-- [ ] Root exercises purchasing through washing and interrupted saves, compares evidence, resolves reviewed defects, and lands the milestone.
+- [x] Root settles storage/delivery/task/save interfaces from evidence; scoped workers implement and verify the connected service loop.
+- [x] Root exercises purchasing through washing and interrupted saves, compares evidence, resolves reviewed defects, and lands the milestone.
 
 ## Outcome
 
-The construction milestone is landed at 37d1dc9. Root approved the [shared design](design.md) for focused independent review before implementation. Fifteen simulation seconds per calendar day, ten-day ingredient cadence and five-day tableware transit are inferred defaults bounded by the native date snapshots; recurring batches and their transaction rules were directly observed. Complete reference parity remains unverified.
+Merged and pushed at 405a02f, with final product ed9198c. Version 2 stock, deliveries, reusable ware, washing, employee skills/priorities and monthly payroll passed 53 tests and production build. Actual desktop inputs verified construction through payment and clean return, active meal/washing save reloads, and same-order shortage recovery. Desktop captures cover 2560/1440/1024 widths; fixed/exploratory views, key panels and all 37 model previews were inspected. The ignored gallery retains comparisons and hashes. [Final independent review](reviews/3_integration.md) closes F0–F6; Claude was unavailable through weekly quota. No remote CI is configured; the existing 691.24 KB bundle advisory remains. Native complete service, exact timing/economy and wider parity remain unverified. Outdoor placement/moving, one-shot furnishing and opening progression are next bounded fidelity work.
