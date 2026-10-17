@@ -256,7 +256,7 @@ function renderMenu() {
 function renderStaff() {
   const stats = getStats(game);
   const tabs = `<div class="staff-tabs" role="tablist" aria-label="Employee management"><button role="tab" aria-selected="${ui.staffTab === 'priorities'}" data-action="staff-tab" data-tab="priorities">Priorities</button><button role="tab" aria-selected="${ui.staffTab === 'hire'}" data-action="staff-tab" data-tab="hire">Hire employees</button></div>`;
-  if (ui.staffTab === 'hire') return tabs + `<div class="candidate-grid">${game.candidates.map((candidate) => `<article class="candidate-card">${personArt(candidate)}<h3>${escapeHtml(candidate.name)}</h3><strong>${money(candidate.monthlyWage)} / month</strong>${skillBars(candidate)}<button data-action="hire-candidate" data-id="${candidate.id}" aria-label="Hire ${escapeHtml(candidate.name)}">Hire</button></article>`).join('')}</div><p class="supply-note">Choose an employee, then click a clear floor tile to place them. Wages accrue through the month.</p>`;
+  if (ui.staffTab === 'hire') return tabs + `<div class="candidate-grid">${game.candidates.map((candidate) => `<article class="candidate-card">${personArt(candidate)}<h3>${escapeHtml(candidate.name)}</h3><strong>${money(candidate.monthlyWage)} / month</strong>${skillBars(candidate)}<button data-action="hire-candidate" data-id="${candidate.id}" aria-label="Hire ${escapeHtml(candidate.name)}">Hire</button></article>`).join('')}</div><p class="supply-note">Choose an employee, then click clear owned ground to place them. Wages accrue through the month.</p>`;
   return tabs + `<div class="priorities-table"><div class="priority-head"><span>Employee</span>${TASK_GROUPS.map((group) => `<span>${taskLabel(group)}</span>`).join('')}<span></span></div><div class="staff-list">${game.staff.map((staff) => `<div class="priority-row"><div class="employee-label">${personArt(staff)}<span><strong>${escapeHtml(staff.name)}</strong><small>${money(staff.monthlyWage)} / month</small><small>${escapeHtml(staff.blockedReason || staff.task)}</small></span></div>${TASK_GROUPS.map((group) => priorityButton(staff, group)).join('')}<button class="icon-button subtle" data-action="fire" data-id="${staff.id}" aria-label="Dismiss ${escapeHtml(staff.name)}" title="Dismiss employee">${icon('close')}</button></div>`).join('') || '<p class="empty-state">No employees. Open Hire employees to meet the candidates.</p>'}</div></div><p class="supply-note">Click a square to cycle normal → high ▲ → off × → low ▼. Employees choose available jobs in priority order.</p><div class="payroll-summary"><span>Monthly wages <strong>${money(stats.monthlyWages)}</strong></span><span>Accrued this month <strong>${money(stats.wagesAccrued)}</strong></span></div>`;
 }
 
@@ -377,7 +377,7 @@ function renderConstructionHint() {
   const needsEntrance = !stats.hasUsableSeating && stats.hasRoom === true && stats.hasEntrance === false;
   hint.hidden = !needsRoom && !needsEntrance;
   hint.innerHTML = needsRoom
-    ? '<strong>Build an enclosed room</strong><span>Choose walls in Construction and drag four sides. An enclosed room receives peach flooring automatically.</span>'
+    ? '<strong>Furnish your space</strong><span>Place a table and an adjacent chair on clear owned ground outdoors, or choose walls in Construction and drag four sides for an enclosed room with automatic peach flooring.</span>'
     : needsEntrance
       ? '<strong>Add an entrance</strong><span>Choose a doorway and place it on a boundary wall.' + (!game.doorGrantUsed ? ' Your first doorway is free.' : '') + '</span>'
       : '';
