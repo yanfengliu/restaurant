@@ -208,7 +208,9 @@ For each existing cooking/station-ready order, grant and link one ware unit and 
 
 For a queued old order, mark `legacy-pending` without ware, using a frozen version 1 debit: burger 4.5, salad 3, pasta 4, steak 9, risotto 6, chef-special 11. Grant its ware only atomically with a successful one-time preparation debit, then mark `legacy-paid`, without also consuming new stock or reading a changed recipe-cost display. A queued cancellation therefore has no unit to strand at an absent source or counter.
 
-Eating guests receive a granted guest-owned unit; completed meals with an existing table become dirty units there, while historical completed meals without a remaining table create no new dish or charge.
+Already-ready legacy meals use `quality = 1`; already-served legacy guests use `mealQuality = 1`, since their old save cannot reconstruct a historical cooking statistic. Queued/cooking meals derive quality normally at future completion. Version 1 deletes recipe identity when serving, so already-served guests use an explicitly migrated fallback plate rather than an invented recipe identity.
+
+Eating guests receive that granted guest-owned unit; completed meals with positive `bill` and an existing table become dirty units there. Failed pre-meal leavers and historical completed meals without a remaining table create no new dish or charge. The validator recognizes the declared legacy fallback without requiring an unknowable historical recipe.
 
 Migrated kitchens gain no invented stock or moved/new storage: in-flight work completes, and the UI explains the storage/delivery prerequisites for subsequent new orders; lack of a counter can block later washing without invalidating the imported state.
 
