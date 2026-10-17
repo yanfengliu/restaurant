@@ -1,6 +1,6 @@
 # Supplies and employee contract proposal
 
-Status: proposal; implementation requires coordinator approval and the construction milestone to land.
+Status: coordinator-approved contract; independent design review precedes implementation.
 
 Owner: simulation worker; design base `b16105e`, implementation must start from landed main `37d1dc9` or a later coordinator-approved base.
 
@@ -224,6 +224,8 @@ Tests cover unsupported/duplicate child placement and parent sale atomicity; fix
 
 Use at least 8,000 consecutive quarter-second round trips over new supplies/service states and compare future deterministic state, plus real browser purchases and a meal-to-washed-plate cycle through controls; native service timing remains explicitly unverified.
 
-Coordinator approval is still required for this complete field/API contract and the inferred candidate-wage formula, quality formula, fridge capacity and carried-step breakage probability before implementation; the shelf/cabinet capacities, ware IDs, rice/mushroom bridge, four-second wash, non-preemptive priorities, day length, ingredient boundaries, five-day tableware delay, zero-fee hire and month-boundary payroll are coordinator decisions recorded above.
+Coordinator approved this field/API contract on 2026-10-17, including the inferred candidate-wage formula, quality formula, fridge capacity and carried-step breakage probability. These are tunable playable defaults, not measured reference values; independent review must resolve material graph or transaction defects before implementation.
+
+The ingredient panel displays the scheduled batch cost, the sum of configured batch quantities times unit prices, even when storage is currently full. Its projected capacity-limited arrival cost remains separately available through `getSupplies`; this preserves the observed recurring-order display without promising a charge for undelivered units.
 
 Ingredient freshness, broad catalog/progression, zoning, per-table menus, employee clothing, precise native timing calibration and scenario changes remain later work.

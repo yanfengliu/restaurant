@@ -1,6 +1,6 @@
 # Stock, service and employee priorities
 
-Status: planned
+Status: active
 Owner: Codex orchestrator
 Created: 2026-10-17
 Updated: 2026-10-17
@@ -11,7 +11,7 @@ Make the observed equipment, ingredient and tableware prerequisites govern a com
 
 ## Scope
 
-After milestone 1, add cabinet-supported countertop appliances, storage-limited stock, recurring ingredient batches charged on delivery, prepaid/refundable tableware queues, reusable dishes and washing, recipe dependency feedback, generic employees with four task priorities, candidate skills and monthly wage display. Keep valid version 1 saves loadable. Broader catalog, calendar and scenario progression follow separately.
+After milestone 1, add cabinet-supported countertop appliances, storage-limited stock, recurring ingredient batches charged on delivery, prepaid/refundable tableware queues, reusable dishes and washing, recipe dependency feedback, generic employees with four task priorities, candidate skills and monthly wages. Include the calendar conversion needed for deliveries and payroll; the earlier 480-second day would make a ten-day shipment take eighty minutes. Keep valid version 1 saves loadable. Broader catalog and scenario progression follow separately.
 
 ## Approach
 
@@ -31,4 +31,4 @@ Engine/catalog/tests, interface, and scene each retain separate owners; root agr
 
 ## Outcome
 
-Planned; implementation waits for the reviewed construction milestone and the shared contract. Complete reference parity remains unverified.
+The construction milestone is landed at 37d1dc9. Root approved the [shared design](design.md) for focused independent review before implementation. Fifteen simulation seconds per calendar day, ten-day ingredient cadence and five-day tableware transit are inferred defaults bounded by the native date snapshots; recurring batches and their transaction rules were directly observed. Complete reference parity remains unverified.
