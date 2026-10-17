@@ -287,7 +287,7 @@ export function createScene(container, callbacks = {}) {
     const carried=new THREE.Group(); carried.position.set(0.24,0.76,0.28); plate(carried,0,0,0,true); carried.visible=false; body.add(carried);
     const indicator=new THREE.Group(); indicator.position.y=1.7; g.add(indicator);
     const token=cyl(indicator,0.12,0.035,material('#e3c982'),0,0,0,12); token.rotation.x=Math.PI/2; indicator.visible=false;
-    g.userData={data,isStaff,seed,body,head,leftLeg,rightLeg,leftArm,rightArm,carried,indicator,lastX:data.x,lastZ:data.z};
+    g.userData={objectId:data.id,data,isStaff,seed,body,head,leftLeg,rightLeg,leftArm,rightArm,carried,indicator,lastX:data.x,lastZ:data.z};
     g.position.set(data.x+0.5,0.1,data.z+0.5); peopleLayer.add(g); return g;
   }
   function syncPeople() {
@@ -334,18 +334,18 @@ export function createScene(container, callbacks = {}) {
         ghost.traverse(n=>{if(n.isMesh)n.material=m;}); cursor.material=material(good?'#90c8a0':'#d67969',{transparent:true,opacity:0.4,depthWrite:false});
       }
     }
-    const object=objects.get(hoveredId); hoverOutline.visible=Boolean(object && !ghost);
+    const object=objects.get(hoveredId)||people.get(hoveredId); hoverOutline.visible=Boolean(object && !ghost);
     if(object) hoverOutline.setFromObject(object);
   }
   function pick(event) {
     const rect=renderer.domElement.getBoundingClientRect(); pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);
     raycaster.setFromCamera(pointer,camera);
-    const hits=raycaster.intersectObjects(objectLayer.children,true);
+    const hits=raycaster.intersectObjects(tool?objectLayer.children:[...objectLayer.children,...peopleLayer.children],true);
     let objectId=null;
     if(hits.length) { let obj=hits[0].object; while(obj&&!obj.userData.objectId)obj=obj.parent; objectId=obj?.userData.objectId; }
     if(!raycaster.ray.intersectPlane(plane,hitPoint))return null;
     let x=Math.floor(hitPoint.x),z=Math.floor(hitPoint.z);
-    if(objectId && tool?.type!=='FLOOR' && tool?.type!=='PLACE') { const o=objects.get(objectId).userData.data; x=o.x;z=o.z; }
+    if(objectId && tool?.type!=='FLOOR' && tool?.type!=='PLACE') { const o=(objects.get(objectId)||people.get(objectId)).userData.data; x=Math.floor(o.x);z=Math.floor(o.z); }
     if(x<0||x>23||z<0||z>23)return null;
     return {x,z,...(objectId?{objectId}:{})};
   }
@@ -353,6 +353,7 @@ export function createScene(container, callbacks = {}) {
   const canvas=renderer.domElement;
   function onPointerDown(event) {
     if(event.button>2)return;
+    event.preventDefault();
     drag={x:event.clientX,y:event.clientY,lastX:event.clientX,lastY:event.clientY,button:event.button,moved:false,pan:event.button===1||event.shiftKey};
     canvas.setPointerCapture(event.pointerId);
   }
@@ -436,7 +437,7 @@ export function createScene(container, callbacks = {}) {
     rotate(delta) { azimuth+=Number(delta)||0;updateCamera(); },
     zoom(delta) { zoomLevel=clamp(zoomLevel+(Number(delta)||0),0.55,2.8);updateCamera(); },
     resize,
-    screenPosition(x,z) { const p=new THREE.Vector3(x+0.5,0.8,z+0.5).project(camera);return {x:(p.x+1)*width/2,y:(1-p.y)*height/2}; },
+    screenPosition(x,z) { const p=new THREE.Vector3(x+0.5,0.1,z+0.5).project(camera);return {x:(p.x+1)*width/2,y:(1-p.y)*height/2}; },
     dispose() {
       if(disposed)return;disposed=true;cancelAnimationFrame(frame);observer.disconnect();
       for(const[name,fn]of Object.entries(listeners))canvas.removeEventListener(name,fn);
