@@ -207,3 +207,31 @@ The three screenshots below were independently inspected at their full 2560 × 1
 | `output/reference-study5/03-dishwasher-catalog.jpg` | 2026-10-18 00:03:49.647 | `57c87bc84098db261cabd8f287cd4cfa29f1b76d307fb353bb1643ac7a24c845` |
 | `output/reference-study5/04-dishwasher-empty-five-capacity.jpg` | 2026-10-18 00:04:01.111 | `400c10fa76863dcd028e17e0d3de47ed2ea7c354834302491c4c16b59fa1308e` |
 | `output/reference-study5/07-wage-feb5-unchanged.jpg` | 2026-10-18 00:08:47.295 | `ed20c49f8f5ac6e38f065daa0b7f191c7384ab901cb99e2b328a0e5d2ae366da` |
+
+### Fifth study continued: operating wage checkpoints, 2026-10-17
+
+The integration owner continued the same study save through kitchen setup, menu activation, tutorial progression and the first served meal. Wages had remained zero before that sequence, then appeared in the current-month Balance panel. Because those conditions changed together, the study does not isolate which startup or operating condition enables salary debits. It does establish paid wages during the month, superseding the idle trace's uncertainty about whether any wage debit occurs.
+
+On February 20, the panel displayed wages −14 and ingredients −5, with no food income listed; cash was 2088. The recurring potato order was reduced from five to zero on that date. On February 27, the panel displayed wages −48, ingredients still −5 and food income 30; cash was 2084. These displayed values separate wage spending from ingredient spending and meal income. The seven-day increase of 34 in displayed wages is consistent with the published daily-installment rule: for example, `7 × 134 / 28 = 33.5`. That comparison does not measure the game's month-length denominator. The snapshots do not establish internal precision, display rounding, the exact debit frame or partial-day hiring and firing rules, and the displayed calendar was not validated as Gregorian.
+
+The following original 2560 × 1440 frames were independently inspected and their bytes matched the retained study manifest. The candidate frame confirms Sophia's displayed monthly wage; the two Balance frames establish the operating checkpoints. A complete dishwasher loading, washing and clean-pickup trace was still pending at this checkpoint.
+
+| Local evidence file | Captured (UTC) | SHA-256 |
+| --- | --- | --- |
+| `output/reference-study5/05-wage-candidate-134-month.jpg` | 2026-10-18 00:04:10.384 | `88755ed0ce33aefc8a03940bcac1b5076eb09c542486c3f431f8715ac82dd540` |
+| `output/reference-study5/09-wages-operating-feb20.jpg` | 2026-10-18 00:21:47.476 | `b03ffb5bb8c67371108aa1a7e02b1d67491b11ee77a6a48f7013a7d510a22128` |
+| `output/reference-study5/12-wages-feb27-separate-food-and-ingredients.jpg` | 2026-10-18 00:25:27.642 | `0ec12802bb62e95dc5d4390dd6d5078148c441cbb329d08e7058573f499dbc0d` |
+
+### Fifth study concluded: five-dish batch and unattended cycle, 2026-10-17
+
+The later service trace established a five-dish batch threshold and an appliance cycle that continues without an employee standing at it. Frame 16 shows an open rack at `4 / 5`, and frame 17 later shows it open at `0 / 5`. The more closely captured sequence, frames 21–30 at roughly 1.1-second intervals, shows four dishes waiting while a guest eats, the finished dirty plate at the table, Sophia carrying that plate to the appliance, then `5 / 5` with the hood closed. Frames 27–30 retain the closed hood with Sophia elsewhere, including working at the other kitchen counter. An earlier closed-hood frame 14 independently shows the employee away from the appliance. These observations supersede the initial empty-rack checkpoint's uncertainty about the batch trigger and need for continuous employee attendance.
+
+The first subsequent frame 31 already shows the hood open and `0 / 5`. It was captured 16.867 seconds after the last closed-hood frame 30; the missing interval hides the opening and any clean-dish handling. Neither the exact wash duration nor clean pickup and cabinet return was observed. An empty open rack does not prove automatic return to cabinets. The pedestal hand sink's washing role and breakage rules were not tested. A separate clean-retrieval task in Corner Table therefore remains an authored rule, not a verified native match.
+
+The service study used the task's own save and ended with the exact owned-process cleanup guard reporting exit code zero; original user saves and shared Steam were preserved. The fourteen later frames 14, 16, 17 and 21–31 were each inspected at original 2560 × 1440 resolution. Their hashes, along with the earlier inspected appliance and wage frames, are retained in the ignored `output/gallery/service-research-manifest.json`. The gallery links the decisive sequence below and the wage comparison without copying source images into product assets or claiming a new product visual result.
+
+| Local evidence file | Captured (UTC) | SHA-256 |
+| --- | --- | --- |
+| `output/reference-study5/21-cycle-transition-01.jpg` | 2026-10-18 00:34:55.423 | `a5b5d2eaed9137f2280b39b7639f7d5bc5079cfd972de877c03edf0986e3cb33` |
+| `output/reference-study5/27-cycle-transition-07.jpg` | 2026-10-18 00:35:02.335 | `b70321c68e79976574ff4979e926cb6f129d6ad55c4e11563fe3983cf9ae3438` |
+| `output/reference-study5/31-cycle-return-01.jpg` | 2026-10-18 00:35:22.636 | `00e055192844c17a313f15c0b6089c4790aca6c95a1e74686759cb87d84e03fa` |
