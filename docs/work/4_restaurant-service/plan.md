@@ -19,17 +19,23 @@ Start from pushed main `03b77ab`. First identify the dishwasher in the native ca
 
 ## Acceptance criteria
 
-- [ ] Identify native equipment and observe a bounded service/washing and wage trace, documenting any unresolved uncertainty before implementation decisions.
-- [ ] Commit the shared service, catalog and wage compatibility contract; preserve existing saves and all reciprocal dish/task links.
+- [x] Identify native equipment and observe a bounded service/washing and wage trace, documenting any unresolved uncertainty before implementation decisions.
+- [x] Commit the shared service, catalog and wage compatibility contract; preserve existing saves and all reciprocal dish/task links.
 - [ ] Implement the agreed appliance and daily settlement behavior with meaningful conservation, boundary, cancellation and reload checks.
 - [ ] Exercise changed controls and service through actual headless desktop browser inputs and inspect appliance, animation and panel pixels at 2560/1440/1024 widths; update the ignored comparison gallery.
 - [ ] Pass the relevant local gates and exact independent integrated review, resolve material findings, merge/push and clean owned processes/worktrees.
 
 ## Implementation steps
 
-- [ ] Study the installed game and primary sources, agree contracts and delegate bounded implementation scopes.
+- [x] Study the installed game and primary sources, agree contracts and delegate bounded implementation scopes.
 - [ ] Integrate, test controls/pixels and money/save boundaries, obtain independent review and complete the fleet gates.
 
 ## Outcome
 
 Pending. Record the verified revision, checks and limitations at closure.
+
+## Integration record
+
+2026-10-17: Native study and primary-source notes integrated at `3d27f14`; approved implementation contract is `b2d3d9e`. Four waiting dishes, the fifth load, closed-hood unattended washing and daily operating wage deductions were observed. Clean retrieval and exact cycle duration fell between captures; the approved contract retains explicit authored staff retrieval and four-second timing. Calendar denomination and wage rounding remain unmeasured. The task-owned native process closed; the study save and ignored comparison evidence remain available.
+
+Engine/catalog/save/tests owner: `service-engine`, base `3d27f14`, `.worktrees/service-engine`. Interface/model owner: `service-interface`, same base, `.worktrees/service-interface`. Both implement the committed read API; only the engine owner has the expensive gate grant. Independent contract review is in progress. Root owns actual browser acceptance, gallery updates, final review, integration and cleanup.
