@@ -3,6 +3,8 @@ import { ITEMS, RECIPES, SCENARIOS, INGREDIENTS, TABLEWARE, TASK_GROUPS } from '
 const STEP = 0.25;
 const DAY_SECONDS = 15;
 const MONTH_SECONDS = 450;
+const WASH_SECONDS = 4;
+const RACK_STATES = ['rackDirty', 'rackWashing', 'rackClean'];
 const PRIORITIES = ['normal', 'high', 'off', 'low'];
 const accessCache = new WeakMap();
 const V1_RECIPES = [
@@ -97,6 +99,7 @@ export function createGame(mode = 'sandbox') {
     addObject(game, 'door', 11, 6, 0, 0);
     addObject(game, 'stove', 7, 7); addObject(game, 'prep', 8, 7); addObject(game, 'fridge', 9, 7);
     addObject(game, 'sink', 13, 7); addObject(game, 'bin', 14, 7); addObject(game, 'counter', 12, 8);
+    addObject(game, 'dishwasher', 15, 7);
     addObject(game, 'counter', 13, 8); addObject(game, 'bigshelf', 10, 7);
     for (const [x, z] of [[9, 10], [13, 10], [9, 13], [13, 13]]) {
       addObject(game, 'table', x, z); addObject(game, 'chair', x - 1, z, 90); addObject(game, 'chair', x + 1, z, 270);
@@ -129,6 +132,30 @@ function grantWare(game, type, state, links, delivered = false) {
 }
 
 const wareById = (game, id) => game.supplies.ware.find((ware) => ware.id === id);
+function dishwasherContents(game, object) {
+  const units = game.supplies.ware.filter((ware) => ware.dishwasherId === object.id);
+  const inbound = game.staff.filter((member) => member.dishwasherId === object.id && ['machine-collect', 'machine-load'].includes(member.task)).length;
+  const dirty = units.filter((ware) => ware.state === 'rackDirty').length;
+  const washing = units.filter((ware) => ware.state === 'rackWashing').length;
+  const cleanReady = units.filter((ware) => ware.state === 'rackClean').length;
+  return { id: object.id, capacity: ITEMS.dishwasher.washCapacity, occupied: dirty + washing + cleanReady, inbound, dirty, washing, cleanReady, progress: washing ? object.washProgress / WASH_SECONDS : 0, remainingSeconds: washing ? WASH_SECONDS - object.washProgress : 0, batchNeeded: dirty && !washing ? ITEMS.dishwasher.washCapacity - dirty : 0 };
+}
+
+function startDishwasher(game, object) {
+  const units = game.supplies.ware.filter((ware) => ware.dishwasherId === object.id && ware.state === 'rackDirty');
+  if (units.length !== ITEMS.dishwasher.washCapacity) return;
+  for (const ware of units) ware.state = 'rackWashing';
+  object.washProgress = 0;
+}
+
+function updateDishwashers(game, seconds) {
+  for (const object of game.objects.filter((object) => object.type === 'dishwasher' && object.washProgress !== undefined)) {
+    object.washProgress += seconds;
+    if (object.washProgress < WASH_SECONDS) continue;
+    for (const ware of game.supplies.ware.filter((ware) => ware.dishwasherId === object.id && ware.state === 'rackWashing')) ware.state = 'rackClean';
+    delete object.washProgress;
+  }
+}
 const capability = (object, type) => object.type === type || type === 'prep' && object.type === 'cuttingboard';
 const capacity = (game, kind) => game.objects.reduce((sum, object) => sum + (ITEMS[object.type].storageKind === kind ? ITEMS[object.type].capacity : 0), 0);
 function usedStorage(game, storageId) {
@@ -213,14 +240,14 @@ export function getSupplies(game) {
     const usable = units.filter((ware) => ware.state === 'clean' && reachable(game, ENTRY, objectById(game, ware.storageId))).length;
     const queued = game.supplies.tablewareQueue.filter((queue) => queue.tablewareId === id).reduce((sum, queue) => sum + queue.quantity, 0);
     const free = game.objects.filter((object) => object.type === 'counter').reduce((sum, object) => sum + freeStorage(game, object), 0);
-    return { id, ...item, clean, usable, inUse: units.filter((ware) => ['order', 'carriedMeal', 'guest'].includes(ware.state)).length, dirty: units.filter((ware) => ['dirty', 'carriedDirty', 'washing'].includes(ware.state)).length, returning: units.filter((ware) => ware.state === 'carriedClean').length, queued, broken: game.supplies.wareLedger[id].broken, capacity: capacity(game, 'tableware'), free, canAdd: game.cash >= 15 && game.objects.some((object) => object.type === 'counter' && freeStorage(game, object) > 0 && reachable(game, ENTRY, object)), canCancel: queued > 0 };
+    return { id, ...item, clean, usable, inUse: units.filter((ware) => ['order', 'carriedMeal', 'guest'].includes(ware.state)).length, dirty: units.filter((ware) => ['dirty', 'carriedDirty', 'washing', 'rackDirty', 'rackWashing'].includes(ware.state)).length, returning: units.filter((ware) => ['carriedClean', 'rackClean'].includes(ware.state)).length, rackDirty: units.filter((ware) => ware.state === 'rackDirty').length, rackWashing: units.filter((ware) => ware.state === 'rackWashing').length, cleanReady: units.filter((ware) => ware.state === 'rackClean').length, queued, broken: game.supplies.wareLedger[id].broken, capacity: capacity(game, 'tableware'), free, canAdd: game.cash >= 15 && game.objects.some((object) => object.type === 'counter' && freeStorage(game, object) > 0 && reachable(game, ENTRY, object)), canCancel: queued > 0 };
   });
   const nextDay = game.supplies.ingredientNextDay, remainingSeconds = Math.max(0, (nextDay - 1) * DAY_SECONDS - game.calendarSeconds);
   const ingredientActive = ingredients.some((row) => row.batchQuantity);
   const ingredientAccessReason = ingredients.find((row) => row.batchQuantity && !row.storageAvailable)?.blockedReason;
   const queued = game.supplies.tablewareQueue.length > 0, wareRemaining = queued ? Math.max(0, game.supplies.tablewareNextAt - game.elapsed) : 0;
   const wareBlocked = queued && wareRemaining === 0 && game.supplies.tablewareQueue.some((queue) => !reachable(game, ENTRY, objectById(game, queue.storageId)));
-  return { ingredients, tableware, storage: game.objects.filter((object) => ITEMS[object.type].capacity).map((object) => {
+  return { ingredients, tableware, dishwashers: game.objects.filter((object) => object.type === 'dishwasher').map((object) => dishwasherContents(game, object)), storage: game.objects.filter((object) => ITEMS[object.type].capacity).map((object) => {
     const contents = game.supplies.stocks.filter((stock) => stock.storageId === object.id).map((stock) => ({ id: stock.ingredientId, quantity: stock.quantity }));
     for (const type of Object.keys(TABLEWARE)) {
       const quantity = game.supplies.ware.filter((ware) => ware.state === 'clean' && ware.storageId === object.id && ware.type === type).length;
@@ -378,7 +405,7 @@ function relocateObject(game, action) {
       const position = guest.toiletReached ? guest : guest.path.at(-1) ?? guest;
       return guest.state === 'toilet' && Math.abs(position.x - moving.x) + Math.abs(position.z - moving.z) <= 1.00001;
     })) return outcome(false, 'Wait until the guest has finished using this toilet before moving it.');
-    if (game.orders.some((order) => order.sourceId === moving.id) || game.staff.some((member) => taskTarget(game, member)?.id === moving.id || member.sinkId === moving.id) || game.supplies.ware.some((ware) => ware.locationId === moving.id || ware.sinkId === moving.id)) return outcome(false, `Finish the active meal or task at this ${ITEMS[moving.type].name.toLowerCase()} before moving it.`);
+    if (game.orders.some((order) => order.sourceId === moving.id) || game.staff.some((member) => taskTarget(game, member)?.id === moving.id || member.sinkId === moving.id || member.dishwasherId === moving.id) || game.supplies.ware.some((ware) => ware.locationId === moving.id || ware.sinkId === moving.id || ware.dishwasherId === moving.id)) return outcome(false, `Finish the active meal or task at this ${ITEMS[moving.type].name.toLowerCase()} before moving it.`);
   }
   for (const moving of group) Object.assign(moving, { x: action.x, z: action.z, rotation });
   if (parent) object.parentId = parent.id;
@@ -476,11 +503,11 @@ function availableMenu(game) {
 
 function resetStaff(member) {
   member.task = 'idle'; member.path = []; member.timer = 0;
-  for (const field of ['taskTarget', 'orderId', 'guestId', 'wareId', 'sinkId', 'blocked', 'blockedReason']) delete member[field];
+  for (const field of ['taskTarget', 'orderId', 'guestId', 'wareId', 'sinkId', 'dishwasherId', 'blocked', 'blockedReason']) delete member[field];
 }
 
 function setWare(ware, state, links) {
-  for (const field of ['storageId', 'orderId', 'guestId', 'locationId', 'dirtySince', 'assigneeId', 'staffId', 'sinkId', 'returnStorageId', 'breakageChecked']) delete ware[field];
+  for (const field of ['storageId', 'orderId', 'guestId', 'locationId', 'dirtySince', 'assigneeId', 'staffId', 'sinkId', 'dishwasherId', 'rackSince', 'returnStorageId', 'breakageChecked']) delete ware[field];
   ware.state = state; Object.assign(ware, links);
 }
 
@@ -600,6 +627,7 @@ function releaseAssignment(game, member) {
   }
   const ware = wareById(game, member.wareId);
   if (ware?.state === 'dirty' && ware.assigneeId === member.id) { delete ware.assigneeId; delete ware.returnStorageId; }
+  if (ware?.state === 'rackClean' && ware.assigneeId === member.id) delete ware.assigneeId;
   resetStaff(member);
 }
 
@@ -632,8 +660,23 @@ function assignJob(game, member) {
       offer('serving', game.elapsed - guest.timer, { task: 'taking-order', guestId: guest.id }, guest);
     }
   }
+  if (member.priorities.dishwashing !== 'off') for (const ware of game.supplies.ware.filter((ware) => ware.state === 'rackClean' && !ware.assigneeId)) {
+    const machine = objectById(game, ware.dishwasherId), cabinet = objectById(game, ware.returnStorageId);
+    if (!reachable(game, member, cabinet)) continue;
+    offer('dishwashing', ware.rackSince, { task: 'machine-unload', wareId: ware.id, dishwasherId: machine.id, taskTarget: machine.id }, machine, () => { ware.assigneeId = member.id; });
+  }
   if (member.priorities.dishwashing !== 'off') for (const ware of game.supplies.ware.filter((ware) => ware.state === 'dirty' && !ware.assigneeId)) {
     const location = objectById(game, ware.locationId);
+    const machine = game.objects.find((object) => {
+      if (object.type !== 'dishwasher' || !reachable(game, member, object)) return false;
+      const contents = dishwasherContents(game, object);
+      return contents.occupied + contents.inbound < contents.capacity;
+    });
+    if (machine) {
+      const cabinet = game.objects.find((object) => object.type === 'counter' && freeStorage(game, object) > 0 && reachable(game, member, object));
+      if (location && cabinet) offer('dishwashing', ware.dirtySince, { task: 'machine-collect', wareId: ware.id, taskTarget: location.id, dishwasherId: machine.id }, location, () => { ware.assigneeId = member.id; ware.returnStorageId = cabinet.id; });
+      continue;
+    }
     for (const sink of game.objects.filter((object) => object.type === 'sink')) {
       if (!location || game.staff.some((other) => other.sinkId === sink.id) || !reachable(game, member, sink)) continue;
       const cabinet = game.objects.find((object) => object.type === 'counter' && freeStorage(game, object) > 0 && reachable(game, member, object));
@@ -661,7 +704,7 @@ function updateStaff(game, seconds) {
     const beforeX = member.x, beforeZ = member.z;
     const arrived = move(member, seconds, 1.8 * (0.7 + member.energy / 333) * (0.75 + 0.5 * member.skills.speed));
     let ware = wareById(game, member.wareId);
-    if (member.task === 'dish-to-sink' && ware && !ware.breakageChecked && (beforeX !== member.x || beforeZ !== member.z)) {
+    if (['dish-to-sink', 'machine-load'].includes(member.task) && ware && !ware.breakageChecked && (beforeX !== member.x || beforeZ !== member.z)) {
       ware.breakageChecked = true;
       if (random(game) < 0.04 * member.skills.clumsiness) {
         game.supplies.wareLedger[ware.type].broken++; game.supplies.ware = game.supplies.ware.filter((entry) => entry.id !== ware.id);
@@ -711,6 +754,20 @@ function updateStaff(game, seconds) {
         setWare(ware, 'guest', { guestId: guest.id }); game.orders = game.orders.filter((entry) => entry.id !== order.id); delete guest.orderId;
       }
       resetStaff(member);
+    } else if (member.task === 'machine-collect') {
+      setWare(ware, 'carriedDirty', { staffId: member.id, returnStorageId: ware.returnStorageId, breakageChecked: false });
+      member.task = 'machine-load'; member.taskTarget = member.dishwasherId; member.timer = 0; replanStaff(game, member);
+    } else if (member.task === 'machine-load') {
+      const machine = objectById(game, member.dishwasherId);
+      setWare(ware, 'rackDirty', { dishwasherId: machine.id, returnStorageId: ware.returnStorageId, rackSince: game.elapsed });
+      resetStaff(member); startDishwasher(game, machine);
+    } else if (member.task === 'machine-unload') {
+      const cabinet = objectById(game, ware.returnStorageId);
+      if (!reachable(game, member, cabinet)) { releaseAssignment(game, member); continue; }
+      setWare(ware, 'carriedClean', { staffId: member.id, returnStorageId: ware.returnStorageId });
+      member.task = 'machine-return'; member.taskTarget = ware.returnStorageId; member.timer = 0; delete member.dishwasherId; replanStaff(game, member);
+    } else if (member.task === 'machine-return') {
+      setWare(ware, 'clean', { storageId: ware.returnStorageId }); resetStaff(member);
     } else if (member.task === 'dish-collect') {
       const returnStorageId = ware.returnStorageId;
       setWare(ware, 'carriedDirty', { staffId: member.id, returnStorageId, breakageChecked: false });
@@ -754,25 +811,25 @@ function step(game, seconds) {
   const previousDay = game.day;
   let remaining = seconds, payrollPaid = 0;
   while (remaining > 1e-9) {
-    const nextMonth = (Math.floor(game.calendarSeconds / MONTH_SECONDS) + 1) * MONTH_SECONDS;
-    const portion = Math.min(remaining, nextMonth - game.calendarSeconds);
+    const nextDay = (Math.floor(game.calendarSeconds / DAY_SECONDS) + 1) * DAY_SECONDS;
+    const portion = Math.min(remaining, nextDay - game.calendarSeconds);
     for (const member of game.staff) member.wageAccrued += member.monthlyWage * portion / MONTH_SECONDS;
     game.calendarSeconds += portion; remaining -= portion;
-    if (Math.abs(game.calendarSeconds - nextMonth) < 1e-8) {
+    if (Math.abs(game.calendarSeconds - nextDay) < 1e-8) {
       const paid = game.staff.reduce((sum, member) => sum + member.wageAccrued, 0);
       if (paid > 0) { spend(game, paid); payrollPaid += paid; }
       for (const member of game.staff) member.wageAccrued = 0;
-      event(game, `Monthly wages paid: $${paid.toFixed(2)}.`);
+      if (paid > 0) event(game, `Daily wages paid: $${paid.toFixed(2)}.`);
     }
   }
   game.day = Math.floor(game.calendarSeconds / DAY_SECONDS) + 1;
   game.time = Math.max(0, (game.calendarSeconds - (game.day - 1) * DAY_SECONDS) / DAY_SECONDS * 24);
   if (game.day !== previousDay) game.daily = { served: 0, revenue: 0, expenses: payrollPaid };
   const activeGuests = game.guests.filter((guest) => guest.state !== 'leaving').length;
-  const dirtyDishes = game.supplies.ware.filter((ware) => ['dirty', 'carriedDirty', 'washing'].includes(ware.state)).length;
+  const dirtyDishes = game.supplies.ware.filter((ware) => ['dirty', 'carriedDirty', 'washing', 'rackDirty', 'rackWashing'].includes(ware.state)).length;
   game.stats.cleanliness = clamp(game.stats.cleanliness - seconds * (0.012 + activeGuests * 0.012 + dirtyDishes * 0.04), 0, 100);
   if (game.stats.cleanliness < 90 && game.cleaningDueSince === null) game.cleaningDueSince = game.elapsed;
-  updateDeliveries(game); updateGuests(game, seconds); updateStaff(game, seconds); arrivals(game, seconds); updateGoals(game); updateBankruptcy(game);
+  updateDeliveries(game); updateGuests(game, seconds); updateDishwashers(game, seconds); updateStaff(game, seconds); arrivals(game, seconds); updateGoals(game); updateBankruptcy(game);
 }
 
 function updateBankruptcy(game) {
@@ -832,7 +889,7 @@ export function dispatch(game, action) {
       if (object.type === 'toilet' && game.guests.some((guest) => guest.state === 'toilet' && guest.toiletReached && Math.abs(guest.x - object.x) + Math.abs(guest.z - object.z) <= 1.00001)) return outcome(false, 'Wait until the guest has finished using this toilet before selling it.');
       if (game.staff.some((member) => member.taskTarget === object.id && member.task === 'cooking') || game.orders.some((order) => order.sourceId === object.id)) return outcome(false, 'Wait for meals at this station to be served before selling it.');
       if (game.objects.some((child) => child.parentId === object.id)) return outcome(false, 'Remove the countertop appliance before selling this cabinet.');
-      if (usedStorage(game, object.id) || reservedStorage(game, object.id) || game.supplies.ware.some((ware) => ware.locationId === object.id || ware.sinkId === object.id) || game.staff.some((member) => member.taskTarget === object.id || member.sinkId === object.id)) return outcome(false, 'Empty this storage or finish its active tasks before selling it.');
+      if (usedStorage(game, object.id) || reservedStorage(game, object.id) || game.supplies.ware.some((ware) => ware.locationId === object.id || ware.sinkId === object.id || ware.dishwasherId === object.id) || game.staff.some((member) => member.taskTarget === object.id || member.sinkId === object.id || member.dishwasherId === object.id)) return outcome(false, 'Empty this storage or finish its active tasks before selling it.');
       const storageKind = ITEMS[object.type].storageKind;
       if (['shelf', 'fridge'].includes(storageKind) && Object.entries(game.supplies.ingredientBatches).some(([id, quantity]) => INGREDIENTS[id].storageKind === storageKind && quantity > capacity(game, storageKind) - ITEMS[object.type].capacity)) return outcome(false, 'Reduce ingredient batch quantities before selling this storage.');
       game.objects = game.objects.filter((entry) => entry.id !== object.id);
@@ -950,12 +1007,15 @@ export function getStats(game) {
   if (game.cash < 250) warnings.push('Cash is running low. Review menu prices and staffing costs.');
   if (recipeStatus.some((status) => status.enabled && status.canOrder && !status.canPrepare)) warnings.push('An enabled dish needs ingredients or clean tableware before cooking can start.');
   if (game.staff.some((member) => member.blocked)) warnings.push('An employee task is blocked. Clear access to the highlighted station.');
+  const dishwashers = game.objects.filter((object) => object.type === 'dishwasher').map((object) => dishwasherContents(game, object));
+  const futureDishes = game.supplies.ware.length + game.supplies.tablewareQueue.reduce((sum, queue) => sum + queue.quantity, 0);
+  if (dishwashers.some((machine) => machine.dirty && machine.batchNeeded) && futureDishes < ITEMS.dishwasher.washCapacity) warnings.push('The dishwasher waits for five dirty dishes. Order enough tableware for a full batch; loaded dishes stay in its rack.');
   const values = goalValues(game);
   return { ...game.stats, cash: game.cash, day: game.day, time: game.time, guests: game.guests.length, seats: seatCount,
     tables: game.objects.filter((object) => object.type === 'table').length, staff: game.staff.length, orders: game.orders.length,
     profit: game.stats.revenue - game.stats.expenses, occupancy: seatCount ? game.guests.filter((guest) => guest.state !== 'leaving').length / seatCount : 0,
     availableRecipes: recipeStatus.filter((status) => status.canOrder).map((status) => status.recipeId), cookableRecipes: recipeStatus.filter((status) => status.enabled && status.canPrepare).map((status) => status.recipeId), warnings, bankrupt: game.bankrupt,
-    hourlyWages: game.staff.reduce((total, member) => total + member.monthlyWage / 22.5, 0), monthlyWages: game.staff.reduce((total, member) => total + member.monthlyWage, 0), wagesAccrued: game.staff.reduce((total, member) => total + member.wageAccrued, 0), wagePeriodDays: 30, candidates: game.candidates, calendar: calendarInfo(game), hasUsableSeating, ...readiness,
+    hourlyWages: game.staff.reduce((total, member) => total + member.monthlyWage / 22.5, 0), monthlyWages: game.staff.reduce((total, member) => total + member.monthlyWage, 0), dailyWages: game.staff.reduce((total, member) => total + member.monthlyWage / 30, 0), wagesAccrued: game.staff.reduce((total, member) => total + member.wageAccrued, 0), wagePeriodDays: 30, wageSettlementDays: 1, candidates: game.candidates, calendar: calendarInfo(game), hasUsableSeating, ...readiness,
     scenarioProgress: game.scenario.goals.map((goal) => ({ ...goal, value: values[goal.stat] ?? 0, complete: (values[goal.stat] ?? 0) >= goal.target })),
   };
 }
@@ -1111,6 +1171,7 @@ function validateV2Save(game) {
   for (const object of game.objects) {
     if (!Object.hasOwn(ITEMS, object.type) || !inside(object.x, object.z) || !owned(game, object.x, object.z) || ![0, 90, 180, 270].includes(object.rotation)) fail('furniture type, placement or rotation is invalid');
     if (object.purchaseCost !== undefined && (!finite(object.purchaseCost, 0, ITEMS[object.type].cost) || object.purchaseCost !== ITEMS[object.type].cost && !(object.type === 'door' && object.purchaseCost === 0))) fail('a furniture purchase cost is not supported');
+    if (object.washProgress !== undefined && (object.type !== 'dishwasher' || !finite(object.washProgress, 0, WASH_SECONDS) || object.washProgress === WASH_SECONDS)) fail('dishwasher cycle progress must be below four seconds on a dishwasher');
     if (ITEMS[object.type].support) {
       const parent = objectById(game, object.parentId);
       if (!parent || parent.type !== 'counter' || parent.parentId !== undefined || parent.x !== object.x || parent.z !== object.z || parent.rotation !== object.rotation || children.has(parent.id)) fail('a countertop appliance has a missing, incompatible or occupied support');
@@ -1198,12 +1259,13 @@ function validateV2Save(game) {
     if (order.waiterId !== undefined && (order.state !== 'ready' || !game.staff.some((member) => member.id === order.waiterId && ['pickup', 'serving'].includes(member.task) && member.orderId === order.id))) fail('an order waiter link is invalid');
   }
   const assignments = new Set(), sinksInUse = new Set();
-  const tasks = ['idle', 'taking-order', 'cooking', 'pickup', 'serving', 'cleaning', 'dish-collect', 'dish-to-sink', 'dish-wash', 'dish-return', 'meal-dispose'];
+  const tasks = ['idle', 'taking-order', 'cooking', 'pickup', 'serving', 'cleaning', 'dish-collect', 'dish-to-sink', 'dish-wash', 'dish-return', 'meal-dispose', 'machine-collect', 'machine-load', 'machine-unload', 'machine-return'];
   for (const member of game.staff) {
-    if (member.role !== 'employee' || !finite(member.energy, 0, 100) || !finite(member.wageAccrued, 0, member.monthlyWage + 0.00001) || !exactKeys(member.priorities, TASK_GROUPS) || Object.values(member.priorities).some((priority) => !PRIORITIES.includes(priority)) || !tasks.includes(member.task)) fail('an employee has invalid priorities, task or accrued wages');
+    const accrualCeiling = member.monthlyWage * (1 + (game.calendarSeconds - (game.day - 1) * DAY_SECONDS) / MONTH_SECONDS);
+    if (member.role !== 'employee' || !finite(member.energy, 0, 100) || !finite(member.wageAccrued, 0, accrualCeiling + 0.00001) || !exactKeys(member.priorities, TASK_GROUPS) || Object.values(member.priorities).some((priority) => !PRIORITIES.includes(priority)) || !tasks.includes(member.task)) fail('an employee has invalid priorities, task or accrued wages');
     const order = game.orders.find((order) => order.id === member.orderId), guest = game.guests.find((guest) => guest.id === member.guestId), ware = wareById(game, member.wareId), target = taskTarget(game, member);
-    const links = ['orderId', 'guestId', 'wareId', 'taskTarget', 'sinkId'];
-    const allowed = member.task === 'idle' ? [] : member.task === 'taking-order' ? ['guestId'] : member.task === 'cooking' ? ['orderId', 'taskTarget'] : ['pickup', 'serving'].includes(member.task) ? ['orderId', 'guestId', 'wareId'] : member.task === 'cleaning' ? ['taskTarget'] : member.task === 'meal-dispose' ? ['wareId', 'taskTarget'] : ['wareId', 'taskTarget', 'sinkId'];
+    const links = ['orderId', 'guestId', 'wareId', 'taskTarget', 'sinkId', 'dishwasherId'];
+    const allowed = member.task === 'idle' ? [] : member.task === 'taking-order' ? ['guestId'] : member.task === 'cooking' ? ['orderId', 'taskTarget'] : ['pickup', 'serving'].includes(member.task) ? ['orderId', 'guestId', 'wareId'] : member.task === 'cleaning' ? ['taskTarget'] : ['meal-dispose', 'machine-return'].includes(member.task) ? ['wareId', 'taskTarget'] : member.task.startsWith('machine-') ? ['wareId', 'taskTarget', 'dishwasherId'] : ['wareId', 'taskTarget', 'sinkId'];
     if (links.some((field) => member[field] !== undefined && !allowed.includes(field))) fail('an employee task retains incompatible ownership links');
     if (member.task === 'idle') { if (member.path.length || member.blocked !== undefined) fail('idle staff cannot retain a path or blocked task'); continue; }
     if (!target) fail('an employee task target is missing');
@@ -1224,18 +1286,26 @@ function validateV2Save(game) {
       if (['dish-to-sink', 'dish-wash'].includes(member.task) && target.id !== member.sinkId || member.task === 'dish-return' && target.id !== ware.returnStorageId) fail('a washing task has an incompatible destination');
       if (sinksInUse.has(member.sinkId)) fail('multiple dishwashing tasks reserve one sink'); sinksInUse.add(member.sinkId);
     }
+    if (member.task.startsWith('machine-')) {
+      const expected = { 'machine-collect': 'dirty', 'machine-load': 'carriedDirty', 'machine-unload': 'rackClean', 'machine-return': 'carriedClean' }[member.task];
+      if (!ware || ware.state !== expected || objectById(game, ware.returnStorageId)?.type !== 'counter') fail('a machine task requires its owned dish and reserved return cabinet');
+      if (member.task !== 'machine-return' && objectById(game, member.dishwasherId)?.type !== 'dishwasher') fail('a machine task requires an existing dishwasher');
+      if (['machine-collect', 'machine-unload'].includes(member.task) ? ware.assigneeId !== member.id : ware.staffId !== member.id) fail('a machine task has no reciprocal dish owner');
+      if (member.task === 'machine-collect' && target.id !== ware.locationId || member.task === 'machine-load' && target.id !== member.dishwasherId || member.task === 'machine-unload' && (target.id !== member.dishwasherId || ware.dishwasherId !== member.dishwasherId) || member.task === 'machine-return' && target.id !== ware.returnStorageId) fail('a machine task has an incompatible source or destination');
+    }
     if (member.task === 'meal-dispose' && (!ware || ware.state !== 'carriedDirty' || ware.staffId !== member.id || ware.returnStorageId !== undefined || !['stove', 'prep', 'cuttingboard', 'fryer'].includes(target.type))) fail('a meal disposal requires its carried dish and original cooking station');
     if (member.guestId !== undefined) { if (assignments.has(member.guestId)) fail('multiple waiters are assigned to one guest'); assignments.add(member.guestId); }
   }
-  const wareLinks = ['storageId', 'orderId', 'guestId', 'locationId', 'dirtySince', 'assigneeId', 'staffId', 'sinkId', 'returnStorageId', 'breakageChecked'];
+  const wareLinks = ['storageId', 'orderId', 'guestId', 'locationId', 'dirtySince', 'assigneeId', 'staffId', 'sinkId', 'dishwasherId', 'rackSince', 'returnStorageId', 'breakageChecked'];
   for (const ware of supplies.ware) {
     if (!Object.hasOwn(TABLEWARE, ware.type)) fail('a dish has an unknown tableware type');
     const holder = game.staff.find((member) => member.id === ware.staffId);
-    const required = { clean: ['storageId'], order: ['orderId'], carriedMeal: ['staffId', 'orderId'], guest: ['guestId'], dirty: ['locationId', 'dirtySince'], carriedDirty: ['staffId'], washing: ['staffId', 'sinkId', 'returnStorageId'], carriedClean: ['staffId', 'returnStorageId'] }[ware.state];
+    const required = { clean: ['storageId'], order: ['orderId'], carriedMeal: ['staffId', 'orderId'], guest: ['guestId'], dirty: ['locationId', 'dirtySince'], carriedDirty: ['staffId'], washing: ['staffId', 'sinkId', 'returnStorageId'], carriedClean: ['staffId', 'returnStorageId'], rackDirty: ['dishwasherId', 'returnStorageId', 'rackSince'], rackWashing: ['dishwasherId', 'returnStorageId', 'rackSince'], rackClean: ['dishwasherId', 'returnStorageId', 'rackSince'] }[ware.state];
     if (!required) fail('a dish has an invalid state');
     const allowed = [...required];
     if (ware.state === 'dirty' && ware.assigneeId !== undefined) allowed.push('assigneeId', 'returnStorageId');
-    if (ware.state === 'carriedDirty' && holder?.task === 'dish-to-sink') { allowed.push('returnStorageId', 'breakageChecked'); required.push('returnStorageId', 'breakageChecked'); }
+    if (ware.state === 'rackClean' && ware.assigneeId !== undefined) allowed.push('assigneeId');
+    if (ware.state === 'carriedDirty' && ['dish-to-sink', 'machine-load'].includes(holder?.task)) { allowed.push('returnStorageId', 'breakageChecked'); required.push('returnStorageId', 'breakageChecked'); }
     if (required.some((field) => ware[field] === undefined) || wareLinks.some((field) => ware[field] !== undefined && !allowed.includes(field))) fail('dish ownership fields do not match its state');
     if (ware.state === 'clean' && objectById(game, ware.storageId)?.type !== 'counter') fail('a clean dish is missing its cabinet');
     if (ware.state === 'order' && !game.orders.some((order) => order.id === ware.orderId && order.wareId === ware.id && order.state !== 'queued')) fail('a dish order ownership link is invalid');
@@ -1243,14 +1313,23 @@ function validateV2Save(game) {
     if (ware.state === 'guest' && !game.guests.some((guest) => guest.id === ware.guestId && guest.state === 'eating' && guest.wareId === ware.id)) fail('a guest dish ownership link is invalid');
     if (ware.state === 'dirty') {
       if (!['table', 'stove', 'prep', 'cuttingboard', 'fryer'].includes(objectById(game, ware.locationId)?.type) || !finite(ware.dirtySince, 0, game.elapsed)) fail('a dirty dish location or age is invalid');
-      if (ware.assigneeId !== undefined && !game.staff.some((member) => member.id === ware.assigneeId && member.task === 'dish-collect' && member.wareId === ware.id)) fail('a dirty dish collector is missing');
+      if (ware.assigneeId !== undefined && !game.staff.some((member) => member.id === ware.assigneeId && ['dish-collect', 'machine-collect'].includes(member.task) && member.wareId === ware.id)) fail('a dirty dish collector is missing');
     }
-    if (['carriedDirty', 'washing', 'carriedClean'].includes(ware.state) && (!holder || holder.wareId !== ware.id || !['dish-to-sink', 'dish-wash', 'dish-return', 'meal-dispose'].includes(holder.task))) fail('a carried or washing dish has no reciprocal employee');
+    if (['carriedDirty', 'washing', 'carriedClean'].includes(ware.state) && (!holder || holder.wareId !== ware.id || !['dish-to-sink', 'dish-wash', 'dish-return', 'meal-dispose', 'machine-load', 'machine-return'].includes(holder.task))) fail('a carried or washing dish has no reciprocal employee');
     if (ware.state === 'washing' && (objectById(game, ware.sinkId)?.type !== 'sink' || holder.taskTarget !== ware.sinkId)) fail('a washing dish has no compatible sink');
-    if (ware.state === 'carriedDirty' && holder?.task === 'dish-to-sink' && typeof ware.breakageChecked !== 'boolean') fail('a dish carry breakage check is invalid');
+    if (ware.state === 'carriedDirty' && ['dish-to-sink', 'machine-load'].includes(holder?.task) && typeof ware.breakageChecked !== 'boolean') fail('a dish carry breakage check is invalid');
+    if (RACK_STATES.includes(ware.state)) {
+      if (objectById(game, ware.dishwasherId)?.type !== 'dishwasher' || !finite(ware.rackSince, 0, game.elapsed)) fail('a rack dish requires its dishwasher and a valid loading time');
+      if (ware.assigneeId !== undefined && !game.staff.some((member) => member.id === ware.assigneeId && member.task === 'machine-unload' && member.wareId === ware.id && member.dishwasherId === ware.dishwasherId)) fail('a clean rack dish has no reciprocal unload employee');
+    }
     if (ware.returnStorageId !== undefined && objectById(game, ware.returnStorageId)?.type !== 'counter') fail('a dish return reservation has no cabinet');
   }
   for (const object of game.objects.filter((object) => ITEMS[object.type].capacity)) if (usedStorage(game, object.id) + reservedStorage(game, object.id) > ITEMS[object.type].capacity) fail('storage or tableware reservations exceed capacity');
+  for (const object of game.objects.filter((object) => object.type === 'dishwasher')) {
+    const contents = dishwasherContents(game, object);
+    if (contents.occupied + contents.inbound > contents.capacity) fail('dishwasher loaded dishes and incoming reservations exceed five slots');
+    if (contents.washing ? contents.washing !== contents.capacity || contents.occupied !== contents.capacity || contents.inbound || object.washProgress === undefined : object.washProgress !== undefined || contents.dirty === contents.capacity) fail('dishwasher batch ownership or shared cycle progress is inconsistent');
+  }
   for (const [type, ledger] of Object.entries(supplies.wareLedger)) if (!exactKeys(ledger, ['granted', 'delivered', 'broken']) || Object.values(ledger).some((value) => !integer(value)) || ledger.granted + ledger.delivered !== supplies.ware.filter((ware) => ware.type === type).length + ledger.broken) fail('tableware conservation totals are inconsistent');
   const menu = new Set();
   for (const entry of game.menu) { if (!recipeById(entry?.recipeId) || menu.has(entry.recipeId) || !finite(entry.price, 1, 150) || typeof entry.enabled !== 'boolean') fail('a menu recipe or price is invalid'); menu.add(entry.recipeId); }

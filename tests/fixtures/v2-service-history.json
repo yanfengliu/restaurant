@@ -1,0 +1,4716 @@
+{
+  "provenance": {
+    "revision": "1508bb3aff609be2f556ca0403a8f79043a2c002",
+    "generatedAt": "2026-10-18T00:07:54.063Z",
+    "sourceSha256": {
+      "src/engine.js": "51707dc8049e9e7d955b7d63faa62c75a3f38760f49102d8e64145d598777ad8",
+      "src/catalog.js": "fbc3ed2c9ab41c3b68dae8c531181ae4b404b2b03e56dd9ba0b5f10e5e258bd9"
+    },
+    "bound": "Unmodified pre-change engine at pinned revision; public create/dispatch/tick inputs only. Literal snapshots are checked by that engine before retention.",
+    "observedWare": "ware-13",
+    "inputs": [
+      {
+        "createGame": "empty",
+        "purpose": "literal service phases"
+      },
+      {
+        "type": "PLACE",
+        "itemType": "counter",
+        "x": 8,
+        "z": 8
+      },
+      {
+        "type": "PLACE",
+        "itemType": "cuttingboard",
+        "x": 8,
+        "z": 8
+      },
+      {
+        "type": "PLACE",
+        "itemType": "counter",
+        "x": 10,
+        "z": 8
+      },
+      {
+        "type": "PLACE",
+        "itemType": "fryer",
+        "x": 10,
+        "z": 8
+      },
+      {
+        "type": "PLACE",
+        "itemType": "shelf",
+        "x": 12,
+        "z": 8
+      },
+      {
+        "type": "PLACE",
+        "itemType": "sink",
+        "x": 14,
+        "z": 8
+      },
+      {
+        "type": "PLACE",
+        "itemType": "table",
+        "x": 10,
+        "z": 11
+      },
+      {
+        "type": "PLACE",
+        "itemType": "chair",
+        "x": 9,
+        "z": 11
+      },
+      {
+        "type": "TOGGLE_RECIPE",
+        "recipeId": "burger"
+      },
+      {
+        "type": "TOGGLE_RECIPE",
+        "recipeId": "salad"
+      },
+      {
+        "type": "TOGGLE_RECIPE",
+        "recipeId": "pasta"
+      },
+      {
+        "type": "INGREDIENT_BATCH",
+        "ingredientId": "potato",
+        "quantity": 6
+      },
+      {
+        "type": "TABLEWARE_ORDER",
+        "tablewareId": "plate",
+        "delta": 1
+      },
+      {
+        "tickQuarterSeconds": 135
+      },
+      {
+        "type": "TOGGLE_RECIPE",
+        "recipeId": "fries"
+      },
+      {
+        "type": "HIRE",
+        "candidateId": "candidate-2",
+        "x": 11,
+        "z": 9
+      },
+      {
+        "type": "PRIORITY",
+        "id": "staff-15",
+        "taskGroup": "serving",
+        "priority": "off"
+      },
+      {
+        "type": "PRIORITY",
+        "id": "staff-15",
+        "taskGroup": "cooking",
+        "priority": "high"
+      },
+      {
+        "type": "PRIORITY",
+        "id": "staff-15",
+        "taskGroup": "dishwashing",
+        "priority": "off"
+      },
+      {
+        "type": "PRIORITY",
+        "id": "staff-15",
+        "taskGroup": "cleaning",
+        "priority": "off"
+      },
+      {
+        "type": "HIRE",
+        "candidateId": "candidate-3",
+        "x": 12,
+        "z": 9
+      },
+      {
+        "type": "PRIORITY",
+        "id": "staff-18",
+        "taskGroup": "serving",
+        "priority": "high"
+      },
+      {
+        "type": "PRIORITY",
+        "id": "staff-18",
+        "taskGroup": "cooking",
+        "priority": "off"
+      },
+      {
+        "type": "PRIORITY",
+        "id": "staff-18",
+        "taskGroup": "dishwashing",
+        "priority": "off"
+      },
+      {
+        "type": "PRIORITY",
+        "id": "staff-18",
+        "taskGroup": "cleaning",
+        "priority": "off"
+      },
+      {
+        "type": "HIRE",
+        "candidateId": "candidate-4",
+        "x": 13,
+        "z": 9
+      },
+      {
+        "type": "PRIORITY",
+        "id": "staff-21",
+        "taskGroup": "serving",
+        "priority": "off"
+      },
+      {
+        "type": "PRIORITY",
+        "id": "staff-21",
+        "taskGroup": "cooking",
+        "priority": "off"
+      },
+      {
+        "type": "PRIORITY",
+        "id": "staff-21",
+        "taskGroup": "dishwashing",
+        "priority": "off"
+      },
+      {
+        "type": "PRIORITY",
+        "id": "staff-21",
+        "taskGroup": "cleaning",
+        "priority": "off"
+      },
+      {
+        "type": "TOGGLE_OPEN"
+      },
+      {
+        "type": "PRIORITY",
+        "id": "staff-21",
+        "taskGroup": "dishwashing",
+        "priority": "high"
+      },
+      {
+        "serviceQuarterStepsUntilElapsed": 192,
+        "observedWare": "ware-13"
+      },
+      {
+        "createGame": "empty",
+        "purpose": "literal unpaid and already-settled wages"
+      },
+      {
+        "type": "HIRE",
+        "candidateId": "candidate-2",
+        "x": 11,
+        "z": 9
+      },
+      {
+        "type": "PRIORITY",
+        "id": "staff-5",
+        "taskGroup": "serving",
+        "priority": "off"
+      },
+      {
+        "type": "PRIORITY",
+        "id": "staff-5",
+        "taskGroup": "cooking",
+        "priority": "off"
+      },
+      {
+        "type": "PRIORITY",
+        "id": "staff-5",
+        "taskGroup": "dishwashing",
+        "priority": "off"
+      },
+      {
+        "type": "PRIORITY",
+        "id": "staff-5",
+        "taskGroup": "cleaning",
+        "priority": "off"
+      },
+      {
+        "tickQuarterSeconds": 449.75
+      },
+      {
+        "tickQuarterSeconds": 0.25
+      }
+    ]
+  },
+  "states": {
+    "order-cooking": {
+      "version": 2,
+      "mode": "empty",
+      "name": "Corner Table",
+      "cash": 14334,
+      "day": 10,
+      "time": 20.4,
+      "calendarSeconds": 147.75,
+      "speed": 1,
+      "open": true,
+      "land": {
+        "minX": 4,
+        "maxX": 19,
+        "minZ": 4,
+        "maxZ": 19
+      },
+      "floors": [],
+      "objects": [
+        {
+          "id": "object-5",
+          "type": "counter",
+          "x": 8,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-6",
+          "type": "cuttingboard",
+          "x": 8,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50,
+          "parentId": "object-5"
+        },
+        {
+          "id": "object-7",
+          "type": "counter",
+          "x": 10,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-8",
+          "type": "fryer",
+          "x": 10,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 100,
+          "parentId": "object-7"
+        },
+        {
+          "id": "object-9",
+          "type": "shelf",
+          "x": 12,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 100
+        },
+        {
+          "id": "object-10",
+          "type": "sink",
+          "x": 14,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 220
+        },
+        {
+          "id": "object-11",
+          "type": "table",
+          "x": 10,
+          "z": 11,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-12",
+          "type": "chair",
+          "x": 9,
+          "z": 11,
+          "rotation": 0,
+          "purchaseCost": 25
+        }
+      ],
+      "staff": [
+        {
+          "id": "staff-15",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.52,
+            "speed": 0.09,
+            "clumsiness": 0.45
+          },
+          "monthlyWage": 74,
+          "role": "employee",
+          "wageAccrued": 2.0966666666666667,
+          "priorities": {
+            "serving": "off",
+            "cooking": "high",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 99.99100000000001,
+          "x": 10,
+          "z": 9,
+          "task": "cooking",
+          "path": [],
+          "timer": 0.25,
+          "orderId": "order-26",
+          "taskTarget": "object-8"
+        },
+        {
+          "id": "staff-18",
+          "name": "Charlie",
+          "skills": {
+            "cooking": 0.44,
+            "speed": 0.59,
+            "clumsiness": 0.2
+          },
+          "monthlyWage": 100,
+          "role": "employee",
+          "wageAccrued": 2.833333333333331,
+          "priorities": {
+            "serving": "high",
+            "cooking": "off",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 9,
+          "z": 10,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        },
+        {
+          "id": "staff-21",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.07,
+            "speed": 0.2,
+            "clumsiness": 0.08
+          },
+          "monthlyWage": 70,
+          "role": "employee",
+          "wageAccrued": 1.983333333333335,
+          "priorities": {
+            "serving": "off",
+            "cooking": "off",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 13,
+          "z": 9,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        }
+      ],
+      "guests": [
+        {
+          "id": "guest-25",
+          "name": "Alex",
+          "x": 9,
+          "z": 11,
+          "state": "ordered",
+          "tableId": "object-11",
+          "seatId": "object-12",
+          "path": [],
+          "hunger": 70.37981702750571,
+          "patience": 116.90324738249183,
+          "happiness": 91.31750000000007,
+          "timer": 0.75,
+          "mealTime": 19.3930140377488,
+          "toiletNeed": false,
+          "bill": 0,
+          "orderId": "order-26"
+        }
+      ],
+      "orders": [
+        {
+          "id": "order-26",
+          "guestId": "guest-25",
+          "recipeId": "fries",
+          "price": 15,
+          "state": "cooking",
+          "progress": 0.25,
+          "createdAt": 147,
+          "ingredientsCommitted": true,
+          "funding": "regular",
+          "staffId": "staff-15",
+          "wareId": "ware-13",
+          "sourceId": "object-8"
+        }
+      ],
+      "menu": [
+        {
+          "recipeId": "burger",
+          "price": 18,
+          "enabled": false
+        },
+        {
+          "recipeId": "salad",
+          "price": 14,
+          "enabled": false
+        },
+        {
+          "recipeId": "pasta",
+          "price": 20,
+          "enabled": false
+        },
+        {
+          "recipeId": "steak",
+          "price": 32,
+          "enabled": false
+        },
+        {
+          "recipeId": "risotto",
+          "price": 26,
+          "enabled": false
+        },
+        {
+          "recipeId": "chef-special",
+          "price": 42,
+          "enabled": false
+        },
+        {
+          "recipeId": "fries",
+          "price": 15,
+          "enabled": true
+        }
+      ],
+      "stats": {
+        "served": 0,
+        "lost": 0,
+        "revenue": 0,
+        "expenses": 666,
+        "rating": 3.8,
+        "cleanliness": 98.10999999999993
+      },
+      "events": [
+        {
+          "id": "event-24",
+          "text": "The restaurant is open. Welcome in!",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-23",
+          "text": "Morgan joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-20",
+          "text": "Charlie joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-17",
+          "text": "Drew joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-14",
+          "text": "Ingredient delivery arrived: $6.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-1",
+          "text": "A fresh start. Lay floors, build a kitchen and dining room, then open your doors.",
+          "time": 0,
+          "day": 1
+        }
+      ],
+      "scenario": {
+        "id": "sandbox",
+        "title": "Your neighborhood restaurant",
+        "description": "Build at your own pace and make a place people love.",
+        "goals": [],
+        "complete": false
+      },
+      "seed": 121099257,
+      "nextId": 27,
+      "elapsed": 147.75,
+      "accumulator": 0,
+      "arrivalIn": 4.190889140591025,
+      "bankrupt": false,
+      "unlocks": [],
+      "completedScenarios": [],
+      "doorGrantUsed": false,
+      "daily": {
+        "served": 0,
+        "revenue": 0,
+        "expenses": 6
+      },
+      "candidates": [
+        {
+          "id": "candidate-16",
+          "name": "Riley",
+          "skills": {
+            "cooking": 0.04,
+            "speed": 0.71,
+            "clumsiness": 0.97
+          },
+          "monthlyWage": 65
+        },
+        {
+          "id": "candidate-19",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.4,
+            "speed": 0.86,
+            "clumsiness": 0.8
+          },
+          "monthlyWage": 93
+        },
+        {
+          "id": "candidate-22",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.22,
+            "speed": 0.74,
+            "clumsiness": 0.49
+          },
+          "monthlyWage": 88
+        }
+      ],
+      "cleaningDueSince": null,
+      "supplies": {
+        "stocks": [
+          {
+            "storageId": "object-9",
+            "ingredientId": "potato",
+            "quantity": 5
+          }
+        ],
+        "ingredientBatches": {
+          "potato": 6,
+          "flour": 0,
+          "tomato": 0,
+          "coffee": 0,
+          "avocado": 0,
+          "steak": 0,
+          "chicken": 0,
+          "rice": 0,
+          "mushroom": 0
+        },
+        "ingredientNextDay": 20,
+        "tablewareQueue": [],
+        "tablewareNextAt": null,
+        "ware": [
+          {
+            "id": "ware-13",
+            "type": "plate",
+            "state": "order",
+            "orderId": "order-26"
+          }
+        ],
+        "wareLedger": {
+          "plate": {
+            "granted": 0,
+            "delivered": 1,
+            "broken": 0
+          },
+          "stemglass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "pan": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "bowl": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "cup": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "glass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          }
+        },
+        "ingredientBlockedReason": ""
+      },
+      "candidateSeed": 4113889635
+    },
+    "order-ready": {
+      "version": 2,
+      "mode": "empty",
+      "name": "Corner Table",
+      "cash": 14334,
+      "day": 11,
+      "time": 8.799999999999999,
+      "calendarSeconds": 155.5,
+      "speed": 1,
+      "open": true,
+      "land": {
+        "minX": 4,
+        "maxX": 19,
+        "minZ": 4,
+        "maxZ": 19
+      },
+      "floors": [],
+      "objects": [
+        {
+          "id": "object-5",
+          "type": "counter",
+          "x": 8,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-6",
+          "type": "cuttingboard",
+          "x": 8,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50,
+          "parentId": "object-5"
+        },
+        {
+          "id": "object-7",
+          "type": "counter",
+          "x": 10,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-8",
+          "type": "fryer",
+          "x": 10,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 100,
+          "parentId": "object-7"
+        },
+        {
+          "id": "object-9",
+          "type": "shelf",
+          "x": 12,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 100
+        },
+        {
+          "id": "object-10",
+          "type": "sink",
+          "x": 14,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 220
+        },
+        {
+          "id": "object-11",
+          "type": "table",
+          "x": 10,
+          "z": 11,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-12",
+          "type": "chair",
+          "x": 9,
+          "z": 11,
+          "rotation": 0,
+          "purchaseCost": 25
+        }
+      ],
+      "staff": [
+        {
+          "id": "staff-15",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.52,
+            "speed": 0.09,
+            "clumsiness": 0.45
+          },
+          "monthlyWage": 74,
+          "role": "employee",
+          "wageAccrued": 3.3711111111111176,
+          "priorities": {
+            "serving": "off",
+            "cooking": "high",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 99.85150000000023,
+          "x": 10,
+          "z": 9,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        },
+        {
+          "id": "staff-18",
+          "name": "Charlie",
+          "skills": {
+            "cooking": 0.44,
+            "speed": 0.59,
+            "clumsiness": 0.2
+          },
+          "monthlyWage": 100,
+          "role": "employee",
+          "wageAccrued": 4.555555555555547,
+          "priorities": {
+            "serving": "high",
+            "cooking": "off",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 9.470391216216216,
+          "z": 10,
+          "task": "pickup",
+          "path": [
+            {
+              "x": 10,
+              "z": 10
+            },
+            {
+              "x": 10,
+              "z": 9
+            }
+          ],
+          "timer": 0,
+          "orderId": "order-26",
+          "guestId": "guest-25",
+          "wareId": "ware-13"
+        },
+        {
+          "id": "staff-21",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.07,
+            "speed": 0.2,
+            "clumsiness": 0.08
+          },
+          "monthlyWage": 70,
+          "role": "employee",
+          "wageAccrued": 3.1888888888888864,
+          "priorities": {
+            "serving": "off",
+            "cooking": "off",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 13,
+          "z": 9,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        }
+      ],
+      "guests": [
+        {
+          "id": "guest-25",
+          "name": "Alex",
+          "x": 9,
+          "z": 11,
+          "state": "ordered",
+          "tableId": "object-11",
+          "seatId": "object-12",
+          "path": [],
+          "hunger": 70.18606702750589,
+          "patience": 109.15324738249183,
+          "happiness": 90.77500000000012,
+          "timer": 8.5,
+          "mealTime": 19.3930140377488,
+          "toiletNeed": false,
+          "bill": 0,
+          "orderId": "order-26"
+        }
+      ],
+      "orders": [
+        {
+          "id": "order-26",
+          "guestId": "guest-25",
+          "recipeId": "fries",
+          "price": 15,
+          "state": "ready",
+          "progress": 8,
+          "createdAt": 147,
+          "ingredientsCommitted": true,
+          "funding": "regular",
+          "wareId": "ware-13",
+          "sourceId": "object-8",
+          "quality": 0.808,
+          "waiterId": "staff-18"
+        }
+      ],
+      "menu": [
+        {
+          "recipeId": "burger",
+          "price": 18,
+          "enabled": false
+        },
+        {
+          "recipeId": "salad",
+          "price": 14,
+          "enabled": false
+        },
+        {
+          "recipeId": "pasta",
+          "price": 20,
+          "enabled": false
+        },
+        {
+          "recipeId": "steak",
+          "price": 32,
+          "enabled": false
+        },
+        {
+          "recipeId": "risotto",
+          "price": 26,
+          "enabled": false
+        },
+        {
+          "recipeId": "chef-special",
+          "price": 42,
+          "enabled": false
+        },
+        {
+          "recipeId": "fries",
+          "price": 15,
+          "enabled": true
+        }
+      ],
+      "stats": {
+        "served": 0,
+        "lost": 1,
+        "revenue": 0,
+        "expenses": 666,
+        "rating": 3.7849999999999997,
+        "cleanliness": 97.92399999999992
+      },
+      "events": [
+        {
+          "id": "event-24",
+          "text": "The restaurant is open. Welcome in!",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-23",
+          "text": "Morgan joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-20",
+          "text": "Charlie joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-17",
+          "text": "Drew joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-14",
+          "text": "Ingredient delivery arrived: $6.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-1",
+          "text": "A fresh start. Lay floors, build a kitchen and dining room, then open your doors.",
+          "time": 0,
+          "day": 1
+        }
+      ],
+      "scenario": {
+        "id": "sandbox",
+        "title": "Your neighborhood restaurant",
+        "description": "Build at your own pace and make a place people love.",
+        "goals": [],
+        "complete": false
+      },
+      "seed": 2349526276,
+      "nextId": 27,
+      "elapsed": 155.5,
+      "accumulator": 0,
+      "arrivalIn": 8.8172228615731,
+      "bankrupt": false,
+      "unlocks": [],
+      "completedScenarios": [],
+      "doorGrantUsed": false,
+      "daily": {
+        "served": 0,
+        "revenue": 0,
+        "expenses": 0
+      },
+      "candidates": [
+        {
+          "id": "candidate-16",
+          "name": "Riley",
+          "skills": {
+            "cooking": 0.04,
+            "speed": 0.71,
+            "clumsiness": 0.97
+          },
+          "monthlyWage": 65
+        },
+        {
+          "id": "candidate-19",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.4,
+            "speed": 0.86,
+            "clumsiness": 0.8
+          },
+          "monthlyWage": 93
+        },
+        {
+          "id": "candidate-22",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.22,
+            "speed": 0.74,
+            "clumsiness": 0.49
+          },
+          "monthlyWage": 88
+        }
+      ],
+      "cleaningDueSince": null,
+      "supplies": {
+        "stocks": [
+          {
+            "storageId": "object-9",
+            "ingredientId": "potato",
+            "quantity": 5
+          }
+        ],
+        "ingredientBatches": {
+          "potato": 6,
+          "flour": 0,
+          "tomato": 0,
+          "coffee": 0,
+          "avocado": 0,
+          "steak": 0,
+          "chicken": 0,
+          "rice": 0,
+          "mushroom": 0
+        },
+        "ingredientNextDay": 20,
+        "tablewareQueue": [],
+        "tablewareNextAt": null,
+        "ware": [
+          {
+            "id": "ware-13",
+            "type": "plate",
+            "state": "order",
+            "orderId": "order-26"
+          }
+        ],
+        "wareLedger": {
+          "plate": {
+            "granted": 0,
+            "delivered": 1,
+            "broken": 0
+          },
+          "stemglass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "pan": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "bowl": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "cup": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "glass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          }
+        },
+        "ingredientBlockedReason": ""
+      },
+      "candidateSeed": 4113889635
+    },
+    "carriedMeal": {
+      "version": 2,
+      "mode": "empty",
+      "name": "Corner Table",
+      "cash": 14334,
+      "day": 11,
+      "time": 10.4,
+      "calendarSeconds": 156.5,
+      "speed": 1,
+      "open": true,
+      "land": {
+        "minX": 4,
+        "maxX": 19,
+        "minZ": 4,
+        "maxZ": 19
+      },
+      "floors": [],
+      "objects": [
+        {
+          "id": "object-5",
+          "type": "counter",
+          "x": 8,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-6",
+          "type": "cuttingboard",
+          "x": 8,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50,
+          "parentId": "object-5"
+        },
+        {
+          "id": "object-7",
+          "type": "counter",
+          "x": 10,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-8",
+          "type": "fryer",
+          "x": 10,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 100,
+          "parentId": "object-7"
+        },
+        {
+          "id": "object-9",
+          "type": "shelf",
+          "x": 12,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 100
+        },
+        {
+          "id": "object-10",
+          "type": "sink",
+          "x": 14,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 220
+        },
+        {
+          "id": "object-11",
+          "type": "table",
+          "x": 10,
+          "z": 11,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-12",
+          "type": "chair",
+          "x": 9,
+          "z": 11,
+          "rotation": 0,
+          "purchaseCost": 25
+        }
+      ],
+      "staff": [
+        {
+          "id": "staff-15",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.52,
+            "speed": 0.09,
+            "clumsiness": 0.45
+          },
+          "monthlyWage": 74,
+          "role": "employee",
+          "wageAccrued": 3.535555555555563,
+          "priorities": {
+            "serving": "off",
+            "cooking": "high",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 99.93150000000021,
+          "x": 10,
+          "z": 9,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        },
+        {
+          "id": "staff-18",
+          "name": "Charlie",
+          "skills": {
+            "cooking": 0.44,
+            "speed": 0.59,
+            "clumsiness": 0.2
+          },
+          "monthlyWage": 100,
+          "role": "employee",
+          "wageAccrued": 4.777777777777769,
+          "priorities": {
+            "serving": "high",
+            "cooking": "off",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 99.98200000000003,
+          "x": 10,
+          "z": 9,
+          "task": "serving",
+          "path": [
+            {
+              "x": 10,
+              "z": 10
+            },
+            {
+              "x": 9,
+              "z": 10
+            }
+          ],
+          "timer": 0,
+          "orderId": "order-26",
+          "guestId": "guest-25",
+          "wareId": "ware-13"
+        },
+        {
+          "id": "staff-21",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.07,
+            "speed": 0.2,
+            "clumsiness": 0.08
+          },
+          "monthlyWage": 70,
+          "role": "employee",
+          "wageAccrued": 3.3444444444444414,
+          "priorities": {
+            "serving": "off",
+            "cooking": "off",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 13,
+          "z": 9,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        }
+      ],
+      "guests": [
+        {
+          "id": "guest-25",
+          "name": "Alex",
+          "x": 9,
+          "z": 11,
+          "state": "ordered",
+          "tableId": "object-11",
+          "seatId": "object-12",
+          "path": [],
+          "hunger": 70.16106702750591,
+          "patience": 108.15324738249183,
+          "happiness": 90.70500000000013,
+          "timer": 9.5,
+          "mealTime": 19.3930140377488,
+          "toiletNeed": false,
+          "bill": 0,
+          "orderId": "order-26"
+        }
+      ],
+      "orders": [
+        {
+          "id": "order-26",
+          "guestId": "guest-25",
+          "recipeId": "fries",
+          "price": 15,
+          "state": "ready",
+          "progress": 8,
+          "createdAt": 147,
+          "ingredientsCommitted": true,
+          "funding": "regular",
+          "wareId": "ware-13",
+          "sourceId": "object-8",
+          "quality": 0.808,
+          "waiterId": "staff-18"
+        }
+      ],
+      "menu": [
+        {
+          "recipeId": "burger",
+          "price": 18,
+          "enabled": false
+        },
+        {
+          "recipeId": "salad",
+          "price": 14,
+          "enabled": false
+        },
+        {
+          "recipeId": "pasta",
+          "price": 20,
+          "enabled": false
+        },
+        {
+          "recipeId": "steak",
+          "price": 32,
+          "enabled": false
+        },
+        {
+          "recipeId": "risotto",
+          "price": 26,
+          "enabled": false
+        },
+        {
+          "recipeId": "chef-special",
+          "price": 42,
+          "enabled": false
+        },
+        {
+          "recipeId": "fries",
+          "price": 15,
+          "enabled": true
+        }
+      ],
+      "stats": {
+        "served": 0,
+        "lost": 1,
+        "revenue": 0,
+        "expenses": 666,
+        "rating": 3.7849999999999997,
+        "cleanliness": 97.89999999999992
+      },
+      "events": [
+        {
+          "id": "event-24",
+          "text": "The restaurant is open. Welcome in!",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-23",
+          "text": "Morgan joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-20",
+          "text": "Charlie joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-17",
+          "text": "Drew joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-14",
+          "text": "Ingredient delivery arrived: $6.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-1",
+          "text": "A fresh start. Lay floors, build a kitchen and dining room, then open your doors.",
+          "time": 0,
+          "day": 1
+        }
+      ],
+      "scenario": {
+        "id": "sandbox",
+        "title": "Your neighborhood restaurant",
+        "description": "Build at your own pace and make a place people love.",
+        "goals": [],
+        "complete": false
+      },
+      "seed": 2349526276,
+      "nextId": 27,
+      "elapsed": 156.5,
+      "accumulator": 0,
+      "arrivalIn": 7.8172228615731,
+      "bankrupt": false,
+      "unlocks": [],
+      "completedScenarios": [],
+      "doorGrantUsed": false,
+      "daily": {
+        "served": 0,
+        "revenue": 0,
+        "expenses": 0
+      },
+      "candidates": [
+        {
+          "id": "candidate-16",
+          "name": "Riley",
+          "skills": {
+            "cooking": 0.04,
+            "speed": 0.71,
+            "clumsiness": 0.97
+          },
+          "monthlyWage": 65
+        },
+        {
+          "id": "candidate-19",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.4,
+            "speed": 0.86,
+            "clumsiness": 0.8
+          },
+          "monthlyWage": 93
+        },
+        {
+          "id": "candidate-22",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.22,
+            "speed": 0.74,
+            "clumsiness": 0.49
+          },
+          "monthlyWage": 88
+        }
+      ],
+      "cleaningDueSince": null,
+      "supplies": {
+        "stocks": [
+          {
+            "storageId": "object-9",
+            "ingredientId": "potato",
+            "quantity": 5
+          }
+        ],
+        "ingredientBatches": {
+          "potato": 6,
+          "flour": 0,
+          "tomato": 0,
+          "coffee": 0,
+          "avocado": 0,
+          "steak": 0,
+          "chicken": 0,
+          "rice": 0,
+          "mushroom": 0
+        },
+        "ingredientNextDay": 20,
+        "tablewareQueue": [],
+        "tablewareNextAt": null,
+        "ware": [
+          {
+            "id": "ware-13",
+            "type": "plate",
+            "state": "carriedMeal",
+            "staffId": "staff-18",
+            "orderId": "order-26"
+          }
+        ],
+        "wareLedger": {
+          "plate": {
+            "granted": 0,
+            "delivered": 1,
+            "broken": 0
+          },
+          "stemglass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "pan": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "bowl": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "cup": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "glass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          }
+        },
+        "ingredientBlockedReason": ""
+      },
+      "candidateSeed": 4113889635
+    },
+    "guest": {
+      "version": 2,
+      "mode": "empty",
+      "name": "Corner Table",
+      "cash": 14334,
+      "day": 11,
+      "time": 13.200000000000001,
+      "calendarSeconds": 158.25,
+      "speed": 1,
+      "open": true,
+      "land": {
+        "minX": 4,
+        "maxX": 19,
+        "minZ": 4,
+        "maxZ": 19
+      },
+      "floors": [],
+      "objects": [
+        {
+          "id": "object-5",
+          "type": "counter",
+          "x": 8,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-6",
+          "type": "cuttingboard",
+          "x": 8,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50,
+          "parentId": "object-5"
+        },
+        {
+          "id": "object-7",
+          "type": "counter",
+          "x": 10,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-8",
+          "type": "fryer",
+          "x": 10,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 100,
+          "parentId": "object-7"
+        },
+        {
+          "id": "object-9",
+          "type": "shelf",
+          "x": 12,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 100
+        },
+        {
+          "id": "object-10",
+          "type": "sink",
+          "x": 14,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 220
+        },
+        {
+          "id": "object-11",
+          "type": "table",
+          "x": 10,
+          "z": 11,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-12",
+          "type": "chair",
+          "x": 9,
+          "z": 11,
+          "rotation": 0,
+          "purchaseCost": 25
+        }
+      ],
+      "staff": [
+        {
+          "id": "staff-15",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.52,
+            "speed": 0.09,
+            "clumsiness": 0.45
+          },
+          "monthlyWage": 74,
+          "role": "employee",
+          "wageAccrued": 3.823333333333342,
+          "priorities": {
+            "serving": "off",
+            "cooking": "high",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 10,
+          "z": 9,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        },
+        {
+          "id": "staff-18",
+          "name": "Charlie",
+          "skills": {
+            "cooking": 0.44,
+            "speed": 0.59,
+            "clumsiness": 0.2
+          },
+          "monthlyWage": 100,
+          "role": "employee",
+          "wageAccrued": 5.166666666666656,
+          "priorities": {
+            "serving": "high",
+            "cooking": "off",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 99.95050000000008,
+          "x": 9,
+          "z": 10,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        },
+        {
+          "id": "staff-21",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.07,
+            "speed": 0.2,
+            "clumsiness": 0.08
+          },
+          "monthlyWage": 70,
+          "role": "employee",
+          "wageAccrued": 3.6166666666666627,
+          "priorities": {
+            "serving": "off",
+            "cooking": "off",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 13,
+          "z": 9,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        }
+      ],
+      "guests": [
+        {
+          "id": "guest-25",
+          "name": "Alex",
+          "x": 9,
+          "z": 11,
+          "state": "eating",
+          "tableId": "object-11",
+          "seatId": "object-12",
+          "path": [],
+          "hunger": 70.11731702750595,
+          "patience": 106.40324738249183,
+          "happiness": 93.58250000000014,
+          "timer": 0,
+          "mealTime": 19.3930140377488,
+          "toiletNeed": false,
+          "bill": 15,
+          "mealQuality": 0.808,
+          "mealRecipeId": "fries",
+          "wareId": "ware-13"
+        }
+      ],
+      "orders": [],
+      "menu": [
+        {
+          "recipeId": "burger",
+          "price": 18,
+          "enabled": false
+        },
+        {
+          "recipeId": "salad",
+          "price": 14,
+          "enabled": false
+        },
+        {
+          "recipeId": "pasta",
+          "price": 20,
+          "enabled": false
+        },
+        {
+          "recipeId": "steak",
+          "price": 32,
+          "enabled": false
+        },
+        {
+          "recipeId": "risotto",
+          "price": 26,
+          "enabled": false
+        },
+        {
+          "recipeId": "chef-special",
+          "price": 42,
+          "enabled": false
+        },
+        {
+          "recipeId": "fries",
+          "price": 15,
+          "enabled": true
+        }
+      ],
+      "stats": {
+        "served": 0,
+        "lost": 1,
+        "revenue": 0,
+        "expenses": 666,
+        "rating": 3.7849999999999997,
+        "cleanliness": 97.85799999999992
+      },
+      "events": [
+        {
+          "id": "event-24",
+          "text": "The restaurant is open. Welcome in!",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-23",
+          "text": "Morgan joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-20",
+          "text": "Charlie joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-17",
+          "text": "Drew joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-14",
+          "text": "Ingredient delivery arrived: $6.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-1",
+          "text": "A fresh start. Lay floors, build a kitchen and dining room, then open your doors.",
+          "time": 0,
+          "day": 1
+        }
+      ],
+      "scenario": {
+        "id": "sandbox",
+        "title": "Your neighborhood restaurant",
+        "description": "Build at your own pace and make a place people love.",
+        "goals": [],
+        "complete": false
+      },
+      "seed": 2349526276,
+      "nextId": 27,
+      "elapsed": 158.25,
+      "accumulator": 0,
+      "arrivalIn": 6.0672228615731,
+      "bankrupt": false,
+      "unlocks": [],
+      "completedScenarios": [],
+      "doorGrantUsed": false,
+      "daily": {
+        "served": 0,
+        "revenue": 0,
+        "expenses": 0
+      },
+      "candidates": [
+        {
+          "id": "candidate-16",
+          "name": "Riley",
+          "skills": {
+            "cooking": 0.04,
+            "speed": 0.71,
+            "clumsiness": 0.97
+          },
+          "monthlyWage": 65
+        },
+        {
+          "id": "candidate-19",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.4,
+            "speed": 0.86,
+            "clumsiness": 0.8
+          },
+          "monthlyWage": 93
+        },
+        {
+          "id": "candidate-22",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.22,
+            "speed": 0.74,
+            "clumsiness": 0.49
+          },
+          "monthlyWage": 88
+        }
+      ],
+      "cleaningDueSince": null,
+      "supplies": {
+        "stocks": [
+          {
+            "storageId": "object-9",
+            "ingredientId": "potato",
+            "quantity": 5
+          }
+        ],
+        "ingredientBatches": {
+          "potato": 6,
+          "flour": 0,
+          "tomato": 0,
+          "coffee": 0,
+          "avocado": 0,
+          "steak": 0,
+          "chicken": 0,
+          "rice": 0,
+          "mushroom": 0
+        },
+        "ingredientNextDay": 20,
+        "tablewareQueue": [],
+        "tablewareNextAt": null,
+        "ware": [
+          {
+            "id": "ware-13",
+            "type": "plate",
+            "state": "guest",
+            "guestId": "guest-25"
+          }
+        ],
+        "wareLedger": {
+          "plate": {
+            "granted": 0,
+            "delivered": 1,
+            "broken": 0
+          },
+          "stemglass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "pan": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "bowl": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "cup": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "glass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          }
+        },
+        "ingredientBlockedReason": ""
+      },
+      "candidateSeed": 4113889635
+    },
+    "dirty": {
+      "version": 2,
+      "mode": "empty",
+      "name": "Corner Table",
+      "cash": 14334,
+      "day": 12,
+      "time": 20.4,
+      "calendarSeconds": 177.75,
+      "speed": 1,
+      "open": true,
+      "land": {
+        "minX": 4,
+        "maxX": 19,
+        "minZ": 4,
+        "maxZ": 19
+      },
+      "floors": [],
+      "objects": [
+        {
+          "id": "object-5",
+          "type": "counter",
+          "x": 8,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-6",
+          "type": "cuttingboard",
+          "x": 8,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50,
+          "parentId": "object-5"
+        },
+        {
+          "id": "object-7",
+          "type": "counter",
+          "x": 10,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-8",
+          "type": "fryer",
+          "x": 10,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 100,
+          "parentId": "object-7"
+        },
+        {
+          "id": "object-9",
+          "type": "shelf",
+          "x": 12,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 100
+        },
+        {
+          "id": "object-10",
+          "type": "sink",
+          "x": 14,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 220
+        },
+        {
+          "id": "object-11",
+          "type": "table",
+          "x": 10,
+          "z": 11,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-12",
+          "type": "chair",
+          "x": 9,
+          "z": 11,
+          "rotation": 0,
+          "purchaseCost": 25
+        }
+      ],
+      "staff": [
+        {
+          "id": "staff-15",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.52,
+            "speed": 0.09,
+            "clumsiness": 0.45
+          },
+          "monthlyWage": 74,
+          "role": "employee",
+          "wageAccrued": 7.030000000000025,
+          "priorities": {
+            "serving": "off",
+            "cooking": "high",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 10,
+          "z": 9,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        },
+        {
+          "id": "staff-18",
+          "name": "Charlie",
+          "skills": {
+            "cooking": 0.44,
+            "speed": 0.59,
+            "clumsiness": 0.2
+          },
+          "monthlyWage": 100,
+          "role": "employee",
+          "wageAccrued": 9.499999999999975,
+          "priorities": {
+            "serving": "high",
+            "cooking": "off",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 9,
+          "z": 10,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        },
+        {
+          "id": "staff-21",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.07,
+            "speed": 0.2,
+            "clumsiness": 0.08
+          },
+          "monthlyWage": 70,
+          "role": "employee",
+          "wageAccrued": 6.649999999999985,
+          "priorities": {
+            "serving": "off",
+            "cooking": "off",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 13,
+          "z": 9,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        }
+      ],
+      "guests": [
+        {
+          "id": "guest-25",
+          "name": "Alex",
+          "x": 9,
+          "z": 11,
+          "state": "leaving",
+          "tableId": "object-11",
+          "seatId": "object-12",
+          "path": [
+            {
+              "x": 9,
+              "z": 10
+            },
+            {
+              "x": 10,
+              "z": 10
+            },
+            {
+              "x": 11,
+              "z": 10
+            },
+            {
+              "x": 11,
+              "z": 9
+            },
+            {
+              "x": 11,
+              "z": 8
+            },
+            {
+              "x": 11,
+              "z": 7
+            },
+            {
+              "x": 11,
+              "z": 6
+            },
+            {
+              "x": 11,
+              "z": 5
+            },
+            {
+              "x": 11,
+              "z": 4
+            },
+            {
+              "x": 11,
+              "z": 3
+            }
+          ],
+          "hunger": 69.62981702750639,
+          "patience": 106.40324738249183,
+          "happiness": 100,
+          "timer": 0,
+          "mealTime": 19.3930140377488,
+          "toiletNeed": false,
+          "bill": 15,
+          "mealQuality": 0.808,
+          "mealRecipeId": "fries",
+          "exitBlocked": false
+        }
+      ],
+      "orders": [],
+      "menu": [
+        {
+          "recipeId": "burger",
+          "price": 18,
+          "enabled": false
+        },
+        {
+          "recipeId": "salad",
+          "price": 14,
+          "enabled": false
+        },
+        {
+          "recipeId": "pasta",
+          "price": 20,
+          "enabled": false
+        },
+        {
+          "recipeId": "steak",
+          "price": 32,
+          "enabled": false
+        },
+        {
+          "recipeId": "risotto",
+          "price": 26,
+          "enabled": false
+        },
+        {
+          "recipeId": "chef-special",
+          "price": 42,
+          "enabled": false
+        },
+        {
+          "recipeId": "fries",
+          "price": 15,
+          "enabled": true
+        }
+      ],
+      "stats": {
+        "served": 0,
+        "lost": 2,
+        "revenue": 0,
+        "expenses": 666,
+        "rating": 3.7699999999999996,
+        "cleanliness": 97.3899999999999
+      },
+      "events": [
+        {
+          "id": "event-24",
+          "text": "The restaurant is open. Welcome in!",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-23",
+          "text": "Morgan joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-20",
+          "text": "Charlie joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-17",
+          "text": "Drew joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-14",
+          "text": "Ingredient delivery arrived: $6.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-1",
+          "text": "A fresh start. Lay floors, build a kitchen and dining room, then open your doors.",
+          "time": 0,
+          "day": 1
+        }
+      ],
+      "scenario": {
+        "id": "sandbox",
+        "title": "Your neighborhood restaurant",
+        "description": "Build at your own pace and make a place people love.",
+        "goals": [],
+        "complete": false
+      },
+      "seed": 3637548179,
+      "nextId": 27,
+      "elapsed": 177.75,
+      "accumulator": 0,
+      "arrivalIn": 1.342684332281351,
+      "bankrupt": false,
+      "unlocks": [],
+      "completedScenarios": [],
+      "doorGrantUsed": false,
+      "daily": {
+        "served": 0,
+        "revenue": 0,
+        "expenses": 0
+      },
+      "candidates": [
+        {
+          "id": "candidate-16",
+          "name": "Riley",
+          "skills": {
+            "cooking": 0.04,
+            "speed": 0.71,
+            "clumsiness": 0.97
+          },
+          "monthlyWage": 65
+        },
+        {
+          "id": "candidate-19",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.4,
+            "speed": 0.86,
+            "clumsiness": 0.8
+          },
+          "monthlyWage": 93
+        },
+        {
+          "id": "candidate-22",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.22,
+            "speed": 0.74,
+            "clumsiness": 0.49
+          },
+          "monthlyWage": 88
+        }
+      ],
+      "cleaningDueSince": null,
+      "supplies": {
+        "stocks": [
+          {
+            "storageId": "object-9",
+            "ingredientId": "potato",
+            "quantity": 5
+          }
+        ],
+        "ingredientBatches": {
+          "potato": 6,
+          "flour": 0,
+          "tomato": 0,
+          "coffee": 0,
+          "avocado": 0,
+          "steak": 0,
+          "chicken": 0,
+          "rice": 0,
+          "mushroom": 0
+        },
+        "ingredientNextDay": 20,
+        "tablewareQueue": [],
+        "tablewareNextAt": null,
+        "ware": [
+          {
+            "id": "ware-13",
+            "type": "plate",
+            "state": "dirty",
+            "locationId": "object-11",
+            "dirtySince": 177.75
+          }
+        ],
+        "wareLedger": {
+          "plate": {
+            "granted": 0,
+            "delivered": 1,
+            "broken": 0
+          },
+          "stemglass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "pan": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "bowl": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "cup": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "glass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          }
+        },
+        "ingredientBlockedReason": ""
+      },
+      "candidateSeed": 4113889635
+    },
+    "dish-collect": {
+      "version": 2,
+      "mode": "empty",
+      "name": "Corner Table",
+      "cash": 14334,
+      "day": 12,
+      "time": 20.8,
+      "calendarSeconds": 178,
+      "speed": 1,
+      "open": true,
+      "land": {
+        "minX": 4,
+        "maxX": 19,
+        "minZ": 4,
+        "maxZ": 19
+      },
+      "floors": [],
+      "objects": [
+        {
+          "id": "object-5",
+          "type": "counter",
+          "x": 8,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-6",
+          "type": "cuttingboard",
+          "x": 8,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50,
+          "parentId": "object-5"
+        },
+        {
+          "id": "object-7",
+          "type": "counter",
+          "x": 10,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-8",
+          "type": "fryer",
+          "x": 10,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 100,
+          "parentId": "object-7"
+        },
+        {
+          "id": "object-9",
+          "type": "shelf",
+          "x": 12,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 100
+        },
+        {
+          "id": "object-10",
+          "type": "sink",
+          "x": 14,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 220
+        },
+        {
+          "id": "object-11",
+          "type": "table",
+          "x": 10,
+          "z": 11,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-12",
+          "type": "chair",
+          "x": 9,
+          "z": 11,
+          "rotation": 0,
+          "purchaseCost": 25
+        }
+      ],
+      "staff": [
+        {
+          "id": "staff-15",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.52,
+            "speed": 0.09,
+            "clumsiness": 0.45
+          },
+          "monthlyWage": 74,
+          "role": "employee",
+          "wageAccrued": 7.071111111111136,
+          "priorities": {
+            "serving": "off",
+            "cooking": "high",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 10,
+          "z": 9,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        },
+        {
+          "id": "staff-18",
+          "name": "Charlie",
+          "skills": {
+            "cooking": 0.44,
+            "speed": 0.59,
+            "clumsiness": 0.2
+          },
+          "monthlyWage": 100,
+          "role": "employee",
+          "wageAccrued": 9.55555555555553,
+          "priorities": {
+            "serving": "high",
+            "cooking": "off",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 9,
+          "z": 10,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        },
+        {
+          "id": "staff-21",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.07,
+            "speed": 0.2,
+            "clumsiness": 0.08
+          },
+          "monthlyWage": 70,
+          "role": "employee",
+          "wageAccrued": 6.688888888888874,
+          "priorities": {
+            "serving": "off",
+            "cooking": "off",
+            "dishwashing": "high",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 13,
+          "z": 9.382614864864864,
+          "task": "dish-collect",
+          "path": [
+            {
+              "x": 13,
+              "z": 10
+            },
+            {
+              "x": 13,
+              "z": 11
+            },
+            {
+              "x": 12,
+              "z": 11
+            },
+            {
+              "x": 11,
+              "z": 11
+            }
+          ],
+          "timer": 0,
+          "wareId": "ware-13",
+          "taskTarget": "object-11",
+          "sinkId": "object-10"
+        }
+      ],
+      "guests": [
+        {
+          "id": "guest-25",
+          "name": "Alex",
+          "x": 9,
+          "z": 10.55,
+          "state": "leaving",
+          "tableId": "object-11",
+          "seatId": "object-12",
+          "path": [
+            {
+              "x": 9,
+              "z": 10
+            },
+            {
+              "x": 10,
+              "z": 10
+            },
+            {
+              "x": 11,
+              "z": 10
+            },
+            {
+              "x": 11,
+              "z": 9
+            },
+            {
+              "x": 11,
+              "z": 8
+            },
+            {
+              "x": 11,
+              "z": 7
+            },
+            {
+              "x": 11,
+              "z": 6
+            },
+            {
+              "x": 11,
+              "z": 5
+            },
+            {
+              "x": 11,
+              "z": 4
+            },
+            {
+              "x": 11,
+              "z": 3
+            }
+          ],
+          "hunger": 69.62981702750639,
+          "patience": 106.40324738249183,
+          "happiness": 100,
+          "timer": 0.25,
+          "mealTime": 19.3930140377488,
+          "toiletNeed": false,
+          "bill": 15,
+          "mealQuality": 0.808,
+          "mealRecipeId": "fries",
+          "exitBlocked": false
+        }
+      ],
+      "orders": [],
+      "menu": [
+        {
+          "recipeId": "burger",
+          "price": 18,
+          "enabled": false
+        },
+        {
+          "recipeId": "salad",
+          "price": 14,
+          "enabled": false
+        },
+        {
+          "recipeId": "pasta",
+          "price": 20,
+          "enabled": false
+        },
+        {
+          "recipeId": "steak",
+          "price": 32,
+          "enabled": false
+        },
+        {
+          "recipeId": "risotto",
+          "price": 26,
+          "enabled": false
+        },
+        {
+          "recipeId": "chef-special",
+          "price": 42,
+          "enabled": false
+        },
+        {
+          "recipeId": "fries",
+          "price": 15,
+          "enabled": true
+        }
+      ],
+      "stats": {
+        "served": 0,
+        "lost": 2,
+        "revenue": 0,
+        "expenses": 666,
+        "rating": 3.7699999999999996,
+        "cleanliness": 97.3769999999999
+      },
+      "events": [
+        {
+          "id": "event-24",
+          "text": "The restaurant is open. Welcome in!",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-23",
+          "text": "Morgan joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-20",
+          "text": "Charlie joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-17",
+          "text": "Drew joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-14",
+          "text": "Ingredient delivery arrived: $6.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-1",
+          "text": "A fresh start. Lay floors, build a kitchen and dining room, then open your doors.",
+          "time": 0,
+          "day": 1
+        }
+      ],
+      "scenario": {
+        "id": "sandbox",
+        "title": "Your neighborhood restaurant",
+        "description": "Build at your own pace and make a place people love.",
+        "goals": [],
+        "complete": false
+      },
+      "seed": 3637548179,
+      "nextId": 27,
+      "elapsed": 178,
+      "accumulator": 0,
+      "arrivalIn": 1.092684332281351,
+      "bankrupt": false,
+      "unlocks": [],
+      "completedScenarios": [],
+      "doorGrantUsed": false,
+      "daily": {
+        "served": 0,
+        "revenue": 0,
+        "expenses": 0
+      },
+      "candidates": [
+        {
+          "id": "candidate-16",
+          "name": "Riley",
+          "skills": {
+            "cooking": 0.04,
+            "speed": 0.71,
+            "clumsiness": 0.97
+          },
+          "monthlyWage": 65
+        },
+        {
+          "id": "candidate-19",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.4,
+            "speed": 0.86,
+            "clumsiness": 0.8
+          },
+          "monthlyWage": 93
+        },
+        {
+          "id": "candidate-22",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.22,
+            "speed": 0.74,
+            "clumsiness": 0.49
+          },
+          "monthlyWage": 88
+        }
+      ],
+      "cleaningDueSince": null,
+      "supplies": {
+        "stocks": [
+          {
+            "storageId": "object-9",
+            "ingredientId": "potato",
+            "quantity": 5
+          }
+        ],
+        "ingredientBatches": {
+          "potato": 6,
+          "flour": 0,
+          "tomato": 0,
+          "coffee": 0,
+          "avocado": 0,
+          "steak": 0,
+          "chicken": 0,
+          "rice": 0,
+          "mushroom": 0
+        },
+        "ingredientNextDay": 20,
+        "tablewareQueue": [],
+        "tablewareNextAt": null,
+        "ware": [
+          {
+            "id": "ware-13",
+            "type": "plate",
+            "state": "dirty",
+            "locationId": "object-11",
+            "dirtySince": 177.75,
+            "assigneeId": "staff-21",
+            "returnStorageId": "object-5"
+          }
+        ],
+        "wareLedger": {
+          "plate": {
+            "granted": 0,
+            "delivered": 1,
+            "broken": 0
+          },
+          "stemglass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "pan": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "bowl": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "cup": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "glass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          }
+        },
+        "ingredientBlockedReason": ""
+      },
+      "candidateSeed": 4113889635
+    },
+    "carriedDirty": {
+      "version": 2,
+      "mode": "empty",
+      "name": "Corner Table",
+      "cash": 14334,
+      "day": 13,
+      "time": 0.8,
+      "calendarSeconds": 180.5,
+      "speed": 1,
+      "open": true,
+      "land": {
+        "minX": 4,
+        "maxX": 19,
+        "minZ": 4,
+        "maxZ": 19
+      },
+      "floors": [],
+      "objects": [
+        {
+          "id": "object-5",
+          "type": "counter",
+          "x": 8,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-6",
+          "type": "cuttingboard",
+          "x": 8,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50,
+          "parentId": "object-5"
+        },
+        {
+          "id": "object-7",
+          "type": "counter",
+          "x": 10,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-8",
+          "type": "fryer",
+          "x": 10,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 100,
+          "parentId": "object-7"
+        },
+        {
+          "id": "object-9",
+          "type": "shelf",
+          "x": 12,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 100
+        },
+        {
+          "id": "object-10",
+          "type": "sink",
+          "x": 14,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 220
+        },
+        {
+          "id": "object-11",
+          "type": "table",
+          "x": 10,
+          "z": 11,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-12",
+          "type": "chair",
+          "x": 9,
+          "z": 11,
+          "rotation": 0,
+          "purchaseCost": 25
+        }
+      ],
+      "staff": [
+        {
+          "id": "staff-15",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.52,
+            "speed": 0.09,
+            "clumsiness": 0.45
+          },
+          "monthlyWage": 74,
+          "role": "employee",
+          "wageAccrued": 7.48222222222225,
+          "priorities": {
+            "serving": "off",
+            "cooking": "high",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 10,
+          "z": 9,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        },
+        {
+          "id": "staff-18",
+          "name": "Charlie",
+          "skills": {
+            "cooking": 0.44,
+            "speed": 0.59,
+            "clumsiness": 0.2
+          },
+          "monthlyWage": 100,
+          "role": "employee",
+          "wageAccrued": 10.111111111111084,
+          "priorities": {
+            "serving": "high",
+            "cooking": "off",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 9,
+          "z": 10,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        },
+        {
+          "id": "staff-21",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.07,
+            "speed": 0.2,
+            "clumsiness": 0.08
+          },
+          "monthlyWage": 70,
+          "role": "employee",
+          "wageAccrued": 7.0777777777777615,
+          "priorities": {
+            "serving": "off",
+            "cooking": "off",
+            "dishwashing": "high",
+            "cleaning": "off"
+          },
+          "energy": 99.95500000000007,
+          "x": 11,
+          "z": 11,
+          "task": "dish-to-sink",
+          "path": [
+            {
+              "x": 12,
+              "z": 11
+            },
+            {
+              "x": 13,
+              "z": 11
+            },
+            {
+              "x": 14,
+              "z": 11
+            },
+            {
+              "x": 14,
+              "z": 10
+            },
+            {
+              "x": 14,
+              "z": 9
+            }
+          ],
+          "timer": 0,
+          "wareId": "ware-13",
+          "taskTarget": "object-10",
+          "sinkId": "object-10"
+        }
+      ],
+      "guests": [
+        {
+          "id": "guest-25",
+          "name": "Alex",
+          "x": 11,
+          "z": 8.050000000000008,
+          "state": "leaving",
+          "tableId": "object-11",
+          "seatId": "object-12",
+          "path": [
+            {
+              "x": 11,
+              "z": 8
+            },
+            {
+              "x": 11,
+              "z": 7
+            },
+            {
+              "x": 11,
+              "z": 6
+            },
+            {
+              "x": 11,
+              "z": 5
+            },
+            {
+              "x": 11,
+              "z": 4
+            },
+            {
+              "x": 11,
+              "z": 3
+            }
+          ],
+          "hunger": 69.62981702750639,
+          "patience": 106.40324738249183,
+          "happiness": 100,
+          "timer": 2.75,
+          "mealTime": 19.3930140377488,
+          "toiletNeed": false,
+          "bill": 15,
+          "mealQuality": 0.808,
+          "mealRecipeId": "fries",
+          "exitBlocked": false
+        }
+      ],
+      "orders": [],
+      "menu": [
+        {
+          "recipeId": "burger",
+          "price": 18,
+          "enabled": false
+        },
+        {
+          "recipeId": "salad",
+          "price": 14,
+          "enabled": false
+        },
+        {
+          "recipeId": "pasta",
+          "price": 20,
+          "enabled": false
+        },
+        {
+          "recipeId": "steak",
+          "price": 32,
+          "enabled": false
+        },
+        {
+          "recipeId": "risotto",
+          "price": 26,
+          "enabled": false
+        },
+        {
+          "recipeId": "chef-special",
+          "price": 42,
+          "enabled": false
+        },
+        {
+          "recipeId": "fries",
+          "price": 15,
+          "enabled": true
+        }
+      ],
+      "stats": {
+        "served": 0,
+        "lost": 3,
+        "revenue": 0,
+        "expenses": 666,
+        "rating": 3.7549999999999994,
+        "cleanliness": 97.24699999999984
+      },
+      "events": [
+        {
+          "id": "event-24",
+          "text": "The restaurant is open. Welcome in!",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-23",
+          "text": "Morgan joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-20",
+          "text": "Charlie joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-17",
+          "text": "Drew joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-14",
+          "text": "Ingredient delivery arrived: $6.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-1",
+          "text": "A fresh start. Lay floors, build a kitchen and dining room, then open your doors.",
+          "time": 0,
+          "day": 1
+        }
+      ],
+      "scenario": {
+        "id": "sandbox",
+        "title": "Your neighborhood restaurant",
+        "description": "Build at your own pace and make a place people love.",
+        "goals": [],
+        "complete": false
+      },
+      "seed": 3700691158,
+      "nextId": 27,
+      "elapsed": 180.5,
+      "accumulator": 0,
+      "arrivalIn": 13.485758766531944,
+      "bankrupt": false,
+      "unlocks": [],
+      "completedScenarios": [],
+      "doorGrantUsed": false,
+      "daily": {
+        "served": 0,
+        "revenue": 0,
+        "expenses": 0
+      },
+      "candidates": [
+        {
+          "id": "candidate-16",
+          "name": "Riley",
+          "skills": {
+            "cooking": 0.04,
+            "speed": 0.71,
+            "clumsiness": 0.97
+          },
+          "monthlyWage": 65
+        },
+        {
+          "id": "candidate-19",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.4,
+            "speed": 0.86,
+            "clumsiness": 0.8
+          },
+          "monthlyWage": 93
+        },
+        {
+          "id": "candidate-22",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.22,
+            "speed": 0.74,
+            "clumsiness": 0.49
+          },
+          "monthlyWage": 88
+        }
+      ],
+      "cleaningDueSince": null,
+      "supplies": {
+        "stocks": [
+          {
+            "storageId": "object-9",
+            "ingredientId": "potato",
+            "quantity": 5
+          }
+        ],
+        "ingredientBatches": {
+          "potato": 6,
+          "flour": 0,
+          "tomato": 0,
+          "coffee": 0,
+          "avocado": 0,
+          "steak": 0,
+          "chicken": 0,
+          "rice": 0,
+          "mushroom": 0
+        },
+        "ingredientNextDay": 20,
+        "tablewareQueue": [],
+        "tablewareNextAt": null,
+        "ware": [
+          {
+            "id": "ware-13",
+            "type": "plate",
+            "state": "carriedDirty",
+            "staffId": "staff-21",
+            "returnStorageId": "object-5",
+            "breakageChecked": false
+          }
+        ],
+        "wareLedger": {
+          "plate": {
+            "granted": 0,
+            "delivered": 1,
+            "broken": 0
+          },
+          "stemglass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "pan": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "bowl": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "cup": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "glass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          }
+        },
+        "ingredientBlockedReason": ""
+      },
+      "candidateSeed": 4113889635
+    },
+    "washing": {
+      "version": 2,
+      "mode": "empty",
+      "name": "Corner Table",
+      "cash": 14349,
+      "day": 13,
+      "time": 6.4,
+      "calendarSeconds": 184,
+      "speed": 1,
+      "open": true,
+      "land": {
+        "minX": 4,
+        "maxX": 19,
+        "minZ": 4,
+        "maxZ": 19
+      },
+      "floors": [],
+      "objects": [
+        {
+          "id": "object-5",
+          "type": "counter",
+          "x": 8,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-6",
+          "type": "cuttingboard",
+          "x": 8,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50,
+          "parentId": "object-5"
+        },
+        {
+          "id": "object-7",
+          "type": "counter",
+          "x": 10,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-8",
+          "type": "fryer",
+          "x": 10,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 100,
+          "parentId": "object-7"
+        },
+        {
+          "id": "object-9",
+          "type": "shelf",
+          "x": 12,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 100
+        },
+        {
+          "id": "object-10",
+          "type": "sink",
+          "x": 14,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 220
+        },
+        {
+          "id": "object-11",
+          "type": "table",
+          "x": 10,
+          "z": 11,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-12",
+          "type": "chair",
+          "x": 9,
+          "z": 11,
+          "rotation": 0,
+          "purchaseCost": 25
+        }
+      ],
+      "staff": [
+        {
+          "id": "staff-15",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.52,
+            "speed": 0.09,
+            "clumsiness": 0.45
+          },
+          "monthlyWage": 74,
+          "role": "employee",
+          "wageAccrued": 8.057777777777806,
+          "priorities": {
+            "serving": "off",
+            "cooking": "high",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 10,
+          "z": 9,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        },
+        {
+          "id": "staff-18",
+          "name": "Charlie",
+          "skills": {
+            "cooking": 0.44,
+            "speed": 0.59,
+            "clumsiness": 0.2
+          },
+          "monthlyWage": 100,
+          "role": "employee",
+          "wageAccrued": 10.888888888888859,
+          "priorities": {
+            "serving": "high",
+            "cooking": "off",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 9,
+          "z": 10,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        },
+        {
+          "id": "staff-21",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.07,
+            "speed": 0.2,
+            "clumsiness": 0.08
+          },
+          "monthlyWage": 70,
+          "role": "employee",
+          "wageAccrued": 7.622222222222204,
+          "priorities": {
+            "serving": "off",
+            "cooking": "off",
+            "dishwashing": "high",
+            "cleaning": "off"
+          },
+          "energy": 99.89200000000017,
+          "x": 14,
+          "z": 9,
+          "task": "dish-wash",
+          "path": [],
+          "timer": 0,
+          "wareId": "ware-13",
+          "taskTarget": "object-10",
+          "sinkId": "object-10"
+        }
+      ],
+      "guests": [],
+      "orders": [],
+      "menu": [
+        {
+          "recipeId": "burger",
+          "price": 18,
+          "enabled": false
+        },
+        {
+          "recipeId": "salad",
+          "price": 14,
+          "enabled": false
+        },
+        {
+          "recipeId": "pasta",
+          "price": 20,
+          "enabled": false
+        },
+        {
+          "recipeId": "steak",
+          "price": 32,
+          "enabled": false
+        },
+        {
+          "recipeId": "risotto",
+          "price": 26,
+          "enabled": false
+        },
+        {
+          "recipeId": "chef-special",
+          "price": 42,
+          "enabled": false
+        },
+        {
+          "recipeId": "fries",
+          "price": 15,
+          "enabled": true
+        }
+      ],
+      "stats": {
+        "served": 1,
+        "lost": 3,
+        "revenue": 15,
+        "expenses": 666,
+        "rating": 3.8794999999999997,
+        "cleanliness": 97.06499999999977
+      },
+      "events": [
+        {
+          "id": "event-24",
+          "text": "The restaurant is open. Welcome in!",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-23",
+          "text": "Morgan joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-20",
+          "text": "Charlie joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-17",
+          "text": "Drew joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-14",
+          "text": "Ingredient delivery arrived: $6.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-1",
+          "text": "A fresh start. Lay floors, build a kitchen and dining room, then open your doors.",
+          "time": 0,
+          "day": 1
+        }
+      ],
+      "scenario": {
+        "id": "sandbox",
+        "title": "Your neighborhood restaurant",
+        "description": "Build at your own pace and make a place people love.",
+        "goals": [],
+        "complete": false
+      },
+      "seed": 328143421,
+      "nextId": 27,
+      "elapsed": 184,
+      "accumulator": 0,
+      "arrivalIn": 9.985758766531944,
+      "bankrupt": false,
+      "unlocks": [],
+      "completedScenarios": [],
+      "doorGrantUsed": false,
+      "daily": {
+        "served": 1,
+        "revenue": 15,
+        "expenses": 0
+      },
+      "candidates": [
+        {
+          "id": "candidate-16",
+          "name": "Riley",
+          "skills": {
+            "cooking": 0.04,
+            "speed": 0.71,
+            "clumsiness": 0.97
+          },
+          "monthlyWage": 65
+        },
+        {
+          "id": "candidate-19",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.4,
+            "speed": 0.86,
+            "clumsiness": 0.8
+          },
+          "monthlyWage": 93
+        },
+        {
+          "id": "candidate-22",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.22,
+            "speed": 0.74,
+            "clumsiness": 0.49
+          },
+          "monthlyWage": 88
+        }
+      ],
+      "cleaningDueSince": null,
+      "supplies": {
+        "stocks": [
+          {
+            "storageId": "object-9",
+            "ingredientId": "potato",
+            "quantity": 5
+          }
+        ],
+        "ingredientBatches": {
+          "potato": 6,
+          "flour": 0,
+          "tomato": 0,
+          "coffee": 0,
+          "avocado": 0,
+          "steak": 0,
+          "chicken": 0,
+          "rice": 0,
+          "mushroom": 0
+        },
+        "ingredientNextDay": 20,
+        "tablewareQueue": [],
+        "tablewareNextAt": null,
+        "ware": [
+          {
+            "id": "ware-13",
+            "type": "plate",
+            "state": "washing",
+            "staffId": "staff-21",
+            "sinkId": "object-10",
+            "returnStorageId": "object-5"
+          }
+        ],
+        "wareLedger": {
+          "plate": {
+            "granted": 0,
+            "delivered": 1,
+            "broken": 0
+          },
+          "stemglass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "pan": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "bowl": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "cup": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "glass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          }
+        },
+        "ingredientBlockedReason": ""
+      },
+      "candidateSeed": 4113889635
+    },
+    "carriedClean": {
+      "version": 2,
+      "mode": "empty",
+      "name": "Corner Table",
+      "cash": 14349,
+      "day": 13,
+      "time": 12.8,
+      "calendarSeconds": 188,
+      "speed": 1,
+      "open": true,
+      "land": {
+        "minX": 4,
+        "maxX": 19,
+        "minZ": 4,
+        "maxZ": 19
+      },
+      "floors": [],
+      "objects": [
+        {
+          "id": "object-5",
+          "type": "counter",
+          "x": 8,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-6",
+          "type": "cuttingboard",
+          "x": 8,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50,
+          "parentId": "object-5"
+        },
+        {
+          "id": "object-7",
+          "type": "counter",
+          "x": 10,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-8",
+          "type": "fryer",
+          "x": 10,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 100,
+          "parentId": "object-7"
+        },
+        {
+          "id": "object-9",
+          "type": "shelf",
+          "x": 12,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 100
+        },
+        {
+          "id": "object-10",
+          "type": "sink",
+          "x": 14,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 220
+        },
+        {
+          "id": "object-11",
+          "type": "table",
+          "x": 10,
+          "z": 11,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-12",
+          "type": "chair",
+          "x": 9,
+          "z": 11,
+          "rotation": 0,
+          "purchaseCost": 25
+        }
+      ],
+      "staff": [
+        {
+          "id": "staff-15",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.52,
+            "speed": 0.09,
+            "clumsiness": 0.45
+          },
+          "monthlyWage": 74,
+          "role": "employee",
+          "wageAccrued": 8.715555555555573,
+          "priorities": {
+            "serving": "off",
+            "cooking": "high",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 10,
+          "z": 9,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        },
+        {
+          "id": "staff-18",
+          "name": "Charlie",
+          "skills": {
+            "cooking": 0.44,
+            "speed": 0.59,
+            "clumsiness": 0.2
+          },
+          "monthlyWage": 100,
+          "role": "employee",
+          "wageAccrued": 11.777777777777745,
+          "priorities": {
+            "serving": "high",
+            "cooking": "off",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 9,
+          "z": 10,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        },
+        {
+          "id": "staff-21",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.07,
+            "speed": 0.2,
+            "clumsiness": 0.08
+          },
+          "monthlyWage": 70,
+          "role": "employee",
+          "wageAccrued": 8.24444444444443,
+          "priorities": {
+            "serving": "off",
+            "cooking": "off",
+            "dishwashing": "high",
+            "cleaning": "off"
+          },
+          "energy": 99.82000000000028,
+          "x": 14,
+          "z": 9,
+          "task": "dish-return",
+          "path": [
+            {
+              "x": 13,
+              "z": 9
+            },
+            {
+              "x": 12,
+              "z": 9
+            },
+            {
+              "x": 11,
+              "z": 9
+            },
+            {
+              "x": 10,
+              "z": 9
+            },
+            {
+              "x": 9,
+              "z": 9
+            },
+            {
+              "x": 8,
+              "z": 9
+            }
+          ],
+          "timer": 0,
+          "wareId": "ware-13",
+          "taskTarget": "object-5",
+          "sinkId": "object-10"
+        }
+      ],
+      "guests": [],
+      "orders": [],
+      "menu": [
+        {
+          "recipeId": "burger",
+          "price": 18,
+          "enabled": false
+        },
+        {
+          "recipeId": "salad",
+          "price": 14,
+          "enabled": false
+        },
+        {
+          "recipeId": "pasta",
+          "price": 20,
+          "enabled": false
+        },
+        {
+          "recipeId": "steak",
+          "price": 32,
+          "enabled": false
+        },
+        {
+          "recipeId": "risotto",
+          "price": 26,
+          "enabled": false
+        },
+        {
+          "recipeId": "chef-special",
+          "price": 42,
+          "enabled": false
+        },
+        {
+          "recipeId": "fries",
+          "price": 15,
+          "enabled": true
+        }
+      ],
+      "stats": {
+        "served": 1,
+        "lost": 3,
+        "revenue": 15,
+        "expenses": 666,
+        "rating": 3.8794999999999997,
+        "cleanliness": 96.85699999999969
+      },
+      "events": [
+        {
+          "id": "event-24",
+          "text": "The restaurant is open. Welcome in!",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-23",
+          "text": "Morgan joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-20",
+          "text": "Charlie joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-17",
+          "text": "Drew joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-14",
+          "text": "Ingredient delivery arrived: $6.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-1",
+          "text": "A fresh start. Lay floors, build a kitchen and dining room, then open your doors.",
+          "time": 0,
+          "day": 1
+        }
+      ],
+      "scenario": {
+        "id": "sandbox",
+        "title": "Your neighborhood restaurant",
+        "description": "Build at your own pace and make a place people love.",
+        "goals": [],
+        "complete": false
+      },
+      "seed": 328143421,
+      "nextId": 27,
+      "elapsed": 188,
+      "accumulator": 0,
+      "arrivalIn": 5.985758766531944,
+      "bankrupt": false,
+      "unlocks": [],
+      "completedScenarios": [],
+      "doorGrantUsed": false,
+      "daily": {
+        "served": 1,
+        "revenue": 15,
+        "expenses": 0
+      },
+      "candidates": [
+        {
+          "id": "candidate-16",
+          "name": "Riley",
+          "skills": {
+            "cooking": 0.04,
+            "speed": 0.71,
+            "clumsiness": 0.97
+          },
+          "monthlyWage": 65
+        },
+        {
+          "id": "candidate-19",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.4,
+            "speed": 0.86,
+            "clumsiness": 0.8
+          },
+          "monthlyWage": 93
+        },
+        {
+          "id": "candidate-22",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.22,
+            "speed": 0.74,
+            "clumsiness": 0.49
+          },
+          "monthlyWage": 88
+        }
+      ],
+      "cleaningDueSince": null,
+      "supplies": {
+        "stocks": [
+          {
+            "storageId": "object-9",
+            "ingredientId": "potato",
+            "quantity": 5
+          }
+        ],
+        "ingredientBatches": {
+          "potato": 6,
+          "flour": 0,
+          "tomato": 0,
+          "coffee": 0,
+          "avocado": 0,
+          "steak": 0,
+          "chicken": 0,
+          "rice": 0,
+          "mushroom": 0
+        },
+        "ingredientNextDay": 20,
+        "tablewareQueue": [],
+        "tablewareNextAt": null,
+        "ware": [
+          {
+            "id": "ware-13",
+            "type": "plate",
+            "state": "carriedClean",
+            "staffId": "staff-21",
+            "returnStorageId": "object-5"
+          }
+        ],
+        "wareLedger": {
+          "plate": {
+            "granted": 0,
+            "delivered": 1,
+            "broken": 0
+          },
+          "stemglass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "pan": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "bowl": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "cup": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "glass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          }
+        },
+        "ingredientBlockedReason": ""
+      },
+      "candidateSeed": 4113889635
+    },
+    "clean": {
+      "version": 2,
+      "mode": "empty",
+      "name": "Corner Table",
+      "cash": 14349,
+      "day": 13,
+      "time": 19.200000000000003,
+      "calendarSeconds": 192,
+      "speed": 1,
+      "open": true,
+      "land": {
+        "minX": 4,
+        "maxX": 19,
+        "minZ": 4,
+        "maxZ": 19
+      },
+      "floors": [],
+      "objects": [
+        {
+          "id": "object-5",
+          "type": "counter",
+          "x": 8,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-6",
+          "type": "cuttingboard",
+          "x": 8,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50,
+          "parentId": "object-5"
+        },
+        {
+          "id": "object-7",
+          "type": "counter",
+          "x": 10,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-8",
+          "type": "fryer",
+          "x": 10,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 100,
+          "parentId": "object-7"
+        },
+        {
+          "id": "object-9",
+          "type": "shelf",
+          "x": 12,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 100
+        },
+        {
+          "id": "object-10",
+          "type": "sink",
+          "x": 14,
+          "z": 8,
+          "rotation": 0,
+          "purchaseCost": 220
+        },
+        {
+          "id": "object-11",
+          "type": "table",
+          "x": 10,
+          "z": 11,
+          "rotation": 0,
+          "purchaseCost": 50
+        },
+        {
+          "id": "object-12",
+          "type": "chair",
+          "x": 9,
+          "z": 11,
+          "rotation": 0,
+          "purchaseCost": 25
+        }
+      ],
+      "staff": [
+        {
+          "id": "staff-15",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.52,
+            "speed": 0.09,
+            "clumsiness": 0.45
+          },
+          "monthlyWage": 74,
+          "role": "employee",
+          "wageAccrued": 9.37333333333334,
+          "priorities": {
+            "serving": "off",
+            "cooking": "high",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 10,
+          "z": 9,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        },
+        {
+          "id": "staff-18",
+          "name": "Charlie",
+          "skills": {
+            "cooking": 0.44,
+            "speed": 0.59,
+            "clumsiness": 0.2
+          },
+          "monthlyWage": 100,
+          "role": "employee",
+          "wageAccrued": 12.66666666666663,
+          "priorities": {
+            "serving": "high",
+            "cooking": "off",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 9,
+          "z": 10,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        },
+        {
+          "id": "staff-21",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.07,
+            "speed": 0.2,
+            "clumsiness": 0.08
+          },
+          "monthlyWage": 70,
+          "role": "employee",
+          "wageAccrued": 8.866666666666664,
+          "priorities": {
+            "serving": "off",
+            "cooking": "off",
+            "dishwashing": "high",
+            "cleaning": "off"
+          },
+          "energy": 99.74800000000039,
+          "x": 8,
+          "z": 9,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        }
+      ],
+      "guests": [],
+      "orders": [],
+      "menu": [
+        {
+          "recipeId": "burger",
+          "price": 18,
+          "enabled": false
+        },
+        {
+          "recipeId": "salad",
+          "price": 14,
+          "enabled": false
+        },
+        {
+          "recipeId": "pasta",
+          "price": 20,
+          "enabled": false
+        },
+        {
+          "recipeId": "steak",
+          "price": 32,
+          "enabled": false
+        },
+        {
+          "recipeId": "risotto",
+          "price": 26,
+          "enabled": false
+        },
+        {
+          "recipeId": "chef-special",
+          "price": 42,
+          "enabled": false
+        },
+        {
+          "recipeId": "fries",
+          "price": 15,
+          "enabled": true
+        }
+      ],
+      "stats": {
+        "served": 1,
+        "lost": 3,
+        "revenue": 15,
+        "expenses": 666,
+        "rating": 3.8794999999999997,
+        "cleanliness": 96.80899999999968
+      },
+      "events": [
+        {
+          "id": "event-24",
+          "text": "The restaurant is open. Welcome in!",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-23",
+          "text": "Morgan joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-20",
+          "text": "Charlie joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-17",
+          "text": "Drew joined the team.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-14",
+          "text": "Ingredient delivery arrived: $6.",
+          "time": 0,
+          "day": 10
+        },
+        {
+          "id": "event-1",
+          "text": "A fresh start. Lay floors, build a kitchen and dining room, then open your doors.",
+          "time": 0,
+          "day": 1
+        }
+      ],
+      "scenario": {
+        "id": "sandbox",
+        "title": "Your neighborhood restaurant",
+        "description": "Build at your own pace and make a place people love.",
+        "goals": [],
+        "complete": false
+      },
+      "seed": 328143421,
+      "nextId": 27,
+      "elapsed": 192,
+      "accumulator": 0,
+      "arrivalIn": 1.9857587665319443,
+      "bankrupt": false,
+      "unlocks": [],
+      "completedScenarios": [],
+      "doorGrantUsed": false,
+      "daily": {
+        "served": 1,
+        "revenue": 15,
+        "expenses": 0
+      },
+      "candidates": [
+        {
+          "id": "candidate-16",
+          "name": "Riley",
+          "skills": {
+            "cooking": 0.04,
+            "speed": 0.71,
+            "clumsiness": 0.97
+          },
+          "monthlyWage": 65
+        },
+        {
+          "id": "candidate-19",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.4,
+            "speed": 0.86,
+            "clumsiness": 0.8
+          },
+          "monthlyWage": 93
+        },
+        {
+          "id": "candidate-22",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.22,
+            "speed": 0.74,
+            "clumsiness": 0.49
+          },
+          "monthlyWage": 88
+        }
+      ],
+      "cleaningDueSince": null,
+      "supplies": {
+        "stocks": [
+          {
+            "storageId": "object-9",
+            "ingredientId": "potato",
+            "quantity": 5
+          }
+        ],
+        "ingredientBatches": {
+          "potato": 6,
+          "flour": 0,
+          "tomato": 0,
+          "coffee": 0,
+          "avocado": 0,
+          "steak": 0,
+          "chicken": 0,
+          "rice": 0,
+          "mushroom": 0
+        },
+        "ingredientNextDay": 20,
+        "tablewareQueue": [],
+        "tablewareNextAt": null,
+        "ware": [
+          {
+            "id": "ware-13",
+            "type": "plate",
+            "state": "clean",
+            "storageId": "object-5"
+          }
+        ],
+        "wareLedger": {
+          "plate": {
+            "granted": 0,
+            "delivered": 1,
+            "broken": 0
+          },
+          "stemglass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "pan": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "bowl": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "cup": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "glass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          }
+        },
+        "ingredientBlockedReason": ""
+      },
+      "candidateSeed": 4113889635
+    },
+    "month-unpaid-before-boundary": {
+      "version": 2,
+      "mode": "empty",
+      "name": "Corner Table",
+      "cash": 15000,
+      "day": 30,
+      "time": 23.599999999999998,
+      "calendarSeconds": 449.75,
+      "speed": 1,
+      "open": false,
+      "land": {
+        "minX": 4,
+        "maxX": 19,
+        "minZ": 4,
+        "maxZ": 19
+      },
+      "floors": [],
+      "objects": [],
+      "staff": [
+        {
+          "id": "staff-5",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.52,
+            "speed": 0.09,
+            "clumsiness": 0.45
+          },
+          "monthlyWage": 74,
+          "role": "employee",
+          "wageAccrued": 73.95888888888973,
+          "priorities": {
+            "serving": "off",
+            "cooking": "off",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 11,
+          "z": 9,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        }
+      ],
+      "guests": [],
+      "orders": [],
+      "menu": [
+        {
+          "recipeId": "burger",
+          "price": 18,
+          "enabled": true
+        },
+        {
+          "recipeId": "salad",
+          "price": 14,
+          "enabled": true
+        },
+        {
+          "recipeId": "pasta",
+          "price": 20,
+          "enabled": true
+        },
+        {
+          "recipeId": "steak",
+          "price": 32,
+          "enabled": false
+        },
+        {
+          "recipeId": "risotto",
+          "price": 26,
+          "enabled": false
+        },
+        {
+          "recipeId": "chef-special",
+          "price": 42,
+          "enabled": false
+        },
+        {
+          "recipeId": "fries",
+          "price": 15,
+          "enabled": false
+        }
+      ],
+      "stats": {
+        "served": 0,
+        "lost": 0,
+        "revenue": 0,
+        "expenses": 0,
+        "rating": 3.8,
+        "cleanliness": 94.6029999999998
+      },
+      "events": [
+        {
+          "id": "event-7",
+          "text": "Drew joined the team.",
+          "time": 0,
+          "day": 1
+        },
+        {
+          "id": "event-1",
+          "text": "A fresh start. Lay floors, build a kitchen and dining room, then open your doors.",
+          "time": 0,
+          "day": 1
+        }
+      ],
+      "scenario": {
+        "id": "sandbox",
+        "title": "Your neighborhood restaurant",
+        "description": "Build at your own pace and make a place people love.",
+        "goals": [],
+        "complete": false
+      },
+      "seed": 741852,
+      "nextId": 8,
+      "elapsed": 449.75,
+      "accumulator": 0,
+      "arrivalIn": 3,
+      "bankrupt": false,
+      "unlocks": [],
+      "completedScenarios": [],
+      "doorGrantUsed": false,
+      "daily": {
+        "served": 0,
+        "revenue": 0,
+        "expenses": 0
+      },
+      "candidates": [
+        {
+          "id": "candidate-3",
+          "name": "Charlie",
+          "skills": {
+            "cooking": 0.44,
+            "speed": 0.59,
+            "clumsiness": 0.2
+          },
+          "monthlyWage": 100
+        },
+        {
+          "id": "candidate-4",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.07,
+            "speed": 0.2,
+            "clumsiness": 0.08
+          },
+          "monthlyWage": 70
+        },
+        {
+          "id": "candidate-6",
+          "name": "Riley",
+          "skills": {
+            "cooking": 0.04,
+            "speed": 0.71,
+            "clumsiness": 0.97
+          },
+          "monthlyWage": 65
+        }
+      ],
+      "cleaningDueSince": null,
+      "supplies": {
+        "stocks": [],
+        "ingredientBatches": {
+          "potato": 0,
+          "flour": 0,
+          "tomato": 0,
+          "coffee": 0,
+          "avocado": 0,
+          "steak": 0,
+          "chicken": 0,
+          "rice": 0,
+          "mushroom": 0
+        },
+        "ingredientNextDay": 40,
+        "tablewareQueue": [],
+        "tablewareNextAt": null,
+        "ware": [],
+        "wareLedger": {
+          "plate": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "stemglass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "pan": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "bowl": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "cup": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "glass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          }
+        },
+        "ingredientBlockedReason": ""
+      },
+      "candidateSeed": 1523502683
+    },
+    "month-paid-at-boundary": {
+      "version": 2,
+      "mode": "empty",
+      "name": "Corner Table",
+      "cash": 14926,
+      "day": 31,
+      "time": 0,
+      "calendarSeconds": 450,
+      "speed": 1,
+      "open": false,
+      "land": {
+        "minX": 4,
+        "maxX": 19,
+        "minZ": 4,
+        "maxZ": 19
+      },
+      "floors": [],
+      "objects": [],
+      "staff": [
+        {
+          "id": "staff-5",
+          "name": "Drew",
+          "skills": {
+            "cooking": 0.52,
+            "speed": 0.09,
+            "clumsiness": 0.45
+          },
+          "monthlyWage": 74,
+          "role": "employee",
+          "wageAccrued": 0,
+          "priorities": {
+            "serving": "off",
+            "cooking": "off",
+            "dishwashing": "off",
+            "cleaning": "off"
+          },
+          "energy": 100,
+          "x": 11,
+          "z": 9,
+          "task": "idle",
+          "path": [],
+          "timer": 0
+        }
+      ],
+      "guests": [],
+      "orders": [],
+      "menu": [
+        {
+          "recipeId": "burger",
+          "price": 18,
+          "enabled": true
+        },
+        {
+          "recipeId": "salad",
+          "price": 14,
+          "enabled": true
+        },
+        {
+          "recipeId": "pasta",
+          "price": 20,
+          "enabled": true
+        },
+        {
+          "recipeId": "steak",
+          "price": 32,
+          "enabled": false
+        },
+        {
+          "recipeId": "risotto",
+          "price": 26,
+          "enabled": false
+        },
+        {
+          "recipeId": "chef-special",
+          "price": 42,
+          "enabled": false
+        },
+        {
+          "recipeId": "fries",
+          "price": 15,
+          "enabled": false
+        }
+      ],
+      "stats": {
+        "served": 0,
+        "lost": 0,
+        "revenue": 0,
+        "expenses": 74.00000000000084,
+        "rating": 3.8,
+        "cleanliness": 94.5999999999998
+      },
+      "events": [
+        {
+          "id": "event-8",
+          "text": "Monthly wages paid: $74.00.",
+          "time": 23.599999999999998,
+          "day": 30
+        },
+        {
+          "id": "event-7",
+          "text": "Drew joined the team.",
+          "time": 0,
+          "day": 1
+        },
+        {
+          "id": "event-1",
+          "text": "A fresh start. Lay floors, build a kitchen and dining room, then open your doors.",
+          "time": 0,
+          "day": 1
+        }
+      ],
+      "scenario": {
+        "id": "sandbox",
+        "title": "Your neighborhood restaurant",
+        "description": "Build at your own pace and make a place people love.",
+        "goals": [],
+        "complete": false
+      },
+      "seed": 741852,
+      "nextId": 9,
+      "elapsed": 450,
+      "accumulator": 0,
+      "arrivalIn": 3,
+      "bankrupt": false,
+      "unlocks": [],
+      "completedScenarios": [],
+      "doorGrantUsed": false,
+      "daily": {
+        "served": 0,
+        "revenue": 0,
+        "expenses": 74.00000000000084
+      },
+      "candidates": [
+        {
+          "id": "candidate-3",
+          "name": "Charlie",
+          "skills": {
+            "cooking": 0.44,
+            "speed": 0.59,
+            "clumsiness": 0.2
+          },
+          "monthlyWage": 100
+        },
+        {
+          "id": "candidate-4",
+          "name": "Morgan",
+          "skills": {
+            "cooking": 0.07,
+            "speed": 0.2,
+            "clumsiness": 0.08
+          },
+          "monthlyWage": 70
+        },
+        {
+          "id": "candidate-6",
+          "name": "Riley",
+          "skills": {
+            "cooking": 0.04,
+            "speed": 0.71,
+            "clumsiness": 0.97
+          },
+          "monthlyWage": 65
+        }
+      ],
+      "cleaningDueSince": null,
+      "supplies": {
+        "stocks": [],
+        "ingredientBatches": {
+          "potato": 0,
+          "flour": 0,
+          "tomato": 0,
+          "coffee": 0,
+          "avocado": 0,
+          "steak": 0,
+          "chicken": 0,
+          "rice": 0,
+          "mushroom": 0
+        },
+        "ingredientNextDay": 40,
+        "tablewareQueue": [],
+        "tablewareNextAt": null,
+        "ware": [],
+        "wareLedger": {
+          "plate": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "stemglass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "pan": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "bowl": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "cup": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          },
+          "glass": {
+            "granted": 0,
+            "delivered": 0,
+            "broken": 0
+          }
+        },
+        "ingredientBlockedReason": ""
+      },
+      "candidateSeed": 1523502683
+    }
+  }
+}

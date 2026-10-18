@@ -201,9 +201,9 @@ test('preparation waits without consuming anything until all stock routes are re
   doAction(game, { type: 'PRIORITY', id: cook.id, taskGroup: 'cooking', priority: 'off' });
   until(game, () => game.orders.some((order) => order.state === 'queued'));
   for (const [x, z] of [[11, 8], [13, 8], [12, 7], [12, 9]]) place(game, 'wall', x, z);
-  const stocks = structuredClone(game.supplies.stocks), clean = getSupplies(game).tableware[0].clean, cash = game.cash;
+  const stocks = structuredClone(game.supplies.stocks), clean = getSupplies(game).tableware[0].clean, wealth = game.cash - getStats(game).wagesAccrued;
   doAction(game, { type: 'PRIORITY', id: cook.id, taskGroup: 'cooking', priority: 'high' }); run(game, 5);
-  assert.equal(cook.task, 'idle'); assert.deepEqual(game.supplies.stocks, stocks); assert.equal(game.cash, cash); assert.equal(getSupplies(game).tableware[0].clean, clean);
+  assert.equal(cook.task, 'idle'); assert.deepEqual(game.supplies.stocks, stocks); assert.ok(Math.abs(game.cash - getStats(game).wagesAccrued - (wealth - getStats(game).monthlyWages * 5 / 450)) < 1e-7, 'Only continuous wage liability changes while preparation is blocked'); assert.equal(getSupplies(game).tableware[0].clean, clean);
   const status = getRecipeStatus(game).find((row) => row.recipeId === 'fries');
   assert.ok(status.missing.some((row) => row.kind === 'ingredient' && row.owned > 0 && row.available === 0));
   doAction(game, { type: 'REMOVE', id: game.objects.find((object) => object.x === 12 && object.z === 7).id });
@@ -229,7 +229,7 @@ test('candidate hiring has no upfront fee, calendar advances independently, and 
   rejected(game, { type: 'HIRE', candidateId: selected.id, x: 0, z: 0 });
   const employee = hire(game, 'cooking'); assert.equal(game.cash, cash); assert.equal(employee.monthlyWage, selected.monthlyWage); assert.deepEqual(employee.skills, selected.skills);
   assert.equal(game.candidates.length, 3); assert.equal(game.candidates.some((candidate) => candidate.id === selected.id), false);
-  run(game, 15); assert.equal(getStats(game).calendar.label, '2 Jan'); assert.equal(game.cash, cash);
+  run(game, 15); assert.equal(getStats(game).calendar.label, '2 Jan'); assert.ok(Math.abs(game.cash - (cash - selected.monthlyWage / 30)) < 1e-8); assert.equal(employee.wageAccrued, 0);
   run(game, 435); assert.equal(getStats(game).calendar.label, '1 Feb'); assert.ok(Math.abs(game.cash - (cash - selected.monthlyWage)) < 1e-7); assert.equal(employee.wageAccrued, 0);
   run(game, 30); const due = employee.wageAccrued, paidBefore = game.cash;
   doAction(game, { type: 'FIRE', id: employee.id }); assert.ok(Math.abs(game.cash - (paidBefore - due)) < 1e-8);

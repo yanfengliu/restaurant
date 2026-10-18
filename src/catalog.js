@@ -10,6 +10,7 @@ export const ITEMS = {
   prep: { name: 'Preparation station', category: 'Kitchen', cost: 320, color: '#b4bfc0', solid: true },
   fridge: { name: 'Refrigerator', category: 'Kitchen', cost: 150, color: '#dae4e1', solid: true, storageKind: 'fridge', capacity: 12 },
   sink: { name: 'Kitchen sink', category: 'Kitchen', cost: 220, color: '#c6d7d8', solid: true },
+  dishwasher: { name: 'Dishwasher', category: 'Kitchen', cost: 150, color: '#e5dfc7', solid: true, washCapacity: 5 },
   bin: { name: 'Waste bin', category: 'Kitchen', cost: 70, color: '#546660', solid: true },
   toilet: { name: 'Toilet', category: 'Facilities', cost: 280, color: '#eef0e6', solid: true },
   plant: { name: 'Potted plant', category: 'Decoration', cost: 85, color: '#5e9662', solid: true },

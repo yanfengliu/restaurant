@@ -274,7 +274,7 @@ test('guests order, chefs cook, waiters serve and payment arrives only after dep
   assert.equal(game.stats.lost, 0);
 });
 
-test('normal starter service funds supplies and monthly wages without double reserving seats', () => {
+test('normal starter service funds supplies and daily wages without double reserving seats', () => {
   const game = createGame();
   for (let elapsed = 0; elapsed < 960; elapsed++) {
     tick(game, 1);
@@ -284,7 +284,7 @@ test('normal starter service funds supplies and monthly wages without double res
   }
   assert.ok(game.stats.served >= 50, 'A staffed kitchen and washing loop sustain service across multiple shipments');
   assert.ok(game.stats.revenue > game.stats.expenses, JSON.stringify(getStats(game)));
-  assert.ok(game.stats.expenses > 2 * 270, 'Ingredient arrivals are charged in addition to two monthly wage payments');
+  assert.ok(game.stats.expenses > 2 * 270, 'Ingredient arrivals are charged in addition to more than two months of daily wage payments');
   assert.equal(game.day, 65);
 });
 
@@ -558,10 +558,11 @@ test('expansion is bounded, hiring and wages are explicit, and bankruptcy safely
   action(game, { type: 'FLOOR', x: 5, z: 5, style: 'peach' });
   const member = hire(game, 'cooking', 5, 5);
   const startingCash = game.cash; run(game, 20);
-  assert.equal(game.cash, startingCash, 'Wages accrue until the month boundary');
-  assert.ok(Math.abs(member.wageAccrued - member.monthlyWage * 20 / 450) < 1e-8);
+  assert.ok(Math.abs(game.cash - (startingCash - member.monthlyWage / 30)) < 1e-8, 'The completed day is paid once');
+  assert.ok(Math.abs(member.wageAccrued - member.monthlyWage * 5 / 450) < 1e-8);
+  const cashBeforeFire = game.cash, due = member.wageAccrued;
   action(game, { type: 'FIRE', id: member.id });
-  assert.ok(Math.abs(game.cash - (startingCash - member.wageAccrued)) < 1e-8);
+  assert.ok(Math.abs(game.cash - (cashBeforeFire - due)) < 1e-8);
   game.cash = -500.01; action(game, { type: 'TOGGLE_OPEN' }); tick(game, 1);
   assert.equal(game.bankrupt, true); assert.equal(game.open, false);
   assert.equal(dispatch(game, { type: 'TOGGLE_OPEN' }).ok, false);
