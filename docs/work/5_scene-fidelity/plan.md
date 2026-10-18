@@ -43,4 +43,6 @@ Tune existing ambient/directional light, exposure, fog and material colors towar
 
 ## Outcome
 
-Pending. Plan proposal only; no product edits, runtime verification or parity claim yet. Record the verified revision, checks, comparison evidence and remaining limitations at closure.
+Initial implementation is integrated at `ebc138c`. All 78 simulation tests, syntax and build pass, and a real furnished service trace covers eating, dirty carry, unattended five-dish washing, clean carry and storage with phase reloads and conservation. Matched room and close views show improved height, outfits, quieter ground and softer shadows. These checks do not establish acceptable character anatomy or animation.
+
+The user's 2026-10-18 report that the characters still look weird is material and remains open in `docs/learning/defect-register.md`. Separate capsule segments still read as a mannequin. The worker is researching a connected authored mesh, weighted skeleton and natural poses, with Blender available headlessly. The independent reviewer agrees that bones alone will not correct the silhouette. A revised scoped contract and one-model visual prototype must be accepted before further product edits; final acceptance and closure are pending that correction.

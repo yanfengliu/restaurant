@@ -235,3 +235,9 @@ The service study used the task's own save and ended with the exact owned-proces
 | `output/reference-study5/21-cycle-transition-01.jpg` | 2026-10-18 00:34:55.423 | `a5b5d2eaed9137f2280b39b7639f7d5bc5079cfd972de877c03edf0986e3cb33` |
 | `output/reference-study5/27-cycle-transition-07.jpg` | 2026-10-18 00:35:02.335 | `b70321c68e79976574ff4979e926cb6f129d6ad55c4e11563fe3983cf9ae3438` |
 | `output/reference-study5/31-cycle-return-01.jpg` | 2026-10-18 00:35:22.636 | `00e055192844c17a313f15c0b6089c4790aca6c95a1e74686759cb87d84e03fa` |
+
+### Character rigging study, 2026-10-18
+
+The user rejected the initial characters' unnatural appearance. The current independent rigid capsule limbs retain visible joint boundaries; adding pivots has not produced a coherent human surface. This is an observed presentation defect, not a simulation failure. The correction will be judged on anatomy, joint continuity and natural poses in actual game views, rather than the presence of a skeleton alone.
+
+Primary technical sources: [Three.js SkinnedMesh](https://threejs.org/docs/pages/SkinnedMesh.html) describes bone indices and vertex weights, binding and animated bounds; [Skeleton](https://threejs.org/docs/pages/Skeleton.html) describes the bone hierarchy and GPU-resource disposal. [Blender armatures](https://docs.blender.org/manual/en/latest/animation/armatures/index.html) provides the modeling/rigging workflow. The search index exposed the skinning and weight-parenting sections, but direct fetches of those subpages returned HTTP 402/403; do not claim their full text was read. Local `Blender 5.2.0 LTS` was verified by its executable. No third-party character asset was downloaded or uploaded.
