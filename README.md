@@ -39,7 +39,16 @@ npm run check
 npm run audit
 ```
 
-`check` checks JavaScript syntax, runs the Node simulation tests, and produces a production build. `audit` checks installed dependency advisories. `npm run preview` serves the production build locally.
+`check` checks JavaScript syntax, validates the character export and fixed pose fixtures, runs the Node simulation tests, and produces a production build. `audit` checks installed dependency advisories. `npm run preview` serves the production build locally.
+
+The original character source is `scripts/build-character.py`. Blender 5.2 can regenerate its mesh, skeleton and pose evidence under ignored temporary output; Blender is not needed to play the game.
+
+```sh
+blender --background --python scripts/build-character.py -- --output tmp/character-export
+node scripts/check-character.mjs --export tmp/character-export
+```
+
+Add `--evidence` to the Blender command to save the editable scene and posed renders. Numerical export checks cover topology, weights, fixed cross-tool landmarks and lifecycle/pose regressions; rendered appearance and movement still require browser inspection.
 
 The development server exposes a read-only `window.__cornerTable` inspection helper for input-driven browser verification. Production builds omit that helper.
 
