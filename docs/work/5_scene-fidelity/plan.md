@@ -1,6 +1,6 @@
 # Character proportions and scene atmosphere
 
-Status: planned
+Status: active
 Owner: Codex orchestrator
 Created: 2026-10-18
 Updated: 2026-10-18
@@ -27,7 +27,7 @@ Tune existing ambient/directional light, exposure, fog and material colors towar
 
 ## Acceptance criteria
 
-- [ ] The orchestrator and independent effort reviewer accept this bounded direction and shared rendering contract before implementation.
+- [x] The orchestrator and independent effort reviewer accept this bounded direction and shared rendering contract before implementation. Review `0_plan.md` accepts the plan at `c0fe2db`; implementation was authorized after that acceptance.
 - [ ] At matched close and room views, standing staff and guests read as taller adults with rounded shoulders/limbs, coherent outfits and visible hair variation; current short box silhouettes are removed. Record observed improvements and residual differences against the named reference pixels.
 - [ ] Inspect standing idle, walking and turning, seated waiting/eating, meal carrying, dirty-ware carrying and clean-ware carrying. At front, rear and side angles, feet stay on grass and authored floors, seated hips align with chairs, knees/feet clear the table, held ware meets the hand, and indicators clear the head. Check person thumbnails and actual actor selection.
 - [ ] Inspect the outdoor service scene and furnished room at desktop widths 2560, 1440 and 1024. At each width use a repeatable room framing and close detail framing; at 2560 add fixed opposing/side views and at least three exploratory orbit/elevation/zoom combinations. Inspect each retained native-resolution image and bind evidence to its digest. No mobile work.
@@ -37,7 +37,7 @@ Tune existing ambient/directional light, exposure, fog and material colors towar
 
 ## Implementation steps
 
-- [ ] Agree the proposal, evidence bounds and shared contracts; integrate the canonical plan before product work.
+- [x] Agree the proposal, evidence bounds and shared contracts; integrate the canonical plan before product work.
 - [ ] Implement actor forms and pose anchors, then the bounded light/material/ground pass; inspect the diff for scope and preserved interfaces.
 - [ ] Hand off the bounded scene change and devlog for orchestrator headless acceptance, one serialized full gate, independent review and integration. Repair only evidenced material findings within scope.
 
