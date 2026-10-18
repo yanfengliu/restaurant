@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import * as THREE from 'three';
-import {createCharacter, updateCharacter, characterBounds, characterSourceVertex, characterMetrics} from '../src/characters.js';
+import {createCharacter, updateCharacter, updateCharacterPlacement, characterBounds, characterSourceVertex, characterMetrics} from '../src/characters.js';
 
 // Bound: source topology/weight validity and 12 fixed cross-tool landmarks in
 // exported prototype poses. This does not judge human anatomy, motion or pixels.
@@ -268,6 +268,66 @@ try{
   while(selected&&!selected.userData.objectId)selected=selected.parent;
   assert.equal(selected?.userData.objectId,'other');
 }finally{actor.userData.disposeCharacter();other.userData.disposeCharacter();}
+
+// Fixed temporal probes distinguish ordinary running transitions from the
+// deliberate endpoint initialization used by a fresh paused scene or load.
+const transition=createCharacter({id:'transition',name:'Diagnostic'},true);
+try{
+  updateCharacter(transition,{snap:true});
+  const u=transition.userData,arm=['upperArmR','forearmR','handR'];
+  const sample=()=>({palm:u.palms.R.clone().applyMatrix4(u.bones.handR.matrixWorld),joints:arm.map(name=>u.bones[name].quaternion.clone())});
+  function continuous(before,after){
+    assert(before.palm.distanceTo(after.palm)<0.09,'running carry transition moves palm less than 0.09 units per 1/60-second sample');
+    before.joints.forEach((q,i)=>assert(q.angleTo(after.joints[i])<0.4,'running carry transition rotates each arm joint less than 0.4 radians per sample'));
+  }
+  function supported(){
+    transition.updateMatrixWorld(true);
+    const p=sample().palm,anchor=u.carried.getWorldPosition(new THREE.Vector3());
+    assert(Math.abs(anchor.x-p.x)<1e-5&&Math.abs(anchor.z-p.z)<1e-5&&Math.abs(anchor.y-p.y-0.026)<1e-5,'visible ware remains directly above the moving palm');
+    assert(new THREE.Vector3(0,1,0).applyQuaternion(u.carried.getWorldQuaternion(new THREE.Quaternion())).dot(new THREE.Vector3(0,1,0))>0.999,'visible ware stays level throughout pickup');
+  }
+  const idle=sample();u.carried.add(new THREE.Group());
+  updateCharacter(transition,{dt:1/60});let previous=sample();continuous(idle,previous);supported();
+  const pickupFirstStep=idle.palm.distanceTo(previous.palm);
+  for(let frame=1;frame<120;frame++){
+    updateCharacter(transition,{dt:1/60});const next=sample();continuous(previous,next);supported();previous=next;
+  }
+  assert(previous.palm.distanceTo(new THREE.Vector3(0.34,1.06,0.35))<1e-5,'pickup settles at full carrying contact');
+  const full=previous;u.carried.clear();updateCharacter(transition,{dt:1/60});previous=sample();continuous(full,previous);
+  const releaseFirstStep=full.palm.distanceTo(previous.palm);
+  for(let frame=1;frame<120;frame++){updateCharacter(transition,{dt:1/60});const next=sample();continuous(previous,next);previous=next;}
+  assert(previous.palm.distanceTo(idle.palm)<0.001,'release settles at the relaxed pose');
+  // Red control: instantaneous endpoint assignment reproduces the retained
+  // 0.414-unit pickup defect despite a perfectly valid skeleton and skin.
+  updateCharacter(transition,{snap:true});const redBefore=sample();u.carried.add(new THREE.Group());
+  updateCharacter(transition,{dt:1/60,snap:true});const redAfter=sample();
+  assert(Math.abs(redBefore.palm.distanceTo(redAfter.palm)-0.4141123)<1e-5);
+  assert.throws(()=>continuous(redBefore,redAfter),/running carry transition/);
+  supported();
+  updateCharacterPlacement(transition,{x:1,y:0.1,z:2,heading:0.5,dt:1/60,paused:true,reset:true});
+  updateCharacter(transition,{paused:true,snap:true,support:()=>0.1});
+  assert.deepEqual(transition.position.toArray(),[1,0.1,2],'paused load uses saved authoritative placement');
+  const active=updateCharacterPlacement(transition,{x:1.25,y:0.1,z:2,heading:1.1,dt:1/60});
+  updateCharacter(transition,{dt:1/60,...active,support:()=>0.1});
+  assert(transition.position.x>1&&transition.position.x<1.25,'running display has a real interpolation lag before pause');
+  const frozen={position:transition.position.toArray(),heading:transition.rotation.y};
+  const assertFrozen=()=>{assert.deepEqual(transition.position.toArray(),frozen.position,'pause preserves displayed root');assert.equal(transition.rotation.y,frozen.heading,'pause preserves displayed heading');};
+  const bonesBefore=Object.values(u.bones).flatMap(bone=>[...bone.position.toArray(),...bone.quaternion.toArray()]);
+  for(const dt of [1/60,0.06,1/30]){
+    const placement=updateCharacterPlacement(transition,{x:1.25,y:0.1,z:2,heading:1.1,dt,paused:true});
+    updateCharacter(transition,{dt,...placement,paused:true,support:()=>0.1});assertFrozen();
+    assert.deepEqual(Object.values(u.bones).flatMap(bone=>[...bone.position.toArray(),...bone.quaternion.toArray()]),bonesBefore,'pause freezes the current transition pose');
+  }
+  transition.position.set(1.25,0.1,2);transition.rotation.y=1.1;
+  assert.throws(assertFrozen,/pause preserves displayed root/,'red control restores the old first-paused-frame target snap');
+  updateCharacterPlacement(transition,{x:4,y:0.036,z:5,heading:-0.7,dt:1/60,paused:true,reset:true});
+  updateCharacter(transition,{paused:true,snap:true,support:()=>0.036});
+  assert.deepEqual(transition.position.toArray(),[4,0.036,5]);assert(Math.abs(transition.rotation.y+0.7)<1e-10);
+  supported();assert(Math.abs(characterBounds(transition).min.y-0.036)<1e-5);
+  updateCharacter(transition,{paused:true,support:()=>0.1});
+  assert(Math.abs(characterBounds(transition).min.y-0.1)<1e-5,'floor edits while paused preserve grounded soles');
+  proof.transitions={pickupFirstStep,releaseFirstStep,rejectedInstantPickup:redBefore.palm.distanceTo(redAfter.palm),pausedPlacement:'displayed root and heading frozen; fresh paused load reconciled; old snap rejected',bound:'Fixed numeric pose/placement probes; actual browser pickup/release and pause inputs remain separate.'};
+}finally{transition.userData.disposeCharacter();}
 
 // Renderer-free lifecycle smoke checks actual disposal events and unique
 // ownership. It does not claim WebGL memory or GPU draw-call measurements.

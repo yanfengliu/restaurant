@@ -89,7 +89,7 @@ export function createCharacter(data, isStaff = true) {
     head: byName.head, leftLeg: byName.thighL, rightLeg: byName.thighR,
     leftArm: byName.upperArmL, rightArm: byName.upperArmR,
     lowerLegs: [byName.shinL, byName.shinR], feet: [byName.footL, byName.footR], forearms: [byName.forearmL, byName.forearmR],
-    appearance: `${data.name}:${isStaff}`, palms, motion: { initialized: false, cycle: 0.25, walk: 0, seated: 0, feet: {} },
+    appearance: `${data.name}:${isStaff}`, palms, motion: { initialized: false, cycle: 0.25, walk: 0, seated: 0, carry: 0, feet: {} },
     disposeCharacter() {
       if (disposed) return; disposed = true;
       skeleton.dispose(); geometry.dispose(); material.dispose(); token.geometry.dispose(); token.material.dispose();
@@ -150,15 +150,51 @@ function armContact(group, side, palm, normal, direction) {
   twist(lower, signedPalmTurn(lower, normal) * 0.65); setWorldOrientation(hand, orientation);
 }
 
+function groundCharacter(group, support) {
+  const u = group.userData;
+  group.updateWorldMatrix(true, false); group.updateMatrixWorld(true);
+  let gap = Infinity;
+  for (const index of template.shoes) {
+    const p = new THREE.Vector3().fromBufferAttribute(u.mesh.geometry.attributes.position, index);
+    u.mesh.applyBoneTransform(index, p).applyMatrix4(u.mesh.matrixWorld);
+    gap = Math.min(gap, p.y - support(p.x, p.z));
+  }
+  u.body.position.y -= gap;
+  group.updateMatrixWorld(true); u.skeleton.update(); u.mesh.boundingBox = null;
+  u.indicator.position.y = worldPoint(u.bones.head).y - group.position.y + 0.43;
+}
+
+/** Smooth displayed placement; a normal pause freezes the last rendered frame. */
+export function updateCharacterPlacement(group, { x, y, z, heading, dt, paused = false, reset = false }) {
+  const dx = x - group.position.x, dz = z - group.position.z, remaining = Math.hypot(dx, dz);
+  const snap = reset || !group.userData.motion.initialized || (!paused && remaining > 4);
+  if (paused && !snap) return { distance: 0, moving: false, snap: false };
+  const before = group.position.clone();
+  if (snap) group.position.set(x, y, z);
+  else {
+    const blend = 1 - Math.exp(-dt * 10);
+    if (remaining > 0.002) { group.position.x += dx * blend; group.position.z += dz * blend; }
+    group.position.y = y;
+  }
+  const turn = Math.atan2(Math.sin(heading - group.rotation.y), Math.cos(heading - group.rotation.y));
+  group.rotation.y += turn * (snap ? 1 : 1 - Math.exp(-dt * 14));
+  return { distance: snap ? 0 : Math.hypot(group.position.x - before.x, group.position.z - before.z), moving: !paused && remaining > 0.008, snap };
+}
+
 /** Pose only: all simulation coordinates, ids and reservations stay unchanged. */
 export function updateCharacter(group, { dt = 0, distance = 0, moving = false, seated = false, tableDistance = 1, paused = false, support = () => group.position.y, snap = false } = {}) {
   const u = group.userData, motion = u.motion, bones = u.bones, carrying = u.isStaff && u.carried.children.length > 0;
   const context = `${seated}:${carrying}`;
-  if (paused && motion.initialized && motion.context === context && !snap) return;
+  if (paused && motion.initialized && motion.context === context && !snap) {
+    // Building a floor while paused may change the support plane. Preserve the
+    // frozen local pose while keeping its soles on that edited surface.
+    groundCharacter(group, support); return;
+  }
   const initial = snap || !motion.initialized || (paused && motion.context !== context);
   const blend = initial ? 1 : 1 - Math.exp(-dt * 12);
   motion.seated += ((seated ? 1 : 0) - motion.seated) * blend;
   motion.walk += ((moving && !seated ? 1 : 0) - motion.walk) * blend;
+  motion.carry += ((carrying ? 1 : 0) - motion.carry) * (initial ? 1 : 1 - Math.exp(-dt * 8));
   if (!paused) motion.cycle += Math.min(distance, 0.2) / 0.8;
   if (initial || distance > 1) motion.feet = {};
   for (const [name, bone] of Object.entries(bones)) {
@@ -210,27 +246,29 @@ export function updateCharacter(group, { dt = 0, distance = 0, moving = false, s
   }
   // Skinning can dip below rest bounds between key poses. Test the actual shoe
   // surface each frame against grass/floor, rather than trusting bind endpoints.
-  let gap = Infinity;
-  for (const index of template.shoes) {
-    const p = new THREE.Vector3().fromBufferAttribute(u.mesh.geometry.attributes.position, index);
-    u.mesh.applyBoneTransform(index, p).applyMatrix4(u.mesh.matrixWorld);
-    gap = Math.min(gap, p.y - support(p.x, p.z));
-  }
-  u.body.position.y -= gap;
-  group.updateWorldMatrix(true, false); group.updateMatrixWorld(true); u.skeleton.update(); u.mesh.boundingBox = null;
+  groundCharacter(group, support);
   if (motion.seated > 0.001) for (const [side, sign] of [['L', -1], ['R', 1]]) {
     const palm = group.localToWorld(new THREE.Vector3(sign * 0.25, 0.868, Math.max(0.35, tableDistance - 0.455 + 0.025)));
     // Chair and tabletop heights share the actor's support surface.
     const current = u.palms[side].clone().applyMatrix4(bones[`hand${side}`].matrixWorld);
     armContact(group, side, current.lerp(palm, motion.seated), up.clone().negate(), forward);
   }
-  if (carrying) {
+  if (motion.carry > 0.001) {
+    const arm = [bones.upperArmR, bones.forearmR, bones.handR], relaxed = arm.map(bone => bone.quaternion.clone());
     const palm = group.localToWorld(new THREE.Vector3(0.34, 1.06, 0.35));
     armContact(group, 'R', palm, up, forward);
+    const contact = arm.map(bone => bone.quaternion.clone());
+    arm.forEach((bone, index) => bone.quaternion.copy(relaxed[index]).slerp(contact[index], motion.carry));
   }
   group.updateMatrixWorld(true); u.skeleton.update();
   u.carried.visible = carrying;
-  if (carrying) u.carried.quaternion.copy(worldOrientation(bones.handR).invert().multiply(heading));
+  if (carrying) {
+    // Pickup pronation is continuous. Ware stays level and directly above the
+    // moving palm rather than inheriting its temporary wrist angle.
+    const palm = u.palms.R.clone().applyMatrix4(bones.handR.matrixWorld);
+    u.carried.position.copy(bones.handR.worldToLocal(palm.addScaledVector(up, 0.026)));
+    u.carried.quaternion.copy(worldOrientation(bones.handR).invert().multiply(heading));
+  }
   u.indicator.position.y = worldPoint(bones.head).y - group.position.y + 0.43;
   motion.initialized = true; motion.context = context;
 }

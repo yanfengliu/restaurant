@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { getSupplies } from './engine.js';
-import { createCharacter, updateCharacter, characterBounds } from './characters.js';
+import { createCharacter, updateCharacter, updateCharacterPlacement, characterBounds } from './characters.js';
 
 const TAU = Math.PI * 2;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -826,18 +826,12 @@ export function createScene(container, callbacks = {}) {
     for(const group of people.values()) {
       const u=group.userData,d=u.data, tx=Number(d.x)+0.5,tz=Number(d.z)+0.5;
       const dx=tx-group.position.x,dz=tz-group.position.z,distance=Math.hypot(dx,dz),paused=game?.speed===0;
-      const ground=personHeight(d,group),teleport=distance>4;
-      const before=group.position.clone();
-      if(teleport||paused)group.position.set(tx,ground,tz);
-      else if(distance>0.002){const blend=1-Math.exp(-dt*10);group.position.x+=dx*blend;group.position.z+=dz*blend;}
-      group.position.y=ground;
       const state=String(d.state||d.task||'').toLowerCase(),sit=!u.isStaff&&['waiting','ordered','eating','waitingfood','waiting_food','served','dining'].includes(state);
       const table=sit?objects.get(d.tableId)?.userData.data:null;
-      const desired=table?Math.atan2(table.x-d.x,table.z-d.z):distance>0.002?Math.atan2(dx,dz):group.rotation.y;
-      const turn=Math.atan2(Math.sin(desired-group.rotation.y),Math.cos(desired-group.rotation.y));
-      group.rotation.y+=turn*((paused||!u.motion.initialized)?1:1-Math.exp(-dt*14));
-      const traveled=Math.hypot(group.position.x-before.x,group.position.z-before.z);
-      updateCharacter(group,{dt,distance:teleport?0:traveled,moving:!paused&&distance>0.008,seated:sit,tableDistance:table?Math.hypot(table.x-d.x,table.z-d.z):1,paused,snap:teleport,support:(x,z)=>surfaceHeight(x-0.5,z-0.5)});
+      const heading=table?Math.atan2(table.x-d.x,table.z-d.z):distance>0.002?Math.atan2(dx,dz):group.rotation.y;
+      const placement=updateCharacterPlacement(group,{x:tx,y:personHeight(d,group),z:tz,heading,dt,paused,reset:Boolean(u.resetPlacement)});
+      u.resetPlacement=false;
+      updateCharacter(group,{dt,...placement,seated:sit,tableDistance:table?Math.hypot(table.x-d.x,table.z-d.z):1,paused,support:(x,z)=>surfaceHeight(x-0.5,z-0.5)});
       u.indicator.visible=!u.isStaff&&(/wait|order|unhappy/.test(state));u.indicator.rotation.copy(camera.rotation);
 
     }
@@ -846,7 +840,13 @@ export function createScene(container, callbacks = {}) {
   frame=requestAnimationFrame(animate);
 
   return {
-    update(nextGame) { if(disposed)return;game=nextGame;syncLand();syncFloors();syncObjects();syncDishwashers();syncPeople();syncTableProps();syncSupplies();updateCutaway();updateHoverVisual(); },
+    update(nextGame) {
+      if(disposed)return;
+      const replaced=game&&game!==nextGame;game=nextGame;
+      syncLand();syncFloors();syncObjects();syncDishwashers();syncPeople();syncTableProps();syncSupplies();
+      if(replaced)for(const group of people.values())group.userData.resetPlacement=true;
+      updateCutaway();updateHoverVisual();
+    },
     setTool(nextTool) { onCancel();tool=nextTool;rebuildGhost();canvas.style.cursor=tool?'crosshair':'default';updateHoverVisual(); },
     setRotation(value) { rotation=Number(value)||0;updateHoverVisual(); },
     setView(nextView) { view=['top','decor','hygiene'].includes(nextView)?nextView:'isometric';floorSignature='';syncFloors();updateCamera(); },
