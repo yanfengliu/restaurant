@@ -234,3 +234,17 @@ test('phase-aware accepted salary ceilings at 0, 7.5 and 14.75 seconds remain va
     reject(game,{type:'FIRE',id:old.staff[0].id});const after=game.cash;run(game,30);near(game.cash,after);near(game.stats.expenses,old.stats.expenses+monthly);
   }
 });
+
+test('a tolerated historical clock boundary retains full unpaid salary and settles it once after reload', () => {
+  const fixture=JSON.parse(readFileSync(new URL('./fixtures/v2-clock-boundary.json',import.meta.url),'utf8'));
+  assert.equal(fixture.provenance.baseRevision,'1508bb3aff609be2f556ca0403a8f79043a2c002');
+  assert.equal(fixture.provenance.oldValidatorAcceptedUnchanged,true);
+  const original=fixture.save;assert.equal(original.calendarSeconds,449.999991);assert.equal(original.day,31);assert.equal(original.time,0);assert.equal(original.staff[0].monthlyWage,22500);assert.equal(original.staff[0].wageAccrued,22500);
+  const game=deserialize(JSON.stringify(original));assert.deepEqual(game,original,'Accepted historical clock tolerance must not rewrite money or records on load');
+  let twin=deserialize(serialize(game));
+  const advance=seconds=>{for(let elapsed=0;elapsed<seconds;elapsed+=0.25){tick(game,0.25);tick(twin,0.25);twin=deserialize(serialize(twin));assert.equal(serialize(game),serialize(twin));}};
+  const member=game.staff[0],salary=22500,untilBoundary=450-original.calendarSeconds,payment=salary+salary*untilBoundary/450;
+  advance(0.25);near(game.cash,original.cash-payment);near(game.stats.expenses,original.stats.expenses+payment);near(member.wageAccrued,salary*(0.25-untilBoundary)/450);
+  const paidCash=game.cash;advance(14.75);near(game.cash,paidCash,'The old liability must not be charged again before another boundary');
+  advance(0.25);near(game.cash,paidCash-salary/30);near(game.stats.expenses,original.stats.expenses+payment+salary/30);near(member.wageAccrued,salary*(0.25-untilBoundary)/450);
+});

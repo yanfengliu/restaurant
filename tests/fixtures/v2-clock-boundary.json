@@ -1,0 +1,236 @@
+{
+  "provenance": {
+    "bound": "Deliberately constructed boundary record accepted unchanged by the old validator; not a naturally produced historical save.",
+    "baseRevision": "1508bb3aff609be2f556ca0403a8f79043a2c002",
+    "sourceHistorySha256": "3267876c1daaf29a37a7437d63953f384f044a6fddbbc972ec203bd277f3b1b8",
+    "sourceState": "month-paid-at-boundary",
+    "sourceSha256": {
+      "engine.js": "af7d53d7c24eecffeceabafd7807b8768bc2e1b0cd33ee9694809c593cffb861",
+      "catalog.js": "ded164799241d84e08b37bfcdea0489e9f321b41be2b0ea6a34a40aa4bf33620"
+    },
+    "changes": {
+      "calendarSeconds": 449.999991,
+      "staff0MonthlyWage": 22500,
+      "staff0WageAccrued": 22500
+    },
+    "oldValidatorAcceptedUnchanged": true
+  },
+  "save": {
+    "version": 2,
+    "mode": "empty",
+    "name": "Corner Table",
+    "cash": 14926,
+    "day": 31,
+    "time": 0,
+    "calendarSeconds": 449.999991,
+    "speed": 1,
+    "open": false,
+    "land": {
+      "minX": 4,
+      "maxX": 19,
+      "minZ": 4,
+      "maxZ": 19
+    },
+    "floors": [],
+    "objects": [],
+    "staff": [
+      {
+        "id": "staff-5",
+        "name": "Drew",
+        "skills": {
+          "cooking": 0.52,
+          "speed": 0.09,
+          "clumsiness": 0.45
+        },
+        "monthlyWage": 22500,
+        "role": "employee",
+        "wageAccrued": 22500,
+        "priorities": {
+          "serving": "off",
+          "cooking": "off",
+          "dishwashing": "off",
+          "cleaning": "off"
+        },
+        "energy": 100,
+        "x": 11,
+        "z": 9,
+        "task": "idle",
+        "path": [],
+        "timer": 0
+      }
+    ],
+    "guests": [],
+    "orders": [],
+    "menu": [
+      {
+        "recipeId": "burger",
+        "price": 18,
+        "enabled": true
+      },
+      {
+        "recipeId": "salad",
+        "price": 14,
+        "enabled": true
+      },
+      {
+        "recipeId": "pasta",
+        "price": 20,
+        "enabled": true
+      },
+      {
+        "recipeId": "steak",
+        "price": 32,
+        "enabled": false
+      },
+      {
+        "recipeId": "risotto",
+        "price": 26,
+        "enabled": false
+      },
+      {
+        "recipeId": "chef-special",
+        "price": 42,
+        "enabled": false
+      },
+      {
+        "recipeId": "fries",
+        "price": 15,
+        "enabled": false
+      }
+    ],
+    "stats": {
+      "served": 0,
+      "lost": 0,
+      "revenue": 0,
+      "expenses": 74.00000000000084,
+      "rating": 3.8,
+      "cleanliness": 94.5999999999998
+    },
+    "events": [
+      {
+        "id": "event-8",
+        "text": "Monthly wages paid: $74.00.",
+        "time": 23.599999999999998,
+        "day": 30
+      },
+      {
+        "id": "event-7",
+        "text": "Drew joined the team.",
+        "time": 0,
+        "day": 1
+      },
+      {
+        "id": "event-1",
+        "text": "A fresh start. Lay floors, build a kitchen and dining room, then open your doors.",
+        "time": 0,
+        "day": 1
+      }
+    ],
+    "scenario": {
+      "id": "sandbox",
+      "title": "Your neighborhood restaurant",
+      "description": "Build at your own pace and make a place people love.",
+      "goals": [],
+      "complete": false
+    },
+    "seed": 741852,
+    "nextId": 9,
+    "elapsed": 450,
+    "accumulator": 0,
+    "arrivalIn": 3,
+    "bankrupt": false,
+    "unlocks": [],
+    "completedScenarios": [],
+    "doorGrantUsed": false,
+    "daily": {
+      "served": 0,
+      "revenue": 0,
+      "expenses": 74.00000000000084
+    },
+    "candidates": [
+      {
+        "id": "candidate-3",
+        "name": "Charlie",
+        "skills": {
+          "cooking": 0.44,
+          "speed": 0.59,
+          "clumsiness": 0.2
+        },
+        "monthlyWage": 100
+      },
+      {
+        "id": "candidate-4",
+        "name": "Morgan",
+        "skills": {
+          "cooking": 0.07,
+          "speed": 0.2,
+          "clumsiness": 0.08
+        },
+        "monthlyWage": 70
+      },
+      {
+        "id": "candidate-6",
+        "name": "Riley",
+        "skills": {
+          "cooking": 0.04,
+          "speed": 0.71,
+          "clumsiness": 0.97
+        },
+        "monthlyWage": 65
+      }
+    ],
+    "cleaningDueSince": null,
+    "supplies": {
+      "stocks": [],
+      "ingredientBatches": {
+        "potato": 0,
+        "flour": 0,
+        "tomato": 0,
+        "coffee": 0,
+        "avocado": 0,
+        "steak": 0,
+        "chicken": 0,
+        "rice": 0,
+        "mushroom": 0
+      },
+      "ingredientNextDay": 40,
+      "tablewareQueue": [],
+      "tablewareNextAt": null,
+      "ware": [],
+      "wareLedger": {
+        "plate": {
+          "granted": 0,
+          "delivered": 0,
+          "broken": 0
+        },
+        "stemglass": {
+          "granted": 0,
+          "delivered": 0,
+          "broken": 0
+        },
+        "pan": {
+          "granted": 0,
+          "delivered": 0,
+          "broken": 0
+        },
+        "bowl": {
+          "granted": 0,
+          "delivered": 0,
+          "broken": 0
+        },
+        "cup": {
+          "granted": 0,
+          "delivered": 0,
+          "broken": 0
+        },
+        "glass": {
+          "granted": 0,
+          "delivered": 0,
+          "broken": 0
+        }
+      },
+      "ingredientBlockedReason": ""
+    },
+    "candidateSeed": 1523502683
+  }
+}

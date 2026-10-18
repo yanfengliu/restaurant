@@ -1261,7 +1261,7 @@ function validateV2Save(game) {
   const assignments = new Set(), sinksInUse = new Set();
   const tasks = ['idle', 'taking-order', 'cooking', 'pickup', 'serving', 'cleaning', 'dish-collect', 'dish-to-sink', 'dish-wash', 'dish-return', 'meal-dispose', 'machine-collect', 'machine-load', 'machine-unload', 'machine-return'];
   for (const member of game.staff) {
-    const accrualCeiling = member.monthlyWage * (1 + (game.calendarSeconds - (game.day - 1) * DAY_SECONDS) / MONTH_SECONDS);
+    const accrualCeiling = member.monthlyWage * (1 + (game.calendarSeconds % DAY_SECONDS) / MONTH_SECONDS);
     if (member.role !== 'employee' || !finite(member.energy, 0, 100) || !finite(member.wageAccrued, 0, accrualCeiling + 0.00001) || !exactKeys(member.priorities, TASK_GROUPS) || Object.values(member.priorities).some((priority) => !PRIORITIES.includes(priority)) || !tasks.includes(member.task)) fail('an employee has invalid priorities, task or accrued wages');
     const order = game.orders.find((order) => order.id === member.orderId), guest = game.guests.find((guest) => guest.id === member.guestId), ware = wareById(game, member.wareId), target = taskTarget(game, member);
     const links = ['orderId', 'guestId', 'wareId', 'taskTarget', 'sinkId', 'dishwasherId'];
