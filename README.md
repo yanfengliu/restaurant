@@ -20,13 +20,13 @@ Open the localhost URL printed by Vite. The starter bistro begins service immedi
 - **Tableware:** plus prepays 15 coins for a unit and reserves cabinet space; minus refunds a unit that is still pending. The shipment arrives after five game days. Plates and bowls return through collection, washing, and clean storage after use.
 - **Inventory:** inspect ingredient stock and clean tableware in a separate window while ordering or building. Hover a tableware count for in-use, dirty, returning, and pending quantities.
 - **Menu:** select a dish, set its price, and inspect its equipment, ingredient, and tableware requirements. Red cards identify shortages. Adding a dish requires its prerequisites; an enabled dish remains on the menu when supplies temporarily run out.
-- **Staff:** compare three candidates' cooking, speed, clumsiness, and monthly wages. Choose Hire, then click a clear floor tile to place the employee. Independently cycle serving, cooking, dishwashing, and cleaning through normal, high, off, and low priorities.
+- **Staff:** compare three candidates' cooking, speed, clumsiness, and monthly wages. Choose Hire, then click clear owned ground to place the employee. Independently cycle serving, cooking, dishwashing, and cleaning through normal, high, off, and low priorities.
 - **Finances:** watch sales, expenses, cash, and service activity.
 - **Goals:** choose from six restaurant challenges or play freely.
 
 Use **WASD**, **Shift-drag**, or middle-drag to pan the camera, **right-drag** to orbit, and scroll to zoom. **Q / E** also rotate the view. **B** opens Build, **M** opens Menu, **R** rotates furniture, **Delete** selects removal, **Space** pauses, and **Esc** cancels. The camera controls also offer an overhead view and full, cutaway, or low walls. Use Catalog or Build to reopen the construction catalog, or Esc / Cancel to clear the active tool.
 
-The calendar uses 15 simulation seconds per game day and 30 days per month. Wages accrue during service and are settled at a month boundary or when an employee is dismissed. Pause and speed controls affect service and deliveries together.
+The calendar uses 15 simulation seconds per game day and 30 days per month. Wages accrue after hiring while simulation time advances, and are paid at each day boundary or when an employee is dismissed. Dishwashers wait for five dirty dishes, wash unattended, then staff return clean dishes to cabinets; sinks retain their single-dish process. Pause and speed controls affect service and deliveries together.
 
 The game saves automatically in this browser every 30 seconds. The gear menu includes explicit save, load, and new restaurant controls. Version 2 saves retain stock, reusable dishes, deliveries, and employee priorities; valid version 1 saves migrate on load using the existing browser save key. Browser storage is local to the browser and origin; clearing it removes the save. If a save cannot be loaded, automatic saving stops and the original save stays untouched until you explicitly choose Save or New Restaurant.
 
