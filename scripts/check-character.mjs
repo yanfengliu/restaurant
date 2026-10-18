@@ -284,4 +284,3 @@ assert.equal(disposalEvents,48*5,'each owned geometry/material/bone texture disp
 assert.equal(skeletonDisposals,48,'each unique skeleton disposed exactly once');
 proof.resourceSmoke={instances:48,ownedDisposalEvents:disposalEvents,skeletonDisposals,geometries:96,materials:96,boneTextures:48,bound:'CPU ownership and disposal requests; browser GPU/resource acceptance remains separate.'};
 console.log(JSON.stringify(proof,null,2));
-
