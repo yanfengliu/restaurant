@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { getSupplies } from './engine.js';
 
 const TAU = Math.PI * 2;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -6,7 +7,7 @@ const cellKey = (x, z) => `${x},${z}`;
 const angle = value => (Number(value) || 0) * Math.PI / 180;
 const floorColors = { peach: '#e3a17c', wood: '#c09568', tile: '#e5dfca', tiles: '#e5dfca', kitchen: '#e5dfca', stone: '#929b99', checker: '#ede5cd', carpet: '#ad5952', concrete: '#a8aaa2', dark: '#605445', white: '#ede9d9' };
 const architectural = type => ['wall','window','door'].includes(type);
-const modelTypes=new Set('table chair stove oven fridge counter prep cuttingboard shelf bigshelf sink fryer coffee bar toilet plant flowerbox wall door window divider bin lamp painting clock'.split(' '));
+const modelTypes=new Set('table chair stove oven fridge counter prep cuttingboard shelf bigshelf sink dishwasher fryer coffee bar toilet plant flowerbox wall door window divider bin lamp painting clock'.split(' '));
 const ingredientTypes=new Set('potato flour tomato coffee avocado steak chicken rice mushroom'.split(' '));
 const wareTypes=new Set('plate stemglass pan bowl cup glass'.split(' '));
 const dishTypes=new Set('burger salad pasta steak risotto chef-special fries'.split(' '));
@@ -39,6 +40,7 @@ export function createScene(container, callbacks = {}) {
   const materials = new Map(), geometries = new Set(), textures = new Set();
   const modelBaseHeights = new Map();
   const thumbnailCache=new Map();let thumbnailTarget=null;
+  let dishwasherGame=null,dishwasherSignature='';
   const objects = new Map(), people = new Map(), floorMeshes = new Map(), tableProps = new Map(), stockProps=new Map(), wareProps=new Map();
   const objectLayer = new THREE.Group(), floorLayer = new THREE.Group(), peopleLayer = new THREE.Group(), propsLayer = new THREE.Group();
   scene.add(floorLayer, objectLayer, peopleLayer, propsLayer);
@@ -219,6 +221,32 @@ export function createScene(container, callbacks = {}) {
       case 'sink':
         cabinet(g); box(g, 0.6, 0.035, 0.5, palette.steelDark, 0, 0.919, 0.04); box(g, 0.45, 0.038, 0.35, material('#768f90'), 0, 0.935, 0.04);
         cyl(g, 0.035, 0.35, palette.steel, 0, 1.07, -0.26, 8); box(g, 0.07, 0.045, 0.24, palette.steel, 0, 1.24, -0.16); break;
+      case 'dishwasher': {
+        const rackBlue=material('#6d88bc'),rackDark=material('#526b9d');
+        for(const x of [-0.32,0.32])for(const z of [-0.26,0.26])box(g,0.07,0.09,0.07,palette.trim,x,0.045,z);
+        box(g,0.82,0.71,0.72,palette.cream,0,0.425,0);
+        box(g,0.74,0.54,0.025,palette.white,0,0.4,0.372);
+        box(g,0.018,0.48,0.03,palette.cream,0.18,0.38,0.39);
+        box(g,0.88,0.065,0.79,palette.white,0,0.81,0);
+        box(g,0.72,0.025,0.6,rackDark,0,0.855,0);
+        for(const x of [-0.35,0.35])box(g,0.035,0.085,0.61,rackBlue,x,0.89,0);
+        for(const z of [-0.29,0.29])box(g,0.72,0.085,0.035,rackBlue,0,0.89,z);
+        for(let index=0;index<6;index++)box(g,0.018,0.035,0.53,rackBlue,-0.3+index*0.12,0.9,0);
+        for(const x of [-0.405,0.405])box(g,0.04,1.62,0.04,palette.steel,x,0.94,-0.33);
+        box(g,0.8,0.045,0.04,palette.steel,0,1.73,-0.33);
+        const hood=new THREE.Group();hood.name='dishwasher-hood';hood.position.y=0.52;g.add(hood);
+        box(hood,0.82,0.07,0.76,palette.white,0,1.225,0);
+        for(const x of [-0.375,0.375])box(hood,0.055,0.33,0.7,palette.cream,x,1.025,0);
+        for(const z of [-0.325,0.325])box(hood,0.72,0.33,0.05,palette.cream,0,1.025,z);
+        box(hood,0.65,0.035,0.025,palette.trim,0,1.04,0.359);
+        for(const x of [-0.425,0.425])box(hood,0.04,0.04,0.24,palette.white,x,1.025,0.31);
+        box(hood,0.89,0.04,0.04,palette.white,0,1.025,0.43);
+        box(g,0.69,0.085,0.022,palette.trim,0,0.73,0.384);
+        for(const [index,buttonColor] of ['#cd6861','#d4b64e','#6e9b79','#6b91ba'].entries())box(g,0.062,0.037,0.025,material(buttonColor),-0.18+index*0.12,0.735,0.407);
+        box(g,0.59,0.018,0.012,palette.steelDark,0,0.655,0.395);
+        const washProgress=box(g,1,0.018,0.016,rackBlue,-0.29,0.655,0.404);washProgress.name='dishwasher-progress';washProgress.scale.x=0.001;washProgress.visible=false;
+        break;
+      }
       case 'fryer':
         box(g,0.64,0.25,0.47,palette.steel,0,1.025,0);box(g,0.56,0.035,0.39,palette.black,0,1.158,0);box(g,0.48,0.016,0.31,material('#9b8248'),0,1.18,0);
         for(const x of [-0.16,0,0.16])box(g,0.012,0.02,0.28,palette.steelDark,x,1.2,0);
@@ -436,6 +464,18 @@ export function createScene(container, callbacks = {}) {
       positionWallArt(group,data);
     }
   }
+  function syncDishwashers() {
+    const appliances=(game?.objects||[]).filter(data=>data.type==='dishwasher');
+    const signature=JSON.stringify(appliances.map(data=>[data.id,data.washProgress,objects.get(data.id)?.userData.signature]));
+    if(dishwasherGame===game&&dishwasherSignature===signature)return;
+    dishwasherGame=game;dishwasherSignature=signature;
+    if(!appliances.length)return;
+    for(const machine of getSupplies(game).dishwashers||[]){
+      const group=objects.get(machine.id),hood=group?.getObjectByName('dishwasher-hood'),progress=group?.getObjectByName('dishwasher-progress');
+      if(hood)hood.position.y=machine.washing?0:0.52;
+      if(progress){progress.visible=machine.washing>0;progress.scale.x=Math.max(0.001,machine.progress*0.58);progress.position.x=-0.29+machine.progress*0.29;}
+    }
+  }
   function personModel(data,isStaff=true) {
     const g=new THREE.Group(), body=new THREE.Group(); g.add(body);
     const seed=String(data.name||data.id||'Guest').split('').reduce((sum,c)=>sum+c.charCodeAt(0),0);
@@ -499,15 +539,19 @@ export function createScene(container, callbacks = {}) {
       group.userData.signature=signature;parent.add(group);stockProps.set(data.id,group);
     }
     for(const id of stockProps.keys())if(!storageIds.has(id))removeProp(stockProps,id);
-    const wareIds=new Set(),cleanIndices=new Map(),locationIndices=new Map();
+    const wareIds=new Set(),cleanIndices=new Map(),locationIndices=new Map(),rackIndices=new Map();
     for(const unit of supplies.ware||[]){
-      wareIds.add(unit.id);let parent=null,recipeId=null,position=new THREE.Vector3(),scale=1;
-      const dirty=['dirty','carriedDirty','washing'].includes(unit.state);
+      wareIds.add(unit.id);let parent=null,recipeId=null,position=new THREE.Vector3(),scale=1,tilt=0;
+      const dirty=['dirty','carriedDirty','washing','rackDirty','rackWashing'].includes(unit.state);
       if(unit.state==='clean'){
         parent=objects.get(unit.storageId);const index=cleanIndices.get(unit.storageId)||0;cleanIndices.set(unit.storageId,index+1);position.set(-0.15,0.19+index*0.022,0);scale=0.7;
       }else if(['carriedMeal','carriedDirty','carriedClean'].includes(unit.state)){
         parent=people.get(unit.staffId)?.userData.carried;scale=0.9;
         if(unit.state==='carriedMeal')recipeId=(game.orders||[]).find(order=>order.id===unit.orderId)?.recipeId||null;
+      }else if(['rackDirty','rackWashing','rackClean'].includes(unit.state)){
+        parent=objects.get(unit.dishwasherId);const index=rackIndices.get(unit.dishwasherId)||0;rackIndices.set(unit.dishwasherId,index+1);
+        const upright=['plate','pan'].includes(unit.type);scale=unit.type==='pan'?0.5:upright?0.88:0.72;tilt=upright?Math.PI/2:0;
+        position.set(-0.24+index*0.12,upright?1.01:0.87,index%2?0.11:-0.08);
       }else if(unit.state==='guest'){
         const guest=(game.guests||[]).find(actor=>actor.id===unit.guestId);parent=objects.get(guest?.tableId);
         const seat=objects.get(guest?.seatId)?.userData.data,table=parent?.userData.data,r=angle(table?.rotation);
@@ -521,9 +565,9 @@ export function createScene(container, callbacks = {}) {
         if(order?.state==='ready')recipeId=order.recipeId;
       }
       if(!parent){removeProp(wareProps,unit.id);continue;}
-      const signature=JSON.stringify([unit.type,unit.state,unit.storageId,unit.orderId,unit.staffId,unit.guestId,unit.locationId,unit.sinkId,recipeId,position.toArray(),scale]);
+      const signature=JSON.stringify([unit.type,unit.state,unit.storageId,unit.orderId,unit.staffId,unit.guestId,unit.locationId,unit.sinkId,unit.dishwasherId,recipeId,position.toArray(),scale,tilt]);
       const previous=wareProps.get(unit.id);if(previous?.userData.signature===signature&&previous.parent===parent)continue;
-      removeProp(wareProps,unit.id);const group=wareModel(unit.type,{dirty,recipeId});group.position.copy(position);group.scale.setScalar(scale);
+      removeProp(wareProps,unit.id);const group=wareModel(unit.type,{dirty,recipeId});group.position.copy(position);group.scale.setScalar(scale);group.rotation.z=tilt;
       if(unit.state==='washing')for(let i=0;i<3;i++)sphere(group,0.035,palette.white,(i-1)*0.06,0.08,0.02);
       group.userData.signature=signature;parent.add(group);wareProps.set(unit.id,group);
     }
@@ -803,7 +847,7 @@ export function createScene(container, callbacks = {}) {
   frame=requestAnimationFrame(animate);
 
   return {
-    update(nextGame) { if(disposed)return;game=nextGame;syncLand();syncFloors();syncObjects();syncPeople();syncTableProps();syncSupplies();updateCutaway();updateHoverVisual(); },
+    update(nextGame) { if(disposed)return;game=nextGame;syncLand();syncFloors();syncObjects();syncDishwashers();syncPeople();syncTableProps();syncSupplies();updateCutaway();updateHoverVisual(); },
     setTool(nextTool) { onCancel();tool=nextTool;rebuildGhost();canvas.style.cursor=tool?'crosshair':'default';updateHoverVisual(); },
     setRotation(value) { rotation=Number(value)||0;updateHoverVisual(); },
     setView(nextView) { view=['top','decor','hygiene'].includes(nextView)?nextView:'isometric';floorSignature='';syncFloors();updateCamera(); },
