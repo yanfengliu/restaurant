@@ -75,7 +75,7 @@ Provide an inspected conservative envelope covering all exported pose samples an
 
 ### Staged acceptance and gates
 
-- [ ] Orchestrator and independent reviewer accept this revised method, file scope, export bounds and shared contracts before product changes.
+- [x] Orchestrator and independent reviewer accept this revised method, file scope, export bounds and shared contracts before product changes. Review `2_plan.md` accepts the recoverable proposal at `0331dc9`; only the ignored one-model prototype stage is authorized so far.
 - [ ] Prototype one model in ignored output first. Inspect native-resolution front, side, rear and three-quarter views at normal gameplay size and close detail. Shoulders slope into arms, the pelvis flows into thighs, sleeves have coherent seams, the hands have palms/thumbs, and no joint reads as a bead, sausage, floating part or open gap. Compare with both `ebc138c` and the studied pixels; do not accept improvement alone while the mannequin defect remains.
 - [ ] Inspect neutral, 45° and 90° elbow/knee bends, shoulder reach and seated hip bends using the exported runtime deformation method. No material volume collapse, pinching, twisting or garment separation. Obtain direction approval on these bytes before adding variants or integrating the whole service cast.
 - [ ] Demonstrate the source/export bridge with a reproducible build, finite indexed geometry, complete normalized weights, valid bone hierarchy/binds and independent skeletons. Compare fixed posed landmarks from Blender with actual Three.js bone-transformed vertices to catch axis, bind and weight conversion errors. Hook the cheap runtime-data check into `npm run check`; name its numerical/export bounds and keep visual acceptance separate.
