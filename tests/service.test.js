@@ -211,3 +211,26 @@ test('a naturally cancelled carried legacy meal disposes before joining the new 
   act(game,{type:'REMOVE',id:wall.id});const washer=game.staff.find(member=>member.name==='Jordan');act(game,{type:'PRIORITY',id:washer.id,taskGroup:'dishwashing',priority:'high'});
   until(game,()=>unit.state==='rackDirty');assert.equal(unit.dishwasherId,machine.id);assert.ok(unit.returnStorageId);assert.deepEqual(deserialize(serialize(game)),game);conservation(game);
 });
+
+test('phase-aware accepted salary ceilings at 0, 7.5 and 14.75 seconds remain valid until one settlement, and old arrears can settle by dismissal', () => {
+  for(const phase of [0,7.5,14.75]) for(const kind of ['current-ceiling','old-month-maximum']) {
+    // Deliberate save-edge records: only the named clock/accrual fields differ from the literal already-paid v2 save.
+    const fixture=structuredClone(history.states['month-paid-at-boundary']),worker=fixture.staff[0],monthly=worker.monthlyWage;
+    fixture.calendarSeconds=450+phase;fixture.elapsed=450+phase;fixture.day=31;fixture.time=phase/15*24;
+    const ceiling=monthly*(1+phase/450);worker.wageAccrued=kind==='current-ceiling'?ceiling:monthly;
+    const initial=structuredClone(fixture),game=deserialize(JSON.stringify(fixture));assert.deepEqual(game,initial,`${kind} at ${phase}: load changes no history or liability`);
+    const over=structuredClone(fixture);over.staff[0].wageAccrued=ceiling+0.00002;assert.throws(()=>deserialize(JSON.stringify(over)),/accrued wages/,`${phase}: exceeds the ceiling plus 1e-5 tolerance`);
+    let twin=deserialize(serialize(game));const remaining=15-phase;
+    for(let time=0;time<remaining;time+=0.25){tick(game,0.25);tick(twin,0.25);twin=deserialize(serialize(twin));assert.equal(serialize(game),serialize(twin),`${kind} at ${phase}, advance ${time}`);}
+    const payment=initial.staff[0].wageAccrued+monthly*remaining/450;
+    near(game.cash,initial.cash-payment);near(game.stats.expenses,initial.stats.expenses+payment);near(game.daily.expenses,payment);assert.equal(game.staff[0].wageAccrued,0);
+    assert.equal(game.day,32);tick(game,0.25);near(game.cash,initial.cash-payment);near(game.staff[0].wageAccrued,monthly*0.25/450);
+  }
+  for(const phase of [0,7.5,14.75]) {
+    const old=structuredClone(history.states['month-paid-at-boundary']),monthly=old.staff[0].monthlyWage;
+    old.calendarSeconds=450+phase;old.elapsed=450+phase;old.day=31;old.time=phase/15*24;old.staff[0].wageAccrued=monthly;
+    const game=deserialize(JSON.stringify(old));assert.deepEqual(game,old);act(game,{type:'FIRE',id:game.staff[0].id});
+    near(game.cash,old.cash-monthly);near(game.stats.expenses,old.stats.expenses+monthly);near(game.daily.expenses,old.daily.expenses+monthly);assert.equal(game.staff.length,0);
+    reject(game,{type:'FIRE',id:old.staff[0].id});const after=game.cash;run(game,30);near(game.cash,after);near(game.stats.expenses,old.stats.expenses+monthly);
+  }
+});

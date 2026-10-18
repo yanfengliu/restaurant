@@ -1,0 +1,2 @@
+# Keep the pinned historical save fixture byte-for-byte across checkouts.
+tests/fixtures/v2-service-history.json -text
