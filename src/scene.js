@@ -15,15 +15,15 @@ const dishTypes=new Set('burger salad pasta steak risotto chef-special fries'.sp
 /** A self-contained, procedural restaurant world. Coordinates identify one-unit cells. */
 export function createScene(container, callbacks = {}) {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#8b9470');
-  scene.fog = new THREE.Fog('#8b9470', 58, 105);
+  scene.background = new THREE.Color('#827e68');
+  scene.fog = new THREE.Fog('#827e68', 58, 105);
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 0.97;
   renderer.domElement.className = 'restaurant-canvas';
   renderer.domElement.style.cssText = 'display:block;width:100%;height:100%;touch-action:none;outline:none';
   renderer.domElement.tabIndex = 0;
@@ -55,9 +55,9 @@ export function createScene(container, callbacks = {}) {
   }
   const palette = {
     cream: material('#ece6d5'), trim: material('#686259'), wood: material('#a47750'), lightwood: material('#c1956e'), darkwood: material('#654d3a'),
-    red: material('#ac4941'), steel: material('#b7c2bf', { roughness: 0.45, metalness: 0.3 }), steelDark: material('#7b8a87', { roughness: 0.42, metalness: 0.28 }),
+    red: material('#ac4941'), steel: material('#bdb9ba', { roughness: 0.54, metalness: 0.22 }), steelDark: material('#85858a', { roughness: 0.54, metalness: 0.22 }),
     black: material('#303534'), white: material('#f6f1e2'), glass: material('#a3cad0', { transparent: true, opacity: 0.6, roughness: 0.2 }),
-    leaf: material('#59804b'), leafLight: material('#82a15b'), soil: material('#554636'), brass: material('#be9c58', { roughness: 0.4, metalness: 0.5 }),
+    leaf: material('#63774f'), leafLight: material('#85945f'), soil: material('#554636'), brass: material('#be9c58', { roughness: 0.4, metalness: 0.5 }),
     brick: material('#b15b75'), brickDark: material('#a25b70'), masonryTrim: material('#756674'),
   };
   const brickCanvas=document.createElement('canvas');brickCanvas.width=128;brickCanvas.height=256;
@@ -315,19 +315,18 @@ export function createScene(container, callbacks = {}) {
     return g;
   }
 
-  scene.add(new THREE.HemisphereLight('#f3f1df', '#697354', 1.55));
-  const sun = new THREE.DirectionalLight('#fff0d8', 2.25);
+  scene.add(new THREE.HemisphereLight('#eee4e3', '#716c59', 2));
+  const sun = new THREE.DirectionalLight('#fff0e7', 1.55);
   sun.position.set(-14, 30, 15); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
   Object.assign(sun.shadow.camera, { left: -27, right: 27, top: 27, bottom: -27, near: 1, far: 80 });
-  sun.shadow.normalBias = 0.025; sun.shadow.bias = -0.00005; sun.target.position.set(12, 0, 12);
+  sun.shadow.normalBias = 0.025; sun.shadow.bias = -0.00005; sun.shadow.radius = 3; sun.target.position.set(12, 0, 12);
   scene.add(sun, sun.target);
-  const fill = new THREE.DirectionalLight('#dce9f3', 0.45); fill.position.set(20, 12, -15); scene.add(fill);
+  const fill = new THREE.DirectionalLight('#e3ddeb', 0.4); fill.position.set(20, 12, -15); scene.add(fill);
 
   const world = new THREE.Group(); scene.add(world);
-  box(world, 120, 0.18, 120, material('#77845c'), 12, -0.19, 12);
-  box(world, 24, 0.16, 24, material('#879565'), 12, -0.05, 12);
-  const grassPatch = material('#82915f');
-  for (let x = 0; x < 24; x++) for (let z = 0; z < 24; z++) if ((x * 17 + z * 7) % 5 === 0) box(world, 1, 0.004, 1, grassPatch, x + 0.5, 0.034, z + 0.5);
+  const grass = material('#767551', { roughness: 1 });
+  box(world, 120, 0.18, 120, grass, 12, -0.19, 12);
+  box(world, 24, 0.16, 24, grass, 12, -0.05, 12);
   box(world, 30, 0.16, 2, material('#b9b6a6'), 12, -0.015, -1);
   box(world, 34, 0.1, 5.5, material('#666f6b'), 12, -0.08, -4.75);
   box(world, 32, 0.015, 0.1, palette.cream, 12, -0.019, -2.5);
@@ -479,26 +478,68 @@ export function createScene(container, callbacks = {}) {
   function personModel(data,isStaff=true) {
     const g=new THREE.Group(), body=new THREE.Group(); g.add(body);
     const seed=String(data.name||data.id||'Guest').split('').reduce((sum,c)=>sum+c.charCodeAt(0),0);
-    const skin=material(['#e6bc95','#c99572','#a77553','#ead0a9'][seed%4]);
-    const shirt=material((isStaff?['#93475a','#5e7d8d','#7c728f','#6e866b']:['#ce8c6e','#8a9b75','#a37a91','#b1ad85','#7f9b9f','#c6a158'])[seed%(isStaff?4:6)]);
-    const trousers=material(isStaff?'#505b59':['#626568','#79675c','#6b7b7d'][seed%3]);
-    box(body,0.31,0.4,0.21,shirt,0,0.75,0);
-    const leftLeg=box(body,0.115,0.39,0.13,trousers,-0.085,0.36,0), rightLeg=box(body,0.115,0.39,0.13,trousers,0.085,0.36,0);
-    box(leftLeg,0.13,0.08,0.19,palette.black,0,-0.18,0.025); box(rightLeg,0.13,0.08,0.19,palette.black,0,-0.18,0.025);
-    const head=sphere(body,0.17,skin,0,1.105,0,1);head.scale.set(0.8,1,0.8);box(body,0.12,0.065,0.1,skin,0,0.925,0);
-    const hairMaterial=material(['#5b4332','#a78150','#3b3b34','#847463'][seed%4]);
-    const hair=sphere(body,0.177,hairMaterial,0,1.21,-0.015,1);hair.scale.set(0.83,0.58,0.83);if(seed%3===0)sphere(body,0.075,hairMaterial,0,1.26,-0.13,1);
-    for(const x of [-0.065,0.065]) box(body,0.018,0.022,0.012,palette.black,x,1.12,0.125);
-    const leftArm=box(body,0.09,0.35,0.11,shirt,-0.22,0.72,0), rightArm=box(body,0.09,0.35,0.11,shirt,0.22,0.72,0);
-    box(leftArm,0.085,0.095,0.1,skin,0,-0.19,0); box(rightArm,0.085,0.095,0.1,skin,0,-0.19,0);
-    if(isStaff) {
-      box(body,0.24,0.33,0.025,palette.cream,0,0.65,0.118);box(body,0.16,0.18,0.025,palette.cream,0,0.85,0.118);
+    const skin=material(['#e3b696','#c69478','#9f7157','#edd0b0'][seed%4]);
+    const lightUniform=isStaff&&seed%3===0;
+    const shirt=material(isStaff?(lightUniform?'#e5ded8':'#3d3b4b'):['#bb7772','#8b9676','#8e7891','#b1a181','#819b9b','#bf925f'][seed%6]);
+    const sleeve=isStaff?material('#e5ded8'):shirt;
+    const trousers=material(isStaff?(lightUniform?'#e3dcd5':'#393b4b'):['#565863','#817063','#687978'][seed%3]);
+    const shoe=material(isStaff?'#302d39':'#494047');
+    function oval(parent,w,h,d,mat,x=0,y=0,z=0){
+      const mesh=addMesh(parent,new THREE.SphereGeometry(1,12,8),mat,x,y,z);mesh.scale.set(w/2,h/2,d/2);return mesh;
     }
-    const carried=new THREE.Group();carried.position.set(0.24,0.76,0.28);carried.visible=false;body.add(carried);
-    const indicator=new THREE.Group(); indicator.position.y=1.7; g.add(indicator);
+    function segment(parent,length,radius,mat){
+      return addMesh(parent,new THREE.CapsuleGeometry(radius,length-radius*2,3,10),mat,0,-length/2,0);
+    }
+    function joint(parent,x,y,z=0){const group=new THREE.Group();group.position.set(x,y,z);parent.add(group);return group;}
+    const torsoPoints=[[0,0.96],[0.15,0.96],[0.16,1.04],[0.18,1.18],[0.205,1.30],[0.20,1.35],[0.155,1.40],[0.08,1.42],[0,1.42]].map(([r,y])=>new THREE.Vector2(r,y));
+    const torso=addMesh(body,new THREE.LatheGeometry(torsoPoints,12),shirt);torso.scale.z=0.65;
+    oval(body,0.34,0.22,0.25,trousers,0,0.89);
+    cyl(body,0.057,0.11,skin,0,1.435,0,10);
+    const leftLeg=joint(body,-0.095,0.88),rightLeg=joint(body,0.095,0.88);
+    const lowerLegs=[],feet=[];
+    for(const leg of [leftLeg,rightLeg]){
+      segment(leg,0.40,0.073,trousers).scale.z=0.87;
+      const knee=joint(leg,0,-0.40);segment(knee,0.36,0.06,trousers).scale.z=0.9;lowerLegs.push(knee);
+      const foot=joint(knee,0,-0.36);feet.push(foot);
+      oval(foot,0.15,0.11,0.27,shoe,0,-0.065,0.055);
+      box(foot,0.135,0.025,0.245,shoe,0,-0.1075,0.05);
+    }
+    const head=joint(body,0,1.565);
+    oval(head,0.27,0.31,0.275,skin);
+    oval(head,0.04,0.055,0.045,skin,0,-0.014,0.137);
+    for(const x of [-1,1]){
+      oval(head,0.038,0.07,0.048,skin,x*0.137,-0.005,-0.005);
+      oval(head,0.012,0.018,0.012,palette.black,x*0.05,0.018,0.130);
+    }
+    const hairMaterial=material(['#514039','#a17a51','#36353a','#82766c'][seed%4]);
+    const hair=addMesh(head,new THREE.SphereGeometry(0.155,12,8,0,TAU,0,Math.PI/2),hairMaterial,0,0.045,-0.012);hair.scale.y=0.86;
+    const hairStyle=Math.floor(seed/4)%4;
+    if(hairStyle===0){const swept=oval(head,0.25,0.09,0.245,hairMaterial,-0.012,0.139,-0.012);swept.rotation.z=-0.15;}
+    else if(hairStyle===1){
+      oval(head,0.265,0.26,0.12,hairMaterial,0,-0.012,-0.10);
+      for(const x of [-0.124,0.124])oval(head,0.052,0.20,0.115,hairMaterial,x,-0.025,-0.025);
+    }else if(hairStyle===2)oval(head,0.14,0.14,0.14,hairMaterial,0,0.055,-0.16);
+    else oval(head,0.24,0.075,0.19,hairMaterial,0,0.14,-0.045);
+    const leftArm=joint(body,-0.235,1.32,0.015),rightArm=joint(body,0.235,1.32,0.015),forearms=[];
+    for(const arm of [leftArm,rightArm]){
+      segment(arm,0.30,0.065,sleeve);
+      const elbow=joint(arm,0,-0.30);forearms.push(elbow);segment(elbow,0.24,0.049,skin);
+      oval(elbow,0.086,0.13,0.076,skin,0,-0.285,0);
+    }
+    for(const x of [-1,1]){const collar=box(body,0.07,0.08,0.022,isStaff?palette.white:shirt,x*0.055,1.385,0.083);collar.rotation.z=x*0.42;}
+    if(isStaff) {
+      const apron=lightUniform?material('#e2d6ce'):material('#343447');
+      const front=addMesh(body,new THREE.LatheGeometry([[0.158,0.93],[0.175,1.02],[0.193,1.19],[0.19,1.27]].map(([r,y])=>new THREE.Vector2(r,y)),10,-1,2),apron);front.scale.z=0.69;
+      for(const x of [-0.10,0.10]){const strap=box(body,0.034,0.15,0.018,apron,x,1.33,0.103);strap.rotation.z=-x*2;}
+      const belt=cyl(body,0.166,0.045,material('#83505a'),0,1.01,0,12);belt.scale.z=0.68;
+    }else{
+      for(const y of [1.18,1.29])oval(body,0.015,0.015,0.012,palette.cream,0,y,0.124);
+    }
+    const carried=joint(forearms[1],0,-0.285,0.04);carried.rotation.x=Math.PI/2;carried.visible=false;
+    const indicator=new THREE.Group(); indicator.position.y=2.02; g.add(indicator);
     const token=cyl(indicator,0.12,0.035,material('#e3c982'),0,0,0,12); token.rotation.x=Math.PI/2; indicator.visible=false;
     const baseY=new THREE.Box3().setFromObject(body).min.y;
-    g.userData={objectId:data.id,data,isStaff,seed,body,head,leftLeg,rightLeg,leftArm,rightArm,carried,indicator,baseY,appearance:`${data.name}:${isStaff}`};return g;
+    g.userData={objectId:data.id,data,isStaff,seed,body,head,leftLeg,rightLeg,leftArm,rightArm,lowerLegs,feet,forearms,carried,indicator,baseY,appearance:`${data.name}:${isStaff}`};return g;
   }
   function makePerson(data,isStaff){
     const group=personModel(data,isStaff);group.position.set(data.x+0.5,personHeight(data,group),data.z+0.5);peopleLayer.add(group);return group;
@@ -835,12 +876,21 @@ export function createScene(container, callbacks = {}) {
       if(distance>4)group.position.set(tx,ground,tz);
       else if(moving) { const lerp=1-Math.exp(-dt*10);group.position.x+=dx*lerp;group.position.z+=dz*lerp;group.rotation.y=Math.atan2(dx,dz); }
       group.position.y+=(ground-group.position.y)*(1-Math.exp(-dt*14));
-      const state=String(d.state||d.task||'').toLowerCase(),sit=state==='eating'||state==='waitingfood'||state==='waiting_food';
-      const walk=moving && game?.speed!==0 ? Math.sin(elapsed*10+u.seed)*0.43 : 0;
-      u.leftLeg.rotation.x=sit?-1.12:walk;u.rightLeg.rotation.x=sit?-1.12:-walk;u.leftArm.rotation.x=-walk*0.6;u.rightArm.rotation.x=walk*0.6;
-      u.body.position.y=sit?-0.25:Math.abs(walk)*0.03;
-      u.carried.visible=u.isStaff&&u.carried.children.length>0;if(u.carried.visible)u.rightArm.rotation.x=-0.9;
-      u.indicator.visible=!u.isStaff && (/wait|order|unhappy/.test(state));u.indicator.position.y=1.55+Math.sin(elapsed*2+u.seed)*0.035;u.indicator.rotation.copy(camera.rotation);
+      const state=String(d.state||d.task||'').toLowerCase(),sit=!u.isStaff&&['waiting','ordered','eating','waitingfood','waiting_food','served','dining'].includes(state);
+      if(sit){const table=objects.get(d.tableId)?.userData.data;if(table)group.rotation.y=Math.atan2(table.x-d.x,table.z-d.z);}
+      const walk=moving&&!sit&&game?.speed!==0?Math.sin(elapsed*8+u.seed)*0.38:0;
+      u.leftLeg.rotation.x=sit?-1.12:walk;u.rightLeg.rotation.x=sit?-1.12:-walk;
+      u.lowerLegs[0].rotation.x=sit?1.12:Math.max(0,-walk)*0.6;u.lowerLegs[1].rotation.x=sit?1.12:Math.max(0,walk)*0.6;
+      const footHeights=[u.leftLeg,u.rightLeg].map((leg,index)=>{
+        const bend=leg.rotation.x+u.lowerLegs[index].rotation.x;u.feet[index].rotation.x=-bend;
+        return 0.88-0.40*Math.cos(leg.rotation.x)-0.36*Math.cos(bend)-0.12;
+      });
+      u.body.position.y=sit?-0.225:-Math.min(...footHeights);
+      u.leftArm.rotation.x=sit?-0.8:-walk*0.6;u.rightArm.rotation.x=sit?-0.8:walk*0.6;
+      for(const arm of u.forearms)arm.rotation.x=sit?0.8-Math.PI/2:-0.08;
+      u.carried.visible=u.isStaff&&u.carried.children.length>0;
+      if(u.carried.visible){u.rightArm.rotation.x=-0.15;u.forearms[1].rotation.x=0.15-Math.PI/2;}
+      u.indicator.visible=!u.isStaff&&(/wait|order|unhappy/.test(state));u.indicator.position.y=2.02+u.body.position.y+Math.sin(elapsed*2+u.seed)*0.025;u.indicator.rotation.copy(camera.rotation);
     }
     renderer.render(scene,camera);frame=requestAnimationFrame(animate);
   }
