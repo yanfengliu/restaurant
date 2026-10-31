@@ -1,3 +1,5 @@
+2026-10-30: AGENTS.md names the fleet constitution as `../fleet/FLEET.md`, the plain path the canon uses, instead of a link that broke from a worktree. Docs only.
+
 2026-10-18: Verified the connected 20-bone character rig at e2365bf with 78 passing simulation tests, reproducible Blender export and independent integrated review. Actual desktop inputs covered furnished plate and outdoor bowl service, seated contacts, selection, portraits and hiring previews; timestamped compositor frames confirmed release, empty-arm return, pause and resumed movement. Updated the ignored gallery with matched comparisons and closed the reported character defect; software rendering, qualitative reference comparison and API resource-count bounds remain explicit.
 
 2026-10-18: Smoothed pickup and release arm poses while keeping carried ware level above the moving palm. Pausing preserves displayed position, heading and local pose; fresh paused loads reconcile saved placement and floor edits retain grounded soles. Added temporal regression probes rejecting the retained instant-carry and first-paused-frame snap controls; actual browser motion acceptance remains with the coordinator.

@@ -7,7 +7,7 @@ The stack is Node.js 24.12.0, Vite 8.3.4, Three.js 0.186.1, and vanilla JavaScri
 
 ## Fleet policy
 
-Follow [the fleet constitution](../fleet/FLEET.md), including scoped worker ownership, independent review, and final integration gates.
+Follow the fleet constitution (`../fleet/FLEET.md`), including scoped worker ownership, independent review, and final integration gates.
 Repository constraints are in [docs/policies/local-rules.md](docs/policies/local-rules.md).
 The fleet sync owns any generated constitution block.
 
